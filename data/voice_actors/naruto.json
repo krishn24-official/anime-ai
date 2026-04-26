@@ -1,0 +1,14 @@
+[
+  {
+    "_id": "va_junko_takeuchi",
+    "name": "Junko Takeuchi",
+
+    "birth_day": 5,
+    "birth_month": 4,
+
+    "character_ids": ["char_naruto"],
+
+    "is_deleted": false,
+    "deleted_at": null
+  }
+]

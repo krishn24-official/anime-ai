@@ -1,0 +1,19 @@
+[
+  {
+    "_id": "ep_1",
+    "anime_id": "anime_naruto",
+
+    "episode_number": 1,
+    "title": "Enter: Naruto Uzumaki!",
+
+    "release_date": "2002-10-03",
+    "director": "Hayato Date",
+
+    "summary": "Naruto graduates from the ninja academy and begins his journey",
+
+    "manga_chapters": ["ch_1"],
+
+    "is_deleted": false,
+    "deleted_at": null
+  }
+]

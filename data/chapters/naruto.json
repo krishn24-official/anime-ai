@@ -1,0 +1,14 @@
+[
+  {
+    "_id": "ch_1",
+    "manga_id": "manga_naruto",
+
+    "chapter_number": 1,
+    "release_date": "1999-09-21",
+
+    "summary": "Introduction of Naruto and the Nine-Tails fox",
+
+    "is_deleted": false,
+    "deleted_at": null
+  }
+]

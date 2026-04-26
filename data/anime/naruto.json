@@ -1,0 +1,17 @@
+[
+  {
+    "_id": "anime_naruto",
+    "name": "Naruto",
+
+    "studio": "Studio Pierrot",
+    "total_seasons": 2,
+    "total_episodes": 720,
+
+    "start_date": "2002-10-03",
+
+    "manga_id": "manga_naruto",
+
+    "is_deleted": false,
+    "deleted_at": null
+  }
+]

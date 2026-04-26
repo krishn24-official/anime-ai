@@ -1,0 +1,42 @@
+[
+  {
+    "_id": "rel_naruto_minato",
+    "source_id": "char_naruto",
+    "target_id": "char_minato",
+    "relationship": "father",
+    "type": "family",
+
+    "is_deleted": false,
+    "deleted_at": null
+  },
+  {
+    "_id": "rel_naruto_kushina",
+    "source_id": "char_naruto",
+    "target_id": "char_kushina",
+    "relationship": "mother",
+    "type": "family",
+
+    "is_deleted": false,
+    "deleted_at": null
+  },
+  {
+    "_id": "rel_naruto_sasuke",
+    "source_id": "char_naruto",
+    "target_id": "char_sasuke",
+    "relationship": "rival",
+    "type": "combat",
+
+    "is_deleted": false,
+    "deleted_at": null
+  },
+  {
+    "_id": "rel_naruto_hinata",
+    "source_id": "char_naruto",
+    "target_id": "char_hinata",
+    "relationship": "wife",
+    "type": "family",
+
+    "is_deleted": false,
+    "deleted_at": null
+  }
+]

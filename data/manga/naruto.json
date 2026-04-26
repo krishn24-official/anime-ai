@@ -1,0 +1,14 @@
+[
+  {
+    "_id": "manga_naruto",
+    "name": "Naruto",
+
+    "author": "Masashi Kishimoto",
+
+    "total_chapters": 700,
+    "start_date": "1999-09-21",
+
+    "is_deleted": false,
+    "deleted_at": null
+  }
+]

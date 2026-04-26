@@ -1,0 +1,26 @@
+[
+  {
+    "_id": "char_naruto",
+    "name": "Naruto Uzumaki",
+
+    "birth_day": 10,
+    "birth_month": 10,
+
+    "physical": {
+      "height": "180 cm",
+      "hair_color": "blonde",
+      "has_hair": true
+    },
+
+    "summary": "Seventh Hokage and jinchuriki of Kurama",
+
+    "anime_ids": ["anime_naruto"],
+    "manga_ids": ["manga_naruto"],
+    "voice_actor_ids": ["va_junko_takeuchi"],
+
+    "tags": ["main character", "ninja", "hokage"],
+
+    "is_deleted": false,
+    "deleted_at": null
+  }
+]
