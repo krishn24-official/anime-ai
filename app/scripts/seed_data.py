@@ -23,9 +23,13 @@ async def seed_collection(folder_path, collection_name):
             if isinstance(data, list):
                 for item in data:
                     try:
-                        await db[collection_name].insert_one(item)
-                    except Exception:
-                        pass  # skip duplicates
+                        await db[collection_name].replace_one(
+                            {"_id": item["_id"]},
+                            item,
+                            upsert=True,
+                        )
+                    except Exception as exc:
+                        print(f"⚠️ Failed to upsert item in {collection_name}: {exc}")
 
             print(f"✅ Seeded {collection_name} from {os.path.basename(file)}")
 

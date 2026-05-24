@@ -8,6 +8,16 @@
     "total_chapters": 700,
     "start_date": "1999-09-21",
 
+    "status": "completed",
+
+    "genres": [],
+
+    "serialization": "Weekly Shonen Jump",
+
+    "cover_image": "",
+
+    "related_anime_ids": [],
+
     "is_deleted": false,
     "deleted_at": null
   }

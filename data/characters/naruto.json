@@ -1,26 +1,65 @@
-[
-  {
-    "_id": "char_naruto",
-    "name": "Naruto Uzumaki",
+{
+  "_id": "char_naruto_uzumaki",
 
-    "birth_day": 10,
-    "birth_month": 10,
+  "name": "Naruto Uzumaki",
 
-    "physical": {
-      "height": "180 cm",
-      "hair_color": "blonde",
-      "has_hair": true
-    },
+  "native_name": "うずまきナルト",
 
-    "summary": "Seventh Hokage and jinchuriki of Kurama",
+  "birth_day": 10,
+  "birth_month": 10,
 
-    "anime_ids": ["anime_naruto"],
-    "manga_ids": ["manga_naruto"],
-    "voice_actor_ids": ["va_junko_takeuchi"],
+  "physical": {
+    "height": "180 cm",
+    "hair_color": "blonde",
+    "has_hair": true
+  },
 
-    "tags": ["main character", "ninja", "hokage"],
+  "description": "Seventh Hokage and jinchuriki of Kurama",
 
-    "is_deleted": false,
-    "deleted_at": null
-  }
-]
+  "images": {
+    "profile": "",
+    "banner": ""
+  },
+
+  "anime_ids": ["anime_naruto"],
+
+  "manga_ids": ["manga_naruto"],
+
+  "voice_actor_ids": ["va_junko_takeuchi"],
+
+  "affiliations": [
+    "Konoha",
+    "Team 7"
+  ],
+
+  "abilities": [
+    "Shadow Clone",
+    "Rasengan",
+    "Sage Mode"
+  ],
+
+  "forms": [
+    "Kurama Mode",
+    "Six Paths Mode"
+  ],
+
+  "status": "alive",
+
+  "species": "human",
+
+  "gender": "male",
+
+  "tags": [
+    "hokage",
+    "jinchuriki",
+    "main character"
+  ],
+
+  "source_metadata": {
+    "anilist_id": 17
+  },
+
+  "is_deleted": false,
+
+  "deleted_at": null
+}

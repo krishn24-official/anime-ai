@@ -1,17 +1,58 @@
 [
   {
-    "_id": "anime_naruto",
-    "name": "Naruto",
+  "_id": "anime_naruto",
 
-    "studio": "Studio Pierrot",
-    "total_seasons": 2,
-    "total_episodes": 720,
+  "title": {
+    "english": "Naruto",
+    "japanese": "ナルト",
+    "romaji": "Naruto"
+  },
 
-    "start_date": "2002-10-03",
+  "synonyms": [],
 
-    "manga_id": "manga_naruto",
+  "type": "TV",
+  "status": "completed",
 
-    "is_deleted": false,
-    "deleted_at": null
-  }
+  "genres": ["Action", "Adventure", "Shonen"],
+
+  "studios": ["Studio Pierrot"],
+
+  "season": "Fall",
+  "year": 2002,
+
+  "source": "Manga",
+
+  "total_seasons": 2,
+  "total_episodes": 720,
+
+  "duration_minutes": 24,
+
+  "rating": {
+    "mal": 8.3,
+    "anilist": 82
+  },
+
+  "images": {
+    "poster": "",
+    "banner": ""
+  },
+
+  "streaming_platforms": [
+    "Crunchyroll",
+    "Netflix"
+  ],
+
+  "related_anime_ids": [],
+
+  "manga_id": "manga_naruto",
+
+  "tags": [
+    "ninja",
+    "shonen",
+    "power system"
+  ],
+
+  "is_deleted": false,
+  "deleted_at": null
+}
 ]
