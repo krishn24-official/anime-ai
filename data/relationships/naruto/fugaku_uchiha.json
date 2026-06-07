@@ -10,6 +10,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_sasuke_fugaku_son"
 },
 
@@ -24,6 +30,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_sakura_fugaku_daughter_in_law"
 },
 
@@ -37,6 +49,12 @@
   "relationship": "grandfather",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_sarada_fugaku_granddaughter"
 }

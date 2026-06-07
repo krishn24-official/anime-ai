@@ -10,6 +10,12 @@
 
   "type": "academy",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_naruto_shino_classmate"
 }
 

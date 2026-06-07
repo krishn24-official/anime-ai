@@ -25,6 +25,10 @@ async def connect_db():
     await db["characters"].create_index("tags")
     await db["characters"].create_index("gender")
     await db["characters"].create_index("role")
+    await db["relationships"].create_index("source_id")
+    await db["relationships"].create_index("target_id")
+    await db["relationships"].create_index("relationship")
+    await db["relationships"].create_index("type")
 
     print("✅ MongoDB Connected")
 
@@ -47,3 +51,7 @@ def get_db():
 def get_anime_collection():
     db = get_db()
     return db["anime"]
+
+def get_relationship_collection():
+    db = get_db()
+    return db["relationships"]

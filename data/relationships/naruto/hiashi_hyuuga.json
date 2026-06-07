@@ -10,6 +10,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_naruto_hiashi_son_in_law"
 },
 
@@ -23,6 +29,12 @@
   "relationship": "father",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_hinata_hiashi_daughter"
 }

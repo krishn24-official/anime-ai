@@ -10,6 +10,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_naruto_himawari_father"
 },
 
@@ -24,6 +30,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_hinata_himawari_mother"
 },
 
@@ -37,6 +49,12 @@
   "relationship": "granddaughter",
 
   "type": "family",
+  
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_kushina_himawari_grandmother"
 },
@@ -52,6 +70,12 @@
   "relationship": "granddaughter",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_minato_himawari_grandfather"
 }

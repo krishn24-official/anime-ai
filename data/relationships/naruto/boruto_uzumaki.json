@@ -10,6 +10,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_naruto_boruto_father"
 },
 
@@ -23,6 +29,12 @@
   "relationship": "grandson",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_kushina_boruto_grandmother"
 },
@@ -38,6 +50,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_minato_boruto_grandfather"
 },
 
@@ -51,6 +69,12 @@
   "relationship": "son",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_hinata_boruto_mother"
 }

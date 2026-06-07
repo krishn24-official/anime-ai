@@ -10,6 +10,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_itachi_sarada_uncle"
 },
 
@@ -23,6 +29,12 @@
   "relationship": "granddaughter",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_mikoto_sarada_grandmother"
 },
@@ -38,6 +50,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_sasuke_sarada_father"
 },
 
@@ -52,8 +70,16 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_sakura_sarada_mother"
-},{
+},
+
+{
   "_id": "rel_sarada_sakura_daughter",
 
   "source_id": "char_sarada_uchiha",
@@ -63,6 +89,12 @@
   "relationship": "daughter",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_sakura_sarada_mother"
 },
@@ -77,6 +109,12 @@
   "relationship": "granddaughter",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_fugaku_sarada_grandfather"
 }

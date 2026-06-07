@@ -9,6 +9,12 @@
   "relationship": "wife",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
  
   "inverse_of": "rel_naruto_hinata_husband" 
 },
@@ -24,6 +30,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_himawari_hinata_daughter"
 },
 
@@ -37,6 +49,12 @@
   "relationship": "daughter_in_law",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_minato_hinata_father_in_law"
 },
@@ -53,6 +71,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_kushina_hinata_mother_in_law"
 },
 
@@ -66,6 +90,12 @@
   "relationship": "sister",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_hanabi_hinata_sister"
 },
@@ -81,6 +111,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_hiashi_hinata_father"
 },
 
@@ -94,6 +130,12 @@
   "relationship": "classmate",
 
   "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
  
   "inverse_of": "rel_naruto_hinata_classmate" 
 },
@@ -108,6 +150,12 @@
   "relationship": "mother",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_boruto_hinata_son"
 }

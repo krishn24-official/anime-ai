@@ -9,6 +9,12 @@
   "relationship": "father",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
  
   "inverse_of": "rel_naruto_minato_son"  
 },
@@ -24,6 +30,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_hinata_minato_daughter_in_law"
 },
 
@@ -38,6 +50,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_himawari_minato_granddaughter"
 },
 
@@ -51,6 +69,12 @@
   "relationship": "grandfather",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_boruto_minato_grandson"
 }

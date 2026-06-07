@@ -10,7 +10,13 @@
 
   "type": "family",
 
-  "inverse_of": "rel_minato_naruto_father" 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_minato_naruto_father"
 },
 
 
@@ -24,6 +30,12 @@
   "relationship": "son",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_kushina_naruto_mother" 
 },
@@ -40,6 +52,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_hinata_naruto_wife" 
 },
 
@@ -54,6 +72,12 @@
   "relationship": "father",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_boruto_naruto_son"
 },
@@ -70,6 +94,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_himawari_naruto_daughter"
 },
 
@@ -83,6 +113,12 @@
   "relationship": "brother_in_law",
 
   "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_hanabi_naruto_sister_in_law"
 },
@@ -98,6 +134,12 @@
 
   "type": "family",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_hiashi_naruto_father_in_law"
 },
 
@@ -112,6 +154,12 @@
 
   "type": "academy",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_hinata_naruto_classmate" 
 },
 
@@ -124,6 +172,12 @@
   "target_id": "char_hinata_hyuuga",
 
   "relationship": "crush",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "type": "romance"
   
@@ -139,6 +193,12 @@
   "relationship": "classmate",
 
   "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
  
   "inverse_of": "rel_sasuke_naruto_classmate" 
 },
@@ -153,6 +213,12 @@
   "relationship": "classmate",
 
   "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_sakura_naruto_classmate"
 },
@@ -169,6 +235,12 @@
 
   "type": "academy",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_kiba_naruto_classmate"
 },
 
@@ -183,6 +255,12 @@
 
   "type": "academy",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_shino_naruto_classmate"
 },
 
@@ -196,6 +274,12 @@
   "relationship": "classmate",
 
   "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_shikamaru_naruto_classmate"
 },
@@ -225,6 +309,12 @@
 
   "type": "academy",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_chouji_naruto_classmate"
 },
 
@@ -239,6 +329,12 @@
   "relationship": "teammate",
 
   "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_sakura_naruto_teammate"
 },
@@ -255,6 +351,12 @@
 
   "type": "team",
 
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
   "inverse_of": "rel_sasuke_naruto_teammate"
 },
 
@@ -269,6 +371,12 @@
   "relationship": "teammate",
 
   "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
 
   "inverse_of": "rel_sai_naruto_teammate"
 }
