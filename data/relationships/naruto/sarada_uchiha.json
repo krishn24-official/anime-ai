@@ -1,0 +1,85 @@
+[
+    {
+  "_id": "rel_sarada_itachi_niece",
+
+  "source_id": "char_sarada_uchiha",
+
+  "target_id": "char_itachi_uchiha",
+
+  "relationship": "niece",
+
+  "type": "family",
+
+  "inverse_of": "rel_itachi_sarada_uncle"
+},
+
+{
+  "_id": "rel_sarada_mikoto_granddaughter",
+
+  "source_id": "char_sarada_uchiha",
+
+  "target_id": "char_mikoto_uchiha",
+
+  "relationship": "granddaughter",
+
+  "type": "family",
+
+  "inverse_of": "rel_mikoto_sarada_grandmother"
+},
+
+{
+  "_id": "rel_sarada_sasuke_daughter",
+
+  "source_id": "char_sarada_uchiha",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "daughter",
+
+  "type": "family",
+
+  "inverse_of": "rel_sasuke_sarada_father"
+},
+
+{
+  "_id": "rel_sarada_sakura_daughter",
+
+  "source_id": "char_sarada_uchiha",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "daughter",
+
+  "type": "family",
+
+  "inverse_of": "rel_sakura_sarada_mother"
+},{
+  "_id": "rel_sarada_sakura_daughter",
+
+  "source_id": "char_sarada_uchiha",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "daughter",
+
+  "type": "family",
+
+  "inverse_of": "rel_sakura_sarada_mother"
+},
+
+{
+  "_id": "rel_sarada_fugaku_granddaughter",
+
+  "source_id": "char_sarada_uchiha",
+
+  "target_id": "char_fugaku_uchiha",
+
+  "relationship": "granddaughter",
+
+  "type": "family",
+
+  "inverse_of": "rel_fugaku_sarada_grandfather"
+}
+
+
+]

@@ -8,14 +8,23 @@ def clean_description(text):
     if not text:
         return None
 
-    # Remove AniList markdown formatting
-    text = re.sub(r"__.*?__:", "", text)
+    # Remove image markdown
+    text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
 
-    # Remove HTML breaks
-    text = re.sub(r"<br>", " ", text)
+    # Remove markdown bold/underline markers
+    text = re.sub(r'__([^_]*)__', r'\1', text)
 
-    # Remove extra spaces/newlines
-    text = re.sub(r"\s+", " ", text)
+    # Remove spoiler markers
+    text = re.sub(r'~!.*?!~', '', text)
+
+    # Remove HTML tags
+    text = re.sub(r'<.*?>', '', text)
+
+    # Replace <br> with space
+    text = re.sub(r'<br\s*/?>', ' ', text)
+
+    # Remove multiple spaces/newlines
+    text = re.sub(r'\s+', ' ', text)
 
     return text.strip()
 
@@ -64,6 +73,8 @@ def transform_character(character, anime_id, role):
             "banner": None
         },
 
+        # IMPORTANT:
+        # this will later be merged in ingestion
         "anime_ids": [anime_id],
 
         "manga_ids": [],
@@ -86,12 +97,18 @@ def transform_character(character, anime_id, role):
             else None
         ),
 
-        "role": role.lower() if role else "unknown",
+        "role": (
+            role.lower()
+            if role
+            else "unknown"
+        ),
 
         "tags": [],
 
         "source_metadata": {
-            "anilist_id": character["id"]
+            "anilist": {
+                "id": character["id"]
+            }
         },
 
         "is_deleted": False,

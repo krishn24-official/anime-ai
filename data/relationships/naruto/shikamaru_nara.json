@@ -1,0 +1,16 @@
+[
+    {
+  "_id": "rel_shikamaru_naruto_classmate",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_naruto_shikamaru_classmate"
+}
+
+]

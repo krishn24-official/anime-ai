@@ -1,0 +1,59 @@
+[
+    {
+  "_id": "rel_boruto_naruto_son",
+
+  "source_id": "char_boruto_uzumaki",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "inverse_of": "rel_naruto_boruto_father"
+},
+
+{
+  "_id": "rel_boruto_kushina_grandson",
+
+  "source_id": "char_boruto_uzumaki",
+
+  "target_id": "char_kushina_uzumaki",
+
+  "relationship": "grandson",
+
+  "type": "family",
+
+  "inverse_of": "rel_kushina_boruto_grandmother"
+},
+
+{
+  "_id": "rel_boruto_minato_grandson",
+
+  "source_id": "char_boruto_uzumaki",
+
+  "target_id": "char_minato_namikaze",
+
+  "relationship": "grandson",
+
+  "type": "family",
+
+  "inverse_of": "rel_minato_boruto_grandfather"
+},
+
+{
+  "_id": "rel_boruto_hinata_son",
+
+  "source_id": "char_boruto_uzumaki",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "inverse_of": "rel_hinata_boruto_mother"
+}
+
+
+]

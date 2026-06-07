@@ -1,0 +1,46 @@
+[
+    {
+  "_id": "rel_fugaku_sasuke_father",
+
+  "source_id": "char_fugaku_uchiha",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "inverse_of": "rel_sasuke_fugaku_son"
+},
+
+{
+  "_id": "rel_fugaku_sakura_father_in_law",
+
+  "source_id": "char_fugaku_uchiha",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "father_in_law",
+
+  "type": "family",
+
+  "inverse_of": "rel_sakura_fugaku_daughter_in_law"
+},
+
+{
+  "_id": "rel_fugaku_sarada_grandfather",
+
+  "source_id": "char_fugaku_uchiha",
+
+  "target_id": "char_sarada_uchiha",
+
+  "relationship": "grandfather",
+
+  "type": "family",
+
+  "inverse_of": "rel_sarada_fugaku_granddaughter"
+}
+
+
+
+]

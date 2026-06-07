@@ -1,0 +1,62 @@
+[
+    {
+  "_id": "rel_himawari_naruto_daughter",
+
+  "source_id": "char_himawari_uzumaki",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "daughter",
+
+  "type": "family",
+
+  "inverse_of": "rel_naruto_himawari_father"
+},
+
+{
+  "_id": "rel_himawari_hinata_daughter",
+
+  "source_id": "char_himawari_uzumaki",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "daughter",
+
+  "type": "family",
+
+  "inverse_of": "rel_hinata_himawari_mother"
+},
+
+{
+  "_id": "rel_himawari_kushina_granddaughter",
+
+  "source_id": "char_himawari_uzumaki",
+
+  "target_id": "char_kushina_uzumaki",
+
+  "relationship": "granddaughter",
+
+  "type": "family",
+
+  "inverse_of": "rel_kushina_himawari_grandmother"
+},
+
+
+{
+  "_id": "rel_himawari_minato_granddaughter",
+
+  "source_id": "char_himawari_uzumaki",
+
+  "target_id": "char_minato_namikaze",
+
+  "relationship": "granddaughter",
+
+  "type": "family",
+
+  "inverse_of": "rel_minato_himawari_grandfather"
+}
+
+
+
+
+]

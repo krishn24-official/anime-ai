@@ -1,0 +1,45 @@
+[
+    {
+  "_id": "rel_mikoto_sarada_grandmother",
+
+  "source_id": "char_mikoto_uchiha",
+
+  "target_id": "char_sarada_uchiha",
+
+  "relationship": "grandmother",
+
+  "type": "family",
+
+  "inverse_of": "rel_sarada_mikoto_granddaughter"
+},
+
+{
+  "_id": "rel_mikoto_sakura_mother_in_law",
+
+  "source_id": "char_mikoto_uchiha",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "mother_in_law",
+
+  "type": "family",
+
+  "inverse_of": "rel_sakura_mikoto_daughter_in_law"
+},
+
+{
+  "_id": "rel_mikoto_sasuke_mother",
+
+  "source_id": "char_mikoto_uchiha",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "mother",
+
+  "type": "family",
+
+  "inverse_of": "rel_sasuke_mikoto_son"
+}
+
+
+]

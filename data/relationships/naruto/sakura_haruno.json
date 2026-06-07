@@ -1,0 +1,142 @@
+[
+    {
+  "_id": "rel_sakura_itachi_sister_in_law",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_itachi_uchiha",
+
+  "relationship": "sister_in_law",
+
+  "type": "family",
+
+  "inverse_of": "rel_itachi_sakura_brother_in_law"
+},
+
+{
+  "_id": "rel_sakura_sasuke_wife",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "wife",
+
+  "type": "family",
+
+  "inverse_of": "rel_sasuke_sakura_husband"
+},
+
+{
+  "_id": "rel_sakura_sasuke_teammate",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "inverse_of": "rel_sasuke_sakura_teammate"
+},
+
+{
+  "_id": "rel_sakura_sasuke_classmate",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_sasuke_sakura_classmate"
+},
+
+{
+  "_id": "rel_sakura_sasuke_crush",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "crush",
+
+  "type": "romance"
+},
+
+{
+  "_id": "rel_sakura_sarada_mother",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_sarada_uchiha",
+
+  "relationship": "mother",
+
+  "type": "family",
+
+  "inverse_of": "rel_sarada_sakura_daughter"
+},
+
+{
+  "_id": "rel_sakura_fugaku_daughter_in_law",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_fugaku_uchiha",
+
+  "relationship": "daughter_in_law",
+
+  "type": "family",
+
+  "inverse_of":"rel_fugaku_sakura_father_in_law"
+},
+
+{
+  "_id": "rel_sakura_mikoto_daughter_in_law",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_mikoto_uchiha",
+
+  "relationship": "daughter_in_law",
+
+  "type": "family",
+
+  "inverse_of": "rel_mikoto_sakura_mother_in_law"
+},
+
+
+{
+  "_id": "rel_sakura_naruto_teammate",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "inverse_of": "rel_naruto_sakura_teammate"
+},
+
+{
+  "_id": "rel_sakura_naruto_classmate",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_naruto_sakura_classmate"
+}
+
+
+]

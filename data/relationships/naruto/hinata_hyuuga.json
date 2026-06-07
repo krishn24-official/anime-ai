@@ -1,0 +1,117 @@
+[
+    {
+  "_id": "rel_hinata_naruto_wife",
+
+  "source_id": "char_hinata_hyuuga",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "wife",
+
+  "type": "family",
+ 
+  "inverse_of": "rel_naruto_hinata_husband" 
+},
+
+{
+  "_id": "rel_hinata_himawari_mother",
+
+  "source_id": "char_hinata_hyuuga",
+
+  "target_id": "char_himawari_uzumaki",
+
+  "relationship": "mother",
+
+  "type": "family",
+
+  "inverse_of": "rel_himawari_hinata_daughter"
+},
+
+{
+  "_id": "rel_hinata_minato_daughter_in_law",
+
+  "source_id": "char_hinata_hyuuga",
+
+  "target_id": "char_minato_namikaze",
+
+  "relationship": "daughter_in_law",
+
+  "type": "family",
+
+  "inverse_of": "rel_minato_hinata_father_in_law"
+},
+
+
+{
+  "_id": "rel_hinata_kushina_daughter_in_law",
+
+  "source_id": "char_hinata_hyuuga",
+
+  "target_id": "char_kushina_uzumaki",
+
+  "relationship": "daughter_in_law",
+
+  "type": "family",
+
+  "inverse_of": "rel_kushina_hinata_mother_in_law"
+},
+
+{
+  "_id": "rel_hinata_hanabi_sister",
+
+  "source_id": "char_hinata_hyuuga",
+
+  "target_id": "char_hanabi_hyuuga",
+
+  "relationship": "sister",
+
+  "type": "family",
+
+  "inverse_of": "rel_hanabi_hinata_sister"
+},
+
+{
+  "_id": "rel_hinata_hiashi_daughter",
+
+  "source_id": "char_hinata_hyuuga",
+
+  "target_id": "char_hiashi_hyuuga",
+
+  "relationship": "daughter",
+
+  "type": "family",
+
+  "inverse_of": "rel_hiashi_hinata_father"
+},
+
+{
+  "_id": "rel_hinata_naruto_classmate",
+
+  "source_id": "char_hinata_hyuuga",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+ 
+  "inverse_of": "rel_naruto_hinata_classmate" 
+},
+
+{
+  "_id": "rel_hinata_boruto_mother",
+
+  "source_id": "char_hinata_hyuuga",
+
+  "target_id": "char_boruto_uzumaki",
+
+  "relationship": "mother",
+
+  "type": "family",
+
+  "inverse_of": "rel_boruto_hinata_son"
+}
+
+
+
+]

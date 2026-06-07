@@ -1,0 +1,16 @@
+[
+    {
+  "_id": "rel_sai_naruto_teammate",
+
+  "source_id": "char_sai",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "inverse_of": "rel_naruto_sai_teammate"
+}
+
+]

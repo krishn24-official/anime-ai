@@ -1,0 +1,17 @@
+[
+    {
+  "_id": "rel_chouji_naruto_classmate",
+
+  "source_id": "char_chouji_akimichi",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_naruto_chouji_classmate"
+}
+
+
+]

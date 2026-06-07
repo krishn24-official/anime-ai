@@ -1,4 +1,6 @@
-# STATUS
+# =========================
+# ANIME STATUS
+# =========================
 
 STATUS_MAPPING = {
     "FINISHED": "completed",
@@ -9,7 +11,9 @@ STATUS_MAPPING = {
 }
 
 
-# TYPE
+# =========================
+# ANIME TYPE
+# =========================
 
 TYPE_MAPPING = {
     "TV": "tv",
@@ -22,7 +26,9 @@ TYPE_MAPPING = {
 }
 
 
-# SOURCE
+# =========================
+# SOURCE MATERIAL
+# =========================
 
 SOURCE_MAPPING = {
     "ORIGINAL": "original",
@@ -37,4 +43,160 @@ SOURCE_MAPPING = {
     "LIVE_ACTION": "live_action",
     "MULTIMEDIA_PROJECT": "multimedia_project",
     "OTHER": "other"
+}
+
+
+# =========================
+# RELATIONSHIP TYPES
+# Broad Categories
+# =========================
+
+RELATIONSHIP_TYPES = [
+    "family",
+    "romance",
+    "friendship",
+    "academy",
+    "team",
+    "mentor",
+    "combat",
+    "organization",
+    "political",
+    "other"
+]
+
+
+# =========================
+# RELATIONSHIPS
+# Specific Edge Meanings
+# =========================
+
+RELATIONSHIPS = {
+
+    # =====================
+    # FAMILY
+    # =====================
+
+    "family": [
+        "father",
+        "mother",
+        "son",
+        "daughter",
+        "brother",
+        "sister",
+        "husband",
+        "wife",
+        "cousin",
+        "uncle",
+        "aunt",
+        "grandfather",
+        "grandmother",
+        "grandson",
+        "granddaughter",
+        "father_in_law",
+        "mother_in_law",
+        "son_in_law",
+        "daughter_in_law",
+        "brother_in_law",
+        "sister_in_law",
+        "niece",
+    ],
+
+
+    # =====================
+    # ROMANCE
+    # =====================
+
+    "romance": [
+        "crush",
+        "love_interest",
+        "fiance",
+        "partner",
+        "ex_partner"
+    ],
+
+
+    # =====================
+    # FRIENDSHIP
+    # =====================
+
+    "friendship": [
+        "friend",
+        "best_friend",
+        "childhood_friend",
+        "ally"
+    ],
+
+
+    # =====================
+    # ACADEMY
+    # =====================
+
+    "academy": [
+        "classmate",
+        "senior",
+        "junior"
+    ],
+
+
+    # =====================
+    # TEAM
+    # =====================
+
+    "team": [
+        "teammate",
+        "leader",
+        "captain",
+        "member"
+    ],
+
+
+    # =====================
+    # MENTOR
+    # =====================
+
+    "mentor": [
+        "student",
+        "sensei",
+        "mentor",
+        "teacher",
+        "master",
+        "apprentice"
+    ],
+
+
+    # =====================
+    # COMBAT
+    # =====================
+
+    "combat": [
+        "rival",
+        "enemy",
+        "killer",
+        "target",
+        "assassin"
+    ],
+
+
+    # =====================
+    # ORGANIZATION
+    # =====================
+
+    "organization": [
+        "member",
+        "leader",
+        "subordinate",
+        "commander",
+        "captain"
+    ],
+
+
+    # =====================
+    # POLITICAL
+    # =====================
+
+    "political": [
+        "kage",
+        "advisor",
+        "bodyguard"
+    ]
 }

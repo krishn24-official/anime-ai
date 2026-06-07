@@ -18,18 +18,21 @@ ANILIST_URL = "https://graphql.anilist.co"
 
 
 query = """
-query ($anime: String) {
+query ($anime: String, $page: Int) {
 
   Media(search: $anime, type: ANIME) {
-
-    id
 
     title {
       english
       romaji
     }
 
-    characters(sort: ROLE, perPage: 25) {
+    characters(sort: ROLE, page: $page, perPage: 25) {
+
+      pageInfo {
+        hasNextPage
+        currentPage
+      }
 
       edges {
 
@@ -68,65 +71,156 @@ query ($anime: String) {
 
 async def fetch_and_save(anime_name):
 
-    await connect_db()
-
     db = get_db()
 
     character_collection = db["characters"]
 
-    variables = {
-        "anime": anime_name
-    }
+    page = 1
 
-    response = requests.post(
-        ANILIST_URL,
-        json={
-            "query": query,
-            "variables": variables
+    total_saved = 0
+
+    while True:
+
+        print(f"\n📄 Fetching page {page} for {anime_name}...")
+
+        variables = {
+            "anime": anime_name,
+            "page": page
         }
+
+        response = requests.post(
+            ANILIST_URL,
+            json={
+                "query": query,
+                "variables": variables
+            }
+        )
+
+        data = response.json()
+
+        # ERROR HANDLING
+        if "errors" in data:
+            print("❌ GraphQL Errors:")
+            print(data["errors"])
+            break
+
+        media = data.get("data", {}).get("Media")
+
+        if not media:
+            print("❌ No media found")
+            break
+
+        title = (
+            media["title"].get("english")
+            or media["title"].get("romaji")
+        )
+
+        anime_slug = create_slug(title)
+
+        anime_db_id = f"anime_{anime_slug}"
+
+        characters_data = media["characters"]
+
+        characters = characters_data["edges"]
+
+        for character_edge in characters:
+
+            role = character_edge.get("role")
+
+            character = character_edge.get("node")
+
+            if not character:
+                continue
+
+            if not character.get("name", {}).get("full"):
+                continue
+
+            formatted_character = transform_character(
+                character,
+                anime_db_id,
+                role
+            )
+
+            # CHECK EXISTING CHARACTER
+            existing_character = await character_collection.find_one(
+                {"_id": formatted_character["_id"]}
+            )
+
+            if existing_character:
+
+                # MERGE ANIME IDS
+                existing_anime_ids = existing_character.get(
+                    "anime_ids",
+                    []
+                )
+
+                merged_anime_ids = list(
+                    set(
+                        existing_anime_ids +
+                        formatted_character["anime_ids"]
+                    )
+                )
+
+                formatted_character["anime_ids"] = merged_anime_ids
+
+            await character_collection.replace_one(
+                {"_id": formatted_character["_id"]},
+                formatted_character,
+                upsert=True
+            )
+
+            total_saved += 1
+
+            print(
+                f"✅ Saved: {formatted_character['name']}"
+            )
+
+        has_next_page = (
+            characters_data["pageInfo"]["hasNextPage"]
+        )
+
+        if not has_next_page:
+            break
+
+        page += 1
+
+    print(
+        f"\n🎉 Total characters saved for {anime_name}: {total_saved}"
     )
 
-    data = response.json()
 
-    media = data["data"]["Media"]
+async def main():
 
-    title = (
-        media["title"]["english"]
-        or media["title"]["romaji"]
-    )
+    print("🚀 Starting character ingestion...")
 
-    anime_slug = create_slug(title)
+    await connect_db()
 
-    anime_db_id = f"anime_{anime_slug}"
+    # await fetch_and_save("Naruto")
 
-    characters = media["characters"]["edges"]
+    # await fetch_and_save("Naruto: Shippuden")
 
-    for character_edge in characters:
+    # await fetch_and_save("Boruto: Naruto Next Generations")
 
-        role = character_edge.get("role")
+    # await fetch_and_save("BORUTO: NARUTO THE MOVIE")
 
-        character = character_edge.get("node")
+    # await fetch_and_save("DEATH NOTE")
 
-        if not character:
-            continue
+    # await fetch_and_save("ONE PIECE")
 
-        formatted_character = transform_character(
-            character,
-            anime_db_id,
-            role
-        )
+    # await fetch_and_save("Shingeki no Kyojin: The Final Season")
 
-        await character_collection.replace_one(
-            {"_id": formatted_character["_id"]},
-            formatted_character,
-            upsert=True
-        )
+    # await fetch_and_save("Shingeki no Kyojin Season 3")
 
-        print(
-            f"✅ Saved: {formatted_character['name']}"
-        )
+    # await fetch_and_save("Shingeki no Kyojin Season 2")
 
+    # await fetch_and_save("Shingeki no Kyojin")
+
+    await fetch_and_save("Jujutsu Kaisen: Kaigyoku・Gyokusetsu")
+    await fetch_and_save("Jujutsu Kaisen 2nd Season")
+    await fetch_and_save("Jujutsu Kaisen: Shimetsu Kaiyuu - Zenpen")
+    await fetch_and_save("Jujutsu Kaisen 0")
+    await fetch_and_save("Jujutsu Kaisen")
     await close_db()
 
 
-asyncio.run(fetch_and_save("Naruto"))
+asyncio.run(main())

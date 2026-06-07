@@ -1,0 +1,57 @@
+[
+    {
+  "_id": "rel_minato_naruto_father",
+
+  "source_id": "char_minato_namikaze",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "father",
+
+  "type": "family",
+ 
+  "inverse_of": "rel_naruto_minato_son"  
+},
+
+{
+  "_id": "rel_minato_hinata_father_in_law",
+
+  "source_id": "char_minato_namikaze",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "father_in_law",
+
+  "type": "family",
+
+  "inverse_of": "rel_hinata_minato_daughter_in_law"
+},
+
+{
+  "_id": "rel_minato_himawari_grandfather",
+
+  "source_id": "char_minato_namikaze",
+
+  "target_id": "char_himawari_uzumaki",
+
+  "relationship": "grandfather",
+
+  "type": "family",
+
+  "inverse_of": "rel_himawari_minato_granddaughter"
+},
+
+{
+  "_id": "rel_minato_boruto_grandfather",
+
+  "source_id": "char_minato_namikaze",
+
+  "target_id": "char_boruto_uzumaki",
+
+  "relationship": "grandfather",
+
+  "type": "family",
+
+  "inverse_of": "rel_boruto_minato_grandson"
+}
+]

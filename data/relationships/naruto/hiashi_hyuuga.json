@@ -1,0 +1,30 @@
+[
+    {
+  "_id": "rel_hiashi_naruto_father_in_law",
+
+  "source_id": "char_hiashi_hyuuga",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "father_in_law",
+
+  "type": "family",
+
+  "inverse_of": "rel_naruto_hiashi_son_in_law"
+},
+
+{
+  "_id": "rel_hiashi_hinata_father",
+
+  "source_id": "char_hiashi_hyuuga",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "inverse_of": "rel_hinata_hiashi_daughter"
+}
+
+]

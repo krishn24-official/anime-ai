@@ -1,0 +1,31 @@
+[
+    {
+  "_id": "rel_hanabi_naruto_sister_in_law",
+
+  "source_id": "char_hanabi_hyuuga",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "sister_in_law",
+
+  "type": "family",
+
+  "inverse_of": "rel_naruto_hanabi_brother_in_law"
+},
+
+{
+  "_id": "rel_hanabi_hinata_sister",
+
+  "source_id": "char_hanabi_hyuuga",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "sister",
+
+  "type": "family",
+
+  "inverse_of": "rel_hinata_hanabi_sister"
+}
+
+
+]

@@ -1,0 +1,128 @@
+[
+    {
+  "_id": "rel_sasuke_itachi_brother",
+
+  "source_id": "char_sasuke_uchiha",
+
+  "target_id": "char_itachi_uchiha",
+
+  "relationship": "brother",
+
+  "type": "family",
+
+  "inverse_of": "rel_itachi_sasuke_brother"
+},
+
+{
+  "_id": "rel_sasuke_mikoto_son",
+
+  "source_id": "char_sasuke_uchiha",
+
+  "target_id": "char_mikoto_uchiha",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "inverse_of": "rel_mikoto_sasuke_mother"
+},
+
+{
+  "_id": "rel_sasuke_sakura_husband",
+
+  "source_id": "char_sasuke_uchiha",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "husband",
+
+  "type": "family",
+
+  "inverse_of": "rel_sakura_sasuke_wife"
+},
+
+{
+  "_id": "rel_sasuke_sakura_teammate",
+
+  "source_id": "char_sasuke_uchiha",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "inverse_of": "rel_sakura_sasuke_teammate"
+},
+
+{
+  "_id": "rel_sasuke_sakura_classmate",
+
+  "source_id": "char_sasuke_uchiha",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_sakura_sasuke_classmate"
+},
+
+{
+  "_id": "rel_sasuke_sarada_father",
+
+  "source_id": "char_sasuke_uchiha",
+
+  "target_id": "char_sarada_uchiha",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "inverse_of": "rel_sarada_sasuke_daughter"
+},
+
+{
+  "_id": "rel_sasuke_fugaku_son",
+
+  "source_id": "char_sasuke_uchiha",
+
+  "target_id": "char_fugaku_uchiha",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "inverse_of": "rel_fugaku_sasuke_father"
+},
+
+{
+  "_id": "rel_sasuke_naruto_teammate",
+
+  "source_id": "char_sasuke_uchiha",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "inverse_of": "rel_naruto_sasuke_teammate"
+},
+
+{
+  "_id": "rel_sasuke_naruto_classmate",
+
+  "source_id": "char_sasuke_uchiha",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+ 
+  "inverse_of": "rel_naruto_sasuke_classmate" 
+}
+
+]

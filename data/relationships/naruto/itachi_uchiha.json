@@ -1,0 +1,45 @@
+[
+    {
+  "_id": "rel_itachi_sarada_uncle",
+
+  "source_id": "char_itachi_uchiha",
+
+  "target_id": "char_sarada_uchiha",
+
+  "relationship": "uncle",
+
+  "type": "family",
+
+  "inverse_of": "rel_sarada_itachi_niece"
+},
+
+{
+  "_id": "rel_itachi_sakura_brother_in_law",
+
+  "source_id": "char_itachi_uchiha",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "brother_in_law",
+
+  "type": "family",
+
+  "inverse_of": "rel_sakura_itachi_sister_in_law"
+},
+
+{
+  "_id": "rel_itachi_sasuke_brother",
+
+  "source_id": "char_itachi_uchiha",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "brother",
+
+  "type": "family",
+
+  "inverse_of": "rel_sasuke_itachi_brother"
+}
+
+
+]

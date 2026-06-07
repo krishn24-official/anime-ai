@@ -1,0 +1,59 @@
+[
+    {
+  "_id": "rel_kushina_naruto_mother",
+
+  "source_id": "char_kushina_uzumaki",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "mother",
+
+  "type": "family",
+ 
+  "inverse_of": "rel_naruto_kushina_son" 
+},
+
+{
+  "_id": "rel_kushina_hinata_mother_in_law",
+
+  "source_id": "char_kushina_uzumaki",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "mother_in_law",
+
+  "type": "family",
+
+  "inverse_of": "rel_hinata_kushina_daughter_in_law"
+},
+
+{
+  "_id": "rel_kushina_himawari_grandmother",
+
+  "source_id": "char_kushina_uzumaki",
+
+  "target_id": "char_himawari_uzumaki",
+
+  "relationship": "grandmother",
+
+  "type": "family",
+
+  "inverse_of": "rel_himawari_kushina_granddaughter"
+},
+
+{
+  "_id": "rel_kushina_boruto_grandmother",
+
+  "source_id": "char_kushina_uzumaki",
+
+  "target_id": "char_boruto_uzumaki",
+
+  "relationship": "grandmother",
+
+  "type": "family",
+
+  "inverse_of": "rel_boruto_kushina_grandson"
+}
+
+
+]

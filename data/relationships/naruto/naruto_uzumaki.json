@@ -1,0 +1,277 @@
+[
+  {
+  "_id": "rel_naruto_minato_son",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_minato_namikaze",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "inverse_of": "rel_minato_naruto_father" 
+},
+
+
+{
+  "_id": "rel_naruto_kushina_son",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_kushina_uzumaki",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "inverse_of": "rel_kushina_naruto_mother" 
+},
+
+
+{
+  "_id": "rel_naruto_hinata_husband",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "husband",
+
+  "type": "family",
+
+  "inverse_of": "rel_hinata_naruto_wife" 
+},
+
+
+{
+  "_id": "rel_naruto_boruto_father",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_boruto_uzumaki",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "inverse_of": "rel_boruto_naruto_son"
+},
+
+
+{
+  "_id": "rel_naruto_himawari_father",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_himawari_uzumaki",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "inverse_of": "rel_himawari_naruto_daughter"
+},
+
+{
+  "_id": "rel_naruto_hanabi_brother_in_law",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_hanabi_hyuuga",
+
+  "relationship": "brother_in_law",
+
+  "type": "family",
+
+  "inverse_of": "rel_hanabi_naruto_sister_in_law"
+},
+
+{
+  "_id": "rel_naruto_hiashi_son_in_law",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_hiashi_hyuuga",
+
+  "relationship": "son_in_law",
+
+  "type": "family",
+
+  "inverse_of": "rel_hiashi_naruto_father_in_law"
+},
+
+{
+  "_id": "rel_naruto_hinata_classmate",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_hinata_naruto_classmate" 
+},
+
+
+{
+  "_id": "rel_naruto_hinata_crush",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "crush",
+
+  "type": "romance"
+  
+},
+
+{
+  "_id": "rel_naruto_sasuke_classmate",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+ 
+  "inverse_of": "rel_sasuke_naruto_classmate" 
+},
+
+{
+  "_id": "rel_naruto_sakura_classmate",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_sakura_naruto_classmate"
+},
+
+
+{
+  "_id": "rel_naruto_kiba_classmate",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_kiba_inuzuka",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_kiba_naruto_classmate"
+},
+
+{
+  "_id": "rel_naruto_shino_classmate",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_shino_aburame",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_shino_naruto_classmate"
+},
+
+{
+  "_id": "rel_naruto_shikamaru_classmate",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_shikamaru_nara",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_shikamaru_naruto_classmate"
+},
+
+{
+  "_id": "rel_naruto_ino_classmate",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_ino_yamanaka",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_ino_naruto_classmate"
+},
+
+{
+  "_id": "rel_naruto_chouji_classmate",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_chouji_akimichi",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_chouji_naruto_classmate"
+},
+
+
+{
+  "_id": "rel_naruto_sakura_teammate",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "inverse_of": "rel_sakura_naruto_teammate"
+},
+
+
+{
+  "_id": "rel_naruto_sasuke_teammate",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "inverse_of": "rel_sasuke_naruto_teammate"
+},
+
+
+{
+  "_id": "rel_naruto_sai_teammate",
+
+  "source_id": "char_naruto_uzumaki",
+
+  "target_id": "char_sai",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "inverse_of": "rel_sai_naruto_teammate"
+}
+
+
+]

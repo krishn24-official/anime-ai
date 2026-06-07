@@ -1,0 +1,17 @@
+[
+    {
+  "_id": "rel_ino_naruto_classmate",
+
+  "source_id": "char_ino_yamanaka",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_naruto_ino_classmate"
+}
+
+
+]

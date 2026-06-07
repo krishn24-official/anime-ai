@@ -1,0 +1,16 @@
+[
+    {
+  "_id": "rel_kiba_naruto_classmate",
+
+  "source_id": "char_kiba_inuzuka",
+
+  "target_id": "char_naruto_uzumaki",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "inverse_of": "rel_naruto_kiba_classmate"
+}
+
+]
