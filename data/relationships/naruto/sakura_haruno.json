@@ -196,7 +196,126 @@
   "deleted_at": null,
 
   "inverse_of": "rel_naruto_sakura_classmate"
-}
+},
 
+{
+  "_id": "rel_sakura_shikamaru_classmate",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_shikamaru_nara",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shikamaru_sakura_classmate"
+},
+
+{
+  "_id": "rel_sakura_hinata_classmate",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hinata_sakura_classmate"
+},
+
+{
+  "_id": "rel_sakura_ino_classmate",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_ino_yamanaka",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_ino_sakura_classmate"
+},
+
+{
+  "_id": "rel_sakura_chouji_classmate",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_chouji_akimichi",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_chouji_sakura_classmate"
+},
+
+{
+  "_id": "rel_sakura_kiba_classmate",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_kiba_inuzuka",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_kiba_sakura_classmate"
+},
+
+{
+  "_id": "rel_sakura_shino_classmate",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_shino_aburame",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shino_sakura_classmate"
+}
 
 ]

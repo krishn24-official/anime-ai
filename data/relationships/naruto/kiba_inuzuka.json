@@ -17,6 +17,146 @@
   "deleted_at": null,
 
   "inverse_of": "rel_naruto_kiba_classmate"
+},
+
+{
+  "_id": "rel_kiba_sasuke_classmate",
+
+  "source_id": "char_kiba_inuzuka",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sasuke_kiba_classmate"
+},
+
+{
+  "_id": "rel_kiba_shikamaru_classmate",
+
+  "source_id": "char_kiba_inuzuka",
+
+  "target_id": "char_shikamaru_nara",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shikamaru_kiba_classmate"
+},
+
+{
+  "_id": "rel_kiba_sakura_classmate",
+
+  "source_id": "char_kiba_inuzuka",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sakura_kiba_classmate"
+},
+
+{
+  "_id": "rel_kiba_hinata_classmate",
+
+  "source_id": "char_kiba_inuzuka",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hinata_kiba_classmate"
+},
+
+{
+  "_id": "rel_kiba_shino_classmate",
+
+  "source_id": "char_kiba_inuzuka",
+
+  "target_id": "char_shino_aburame",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shino_kiba_classmate"
+},
+
+{
+  "_id": "rel_kiba_ino_classmate",
+
+  "source_id": "char_kiba_inuzuka",
+
+  "target_id": "char_ino_yamanaka",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_ino_kiba_classmate"
+},
+
+{
+  "_id": "rel_kiba_chouji_classmate",
+
+  "source_id": "char_kiba_inuzuka",
+
+  "target_id": "char_chouji_akimichi",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_chouji_kiba_classmate"
 }
 
 ]

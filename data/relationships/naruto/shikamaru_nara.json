@@ -17,6 +17,146 @@
   "deleted_at": null,
 
   "inverse_of": "rel_naruto_shikamaru_classmate"
+},
+
+{
+  "_id": "rel_shikamaru_sasuke_classmate",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sasuke_shikamaru_classmate"
+},
+
+{
+  "_id": "rel_shikamaru_sakura_classmate",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sakura_shikamaru_classmate"
+},
+
+{
+  "_id": "rel_shikamaru_hinata_classmate",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hinata_shikamaru_classmate"
+},
+
+{
+  "_id": "rel_shikamaru_ino_classmate",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_ino_yamanaka",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_ino_shikamaru_classmate"
+},
+
+{
+  "_id": "rel_shikamaru_shino_classmate",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_shino_aburame",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shino_shikamaru_classmate"
+},
+
+{
+  "_id": "rel_shikamaru_kiba_classmate",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_kiba_inuzuka",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_kiba_shikamaru_classmate"
+},
+
+{
+  "_id": "rel_shikamaru_chouji_classmate",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_chouji_akimichi",
+
+  "relationship": "classmate",
+
+  "type": "academy",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_chouji_shikamaru_classmate"
 }
 
 ]
