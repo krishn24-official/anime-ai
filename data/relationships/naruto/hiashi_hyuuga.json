@@ -37,6 +37,46 @@
   "deleted_at": null,
 
   "inverse_of": "rel_hinata_hiashi_daughter"
+},
+
+{
+  "_id": "rel_hiashi_hizashi_brother",
+
+  "source_id": "char_hiashi_hyuuga",
+
+  "target_id": "char_hizashi_hyuuga",
+
+  "relationship": "brother",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hizashi_hiashi_brother"
+},
+
+{
+  "_id": "rel_hiashi_neji_uncle",
+
+  "source_id": "char_hiashi_hyuuga",
+
+  "target_id": "char_neji_hyuuga",
+
+  "relationship": "uncle",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_neji_hiashi_nephew"
 }
 
 ]

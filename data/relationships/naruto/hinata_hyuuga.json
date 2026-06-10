@@ -298,6 +298,86 @@
   "deleted_at": null,
 
   "inverse_of": "rel_chouji_hinata_classmate"
+},
+
+{
+  "_id": "rel_hinata_kiba_teammate",
+
+  "source_id": "char_hinata_hyuuga",
+
+  "target_id": "char_kiba_inuzuka",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_kiba_hinata_teammate"
+},
+
+{
+  "_id": "rel_hinata_shino_teammate",
+
+  "source_id": "char_hinata_hyuuga",
+
+  "target_id": "char_shino_aburame",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shino_hinata_teammate"
+},
+
+{
+  "_id": "rel_hinata_neji_cousin",
+
+  "source_id": "char_hinata_hyuuga",
+
+  "target_id": "char_neji_hyuuga",
+
+  "relationship": "cousin",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_neji_hinata_cousin"
+},
+
+{
+  "_id": "rel_hinata_hizashi_niece",
+
+  "source_id": "char_hinata_hyuuga",
+
+  "target_id": "char_hizashi_hyuuga",
+
+  "relationship": "niece",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hizashi_hinata_uncle"
 }
 
 

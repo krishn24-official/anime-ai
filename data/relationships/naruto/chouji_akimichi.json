@@ -157,6 +157,46 @@
   "deleted_at": null,
 
   "inverse_of": "rel_ino_chouji_classmate"
+},
+
+{
+  "_id": "rel_chouji_shikamaru_teammate",
+
+  "source_id": "char_chouji_akimichi",
+
+  "target_id": "char_shikamaru_nara",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shikamaru_chouji_teammate"
+},
+
+{
+  "_id": "rel_chouji_ino_teammate",
+
+  "source_id": "char_chouji_akimichi",
+
+  "target_id": "char_ino_yamanaka",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_ino_chouji_teammate"
 }
 
 ]

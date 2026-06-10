@@ -1,1 +1,121 @@
-[]
+[
+   {
+  "_id": "rel_neji_rocklee_teammate",
+
+  "source_id": "char_neji_hyuuga",
+
+  "target_id": "char_rock_lee",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_rocklee_neji_teammate"
+},
+
+{
+  "_id": "rel_neji_tenten_teammate",
+
+  "source_id": "char_neji_hyuuga",
+
+  "target_id": "char_tenten",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_tenten_neji_teammate"
+},
+
+{
+  "_id": "rel_neji_hinata_cousin",
+
+  "source_id": "char_neji_hyuuga",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "cousin",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hinata_neji_cousin"
+},
+
+{
+  "_id": "rel_neji_hanabi_cousin",
+
+  "source_id": "char_neji_hyuuga",
+
+  "target_id": "char_hanabi_hyuuga",
+
+  "relationship": "cousin",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hanabi_neji_cousin"
+},
+
+{
+  "_id": "rel_neji_hiashi_nephew",
+
+  "source_id": "char_neji_hyuuga",
+
+  "target_id": "char_hiashi_hyuuga",
+
+  "relationship": "nephew",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hiashi_neji_uncle"
+},
+
+{
+  "_id": "rel_neji_hizashi_son",
+
+  "source_id": "char_neji_hyuuga",
+
+  "target_id": "char_hizashi_hyuuga",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hizashi_neji_father"
+}
+]

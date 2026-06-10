@@ -1,1 +1,41 @@
-[]
+[
+    {
+  "_id": "rel_tenten_neji_teammate",
+
+  "source_id": "char_tenten",
+
+  "target_id": "char_neji_hyuuga",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_neji_tenten_teammate"
+},
+
+{
+  "_id": "rel_tenten_rocklee_teammate",
+
+  "source_id": "char_tenten",
+
+  "target_id": "char_rock_lee",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_rocklee_tenten_teammate"
+}
+]

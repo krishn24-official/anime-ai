@@ -37,6 +37,66 @@
   "deleted_at": null,
 
   "inverse_of": "rel_hinata_hanabi_sister"
+},
+
+{
+  "_id": "rel_hanabi_neji_cousin",
+
+  "source_id": "char_hanabi_hyuuga",
+
+  "target_id": "char_neji_hyuuga",
+
+  "relationship": "cousin",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_neji_hanabi_cousin"
+},
+
+{
+  "_id": "rel_neji_hizashi_son",
+
+  "source_id": "char_neji_hyuuga",
+
+  "target_id": "char_hizashi_hyuuga",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hizashi_neji_father"
+},
+
+{
+  "_id": "rel_hanabi_hizashi_niece",
+
+  "source_id": "char_hanabi_hyuuga",
+
+  "target_id": "char_hizashi_hyuuga",
+
+  "relationship": "niece",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hizashi_hanabi_uncle"
 }
 
 

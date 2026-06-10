@@ -157,6 +157,46 @@
   "deleted_at": null,
 
   "inverse_of": "rel_chouji_kiba_classmate"
+},
+
+{
+  "_id": "rel_kiba_hinata_teammate",
+
+  "source_id": "char_kiba_inuzuka",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hinata_kiba_teammate"
+},
+
+{
+  "_id": "rel_kiba_shino_teammate",
+
+  "source_id": "char_kiba_inuzuka",
+
+  "target_id": "char_shino_aburame",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shino_kiba_teammate"
 }
 
 ]

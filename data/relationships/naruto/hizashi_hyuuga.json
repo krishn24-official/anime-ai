@@ -1,1 +1,81 @@
-[]
+[
+    {
+  "_id": "rel_hizashi_neji_father",
+
+  "source_id": "char_hizashi_hyuuga",
+
+  "target_id": "char_neji_hyuuga",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_neji_hizashi_son"
+},
+
+{
+  "_id": "rel_hizashi_hiashi_brother",
+
+  "source_id": "char_hizashi_hyuuga",
+
+  "target_id": "char_hiashi_hyuuga",
+
+  "relationship": "brother",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hiashi_hizashi_brother"
+},
+
+{
+  "_id": "rel_hizashi_hinata_uncle",
+
+  "source_id": "char_hizashi_hyuuga",
+
+  "target_id": "char_hinata_hyuuga",
+
+  "relationship": "uncle",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hinata_hizashi_niece"
+},
+
+{
+  "_id": "rel_hizashi_hanabi_uncle",
+
+  "source_id": "char_hizashi_hyuuga",
+
+  "target_id": "char_hanabi_hyuuga",
+
+  "relationship": "uncle",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hanabi_hizashi_niece"
+}
+]
