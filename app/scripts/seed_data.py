@@ -5,11 +5,21 @@ import asyncio
 from app.db.mongo import connect_db, get_db
 
 
+def get_glob_files(folder_path: str):
+    import glob
+    return glob.glob(os.path.join(folder_path, "*.json"))
+
+
+def load_json_file(file_path: str):
+    with open(file_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 # 🔥 Seed one collection from multiple files
 async def seed_collection(folder_path, collection_name):
     db = get_db()
 
-    files = glob.glob(os.path.join(folder_path, "*.json"))
+    files = await asyncio.to_thread(get_glob_files, folder_path)
 
     if not files:
         print(f"⚠️ No files found in {folder_path}")
@@ -17,8 +27,7 @@ async def seed_collection(folder_path, collection_name):
 
     for file in files:
         try:
-            with open(file, "r", encoding="utf-8") as f:
-                data = json.load(f)
+            data = await asyncio.to_thread(load_json_file, file)
 
             if isinstance(data, list):
                 for item in data:

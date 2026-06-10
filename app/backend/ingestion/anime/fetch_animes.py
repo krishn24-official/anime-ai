@@ -1,5 +1,5 @@
 import asyncio
-import requests
+import httpx
 
 from app.db.mongo import (
     connect_db,
@@ -131,7 +131,7 @@ query ($anime: String) {
 """
 
 
-async def fetch_and_save(anime_name):
+async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
     db = get_db()
 
@@ -139,7 +139,7 @@ async def fetch_and_save(anime_name):
 
     print(f"\n🎬 Fetching: {anime_name}")
 
-    response = requests.post(
+    response = await client.post(
         ANILIST_URL,
         json={
             "query": QUERY,
@@ -147,9 +147,10 @@ async def fetch_and_save(anime_name):
                 "anime": anime_name
             }
         },
-        timeout=30
+        timeout=30.0
     )
 
+    response.raise_for_status()
     data = response.json()
 
     if "errors" in data:
@@ -195,23 +196,25 @@ async def main():
 
     await connect_db()
 
-    for anime_name in ANIME_LIST:
+    async with httpx.AsyncClient() as client:
+        for anime_name in ANIME_LIST:
 
-        try:
+            try:
 
-            await fetch_and_save(
-                anime_name
-            )
+                await fetch_and_save(
+                    client,
+                    anime_name
+                )
 
-            await asyncio.sleep(1)
+                await asyncio.sleep(1)
 
-        except Exception as e:
+            except Exception as e:
 
-            print(
-                f"❌ Failed: {anime_name}"
-            )
+                print(
+                    f"❌ Failed: {anime_name}"
+                )
 
-            print(e)
+                print(e)
 
     await close_db()
 

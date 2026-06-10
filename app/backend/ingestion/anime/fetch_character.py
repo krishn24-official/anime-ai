@@ -1,5 +1,5 @@
 import asyncio
-import requests
+import httpx
 
 from app.db.mongo import (
     connect_db,
@@ -69,7 +69,7 @@ query ($anime: String, $page: Int) {
 """
 
 
-async def fetch_and_save(anime_name):
+async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
     db = get_db()
 
@@ -88,14 +88,16 @@ async def fetch_and_save(anime_name):
             "page": page
         }
 
-        response = requests.post(
+        response = await client.post(
             ANILIST_URL,
             json={
                 "query": query,
                 "variables": variables
-            }
+            },
+            timeout=30.0
         )
 
+        response.raise_for_status()
         data = response.json()
 
         # ERROR HANDLING
@@ -195,31 +197,33 @@ async def main():
 
     await connect_db()
 
-    # await fetch_and_save("Naruto")
+    async with httpx.AsyncClient() as client:
+        await fetch_and_save(client, "Naruto")
 
-    # await fetch_and_save("Naruto: Shippuden")
+        await fetch_and_save(client, "Naruto: Shippuden")
 
-    # await fetch_and_save("Boruto: Naruto Next Generations")
+        await fetch_and_save(client, "Boruto: Naruto Next Generations")
 
-    # await fetch_and_save("BORUTO: NARUTO THE MOVIE")
+        await fetch_and_save(client, "BORUTO: NARUTO THE MOVIE")
 
-    # await fetch_and_save("DEATH NOTE")
+        # await fetch_and_save(client, "DEATH NOTE")
 
-    # await fetch_and_save("ONE PIECE")
+        # await fetch_and_save(client, "ONE PIECE")
 
-    # await fetch_and_save("Shingeki no Kyojin: The Final Season")
+        # await fetch_and_save(client, "Shingeki no Kyojin: The Final Season")
 
-    # await fetch_and_save("Shingeki no Kyojin Season 3")
+        # await fetch_and_save(client, "Shingeki no Kyojin Season 3")
 
-    # await fetch_and_save("Shingeki no Kyojin Season 2")
+        # await fetch_and_save(client, "Shingeki no Kyojin Season 2")
 
-    # await fetch_and_save("Shingeki no Kyojin")
+        # await fetch_and_save(client, "Shingeki no Kyojin")
 
-    await fetch_and_save("Jujutsu Kaisen: Kaigyoku・Gyokusetsu")
-    await fetch_and_save("Jujutsu Kaisen 2nd Season")
-    await fetch_and_save("Jujutsu Kaisen: Shimetsu Kaiyuu - Zenpen")
-    await fetch_and_save("Jujutsu Kaisen 0")
-    await fetch_and_save("Jujutsu Kaisen")
+        # await fetch_and_save(client, "Jujutsu Kaisen: Kaigyoku・Gyokusetsu")
+        # await fetch_and_save(client, "Jujutsu Kaisen 2nd Season")
+        # await fetch_and_save(client, "Jujutsu Kaisen: Shimetsu Kaiyuu - Zenpen")
+        # await fetch_and_save(client, "Jujutsu Kaisen 0")
+        # await fetch_and_save(client, "Jujutsu Kaisen")
+
     await close_db()
 
 

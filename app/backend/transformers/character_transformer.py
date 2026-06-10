@@ -9,22 +9,53 @@ def clean_description(text):
         return None
 
     # Remove image markdown
-    text = re.sub(r'!\[.*?\]\(.*?\)', '', text)
+    text = re.sub(
+        r'!\[.*?\]\(.*?\)',
+        '',
+        text
+    )
 
-    # Remove markdown bold/underline markers
-    text = re.sub(r'__([^_]*)__', r'\1', text)
+    # Convert markdown links
+    text = re.sub(
+        r'\[(.*?)\]\(.*?\)',
+        r'\1',
+        text
+    )
 
     # Remove spoiler markers
-    text = re.sub(r'~!.*?!~', '', text)
+    text = re.sub(
+        r'~+',
+        '',
+        text
+    )
+
+    # Remove markdown bold
+    text = re.sub(
+        r'__([^_]*)__',
+        r'\1',
+        text
+    )
+
+    # Remove markdown italics
+    text = re.sub(
+        r'_([^_]*)_',
+        r'\1',
+        text
+    )
 
     # Remove HTML tags
-    text = re.sub(r'<.*?>', '', text)
+    text = re.sub(
+        r'<[^>]+>',
+        ' ',
+        text
+    )
 
-    # Replace <br> with space
-    text = re.sub(r'<br\s*/?>', ' ', text)
-
-    # Remove multiple spaces/newlines
-    text = re.sub(r'\s+', ' ', text)
+    # Normalize whitespace
+    text = re.sub(
+        r'\s+',
+        ' ',
+        text
+    )
 
     return text.strip()
 

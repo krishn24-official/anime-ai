@@ -3,12 +3,17 @@ from app.db.mongo import connect_db, close_db
 from app.db.init_db import check_db
 from app.db.setup_collections import create_collections
 from app.db.indexes import create_indexes
-from app.routes.characters import router as char_router
-
+from app.api.routes.character import router
+from app.api.router import (
+    api_router
+)
 
 app = FastAPI()
 
-app.include_router(char_router)
+
+app.include_router(
+    api_router
+)
 
 
 @app.on_event("startup")

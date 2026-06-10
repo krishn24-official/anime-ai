@@ -12,6 +12,20 @@ from app.db.mongo import (
 RELATIONSHIP_FOLDER = "data/relationships"
 
 
+def load_json_file(filepath: str):
+    with open(filepath, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def get_json_files(folder: str):
+    json_files = []
+    for root, _, files in os.walk(folder):
+        for file in files:
+            if file.endswith(".json"):
+                json_files.append(os.path.join(root, file))
+    return json_files
+
+
 async def seed_relationships():
 
     await connect_db()
@@ -22,47 +36,31 @@ async def seed_relationships():
 
     total_saved = 0
 
-    for root, dirs, files in os.walk(
-        RELATIONSHIP_FOLDER
-    ):
+    filepaths = await asyncio.to_thread(get_json_files, RELATIONSHIP_FOLDER)
 
-        for file in files:
+    for filepath in filepaths:
 
-            if not file.endswith(".json"):
-                continue
+        print(
+            f"\n📂 Reading: {filepath}"
+        )
 
-            filepath = os.path.join(
-                root,
-                file
+        relationships = await asyncio.to_thread(load_json_file, filepath)
+
+        for relationship in relationships:
+
+            await relationship_collection.replace_one(
+                {
+                    "_id": relationship["_id"]
+                },
+                relationship,
+                upsert=True
             )
+
+            total_saved += 1
 
             print(
-                f"\n📂 Reading: {filepath}"
+                f"✅ Saved: {relationship['_id']}"
             )
-
-            with open(
-                filepath,
-                "r",
-                encoding="utf-8"
-            ) as f:
-
-                relationships = json.load(f)
-
-            for relationship in relationships:
-
-                await relationship_collection.replace_one(
-                    {
-                        "_id": relationship["_id"]
-                    },
-                    relationship,
-                    upsert=True
-                )
-
-                total_saved += 1
-
-                print(
-                    f"✅ Saved: {relationship['_id']}"
-                )
 
     print(
         f"\n🎉 Total relationships saved: {total_saved}"
@@ -71,4 +69,5 @@ async def seed_relationships():
     await close_db()
 
 
-asyncio.run(seed_relationships())
+if __name__ == "__main__":
+    asyncio.run(seed_relationships())
