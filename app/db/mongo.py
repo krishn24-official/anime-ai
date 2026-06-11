@@ -29,6 +29,24 @@ async def connect_db():
     await db["relationships"].create_index("target_id")
     await db["relationships"].create_index("relationship")
     await db["relationships"].create_index("type")
+    await db["events"].create_index(
+        [
+            ("month", 1),
+            ("day", 1)
+        ]
+    )
+
+    await db["events"].create_index(
+        "event_type"
+    )
+
+    await db["events"].create_index(
+        "anime_id"
+    )
+
+    await db["events"].create_index(
+        "manga_id"
+    )
 
     print("✅ MongoDB Connected")
 

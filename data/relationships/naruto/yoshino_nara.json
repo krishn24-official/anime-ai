@@ -1,1 +1,81 @@
-[]
+[
+    {
+  "_id": "rel_yoshino_shikamaru_mother",
+
+  "source_id": "char_yoshino_nara",
+
+  "target_id": "char_shikamaru_nara",
+
+  "relationship": "mother",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shikamaru_yoshino_son"
+},
+
+{
+  "_id": "rel_yoshino_shikaku_wife",
+
+  "source_id": "char_yoshino_nara",
+
+  "target_id": "char_shikaku_nara",
+
+  "relationship": "wife",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shikaku_yoshino_husband"
+},
+
+{
+  "_id": "rel_yoshino_shikadai_grandmother",
+
+  "source_id": "char_yoshino_nara",
+
+  "target_id": "char_shikadai_nara",
+
+  "relationship": "grandmother",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shikadai_yoshino_grandson"
+},
+
+{
+  "_id": "rel_yoshino_temari_mother_in_law",
+
+  "source_id": "char_yoshino_nara",
+
+  "target_id": "char_temari",
+
+  "relationship": "mother_in_law",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_temari_yoshino_daughter_in_law"
+}
+]

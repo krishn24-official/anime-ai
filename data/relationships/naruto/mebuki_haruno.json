@@ -1,1 +1,61 @@
-[]
+[
+    {
+  "_id": "rel_mebuki_sakura_mother",
+
+  "source_id": "char_mebuki_haruno",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "mother",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sakura_mebuki_daughter"
+},
+
+{
+  "_id": "rel_mebuki_sasuke_mother_in_law",
+
+  "source_id": "char_mebuki_haruno",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "mother_in_law",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sasuke_mebuki_son_in_law"
+},
+
+{
+  "_id": "rel_mebuki_kizashi_wife",
+
+  "source_id": "char_mebuki_haruno",
+
+  "target_id": "char_kizashi_haruno",
+
+  "relationship": "wife",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_kizashi_mebuki_husband"
+}
+]

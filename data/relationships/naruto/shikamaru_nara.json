@@ -197,6 +197,86 @@
   "deleted_at": null,
 
   "inverse_of": "rel_chouji_shikamaru_teammate"
+},
+
+{
+  "_id": "rel_shikamaru_temari_husband",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_temari",
+
+  "relationship": "husband",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_temari_shikamaru_wife"
+},
+
+{
+  "_id": "rel_shikamaru_shikadai_father",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_shikadai_nara",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shikadai_shikamaru_son"
+},
+
+{
+  "_id": "rel_shikamaru_shikaku_son",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_shikaku_nara",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shikaku_shikamaru_father"
+},
+
+{
+  "_id": "rel_shikamaru_yoshino_son",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_yoshino_nara",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_yoshino_shikamaru_mother"
 }
 
 ]

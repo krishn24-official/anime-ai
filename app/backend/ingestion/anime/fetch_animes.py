@@ -15,70 +15,6 @@ from app.backend.transformers.anime_transformer import (
 ANILIST_URL = "https://graphql.anilist.co"
 
 
-ANIME_LIST = [
-
-    "Naruto",
-    "Naruto: Shippuden",
-    "Boruto: Naruto Next Generations",
-    "BORUTO: NARUTO THE MOVIE",
-
-    "ONE PIECE",
-
-    "Jujutsu Kaisen",
-    "Jujutsu Kaisen 2nd Season",
-    "Jujutsu Kaisen 0",
-
-    "Kimetsu no Yaiba",
-    "Kimetsu no Yaiba: Yuukaku-hen",
-    "Kimetsu no Yaiba: Mugen Ressha-hen",
-    "Kimetsu no Yaiba: Hashira Geiko-hen",
-    "Kimetsu no Yaiba: Katanakaji no Sato-hen",
-
-    "Ore dake Level Up na Ken",
-    "Ore dake Level Up na Ken: Season 2 - Arise from the Shadow",
-
-    "Chainsaw Man",
-
-    "One Punch Man",
-    "One Punch Man 2",
-
-    "Sousou no Frieren",
-    "Sousou no Frieren 2nd Season",
-
-    "Dragon Ball",
-    "Dragon Ball Z",
-    "Dragon Ball Super",
-    "Dragon Ball GT",
-    "Dragon Ball Kai",
-    "Dragon Ball DAIMA",
-
-    "DEATH NOTE",
-
-    "Dr. STONE",
-    "Dr. STONE: STONE WARS",
-    "Dr. STONE: Ryuusui",
-    "Dr. STONE: NEW WORLD",
-    "Dr. STONE: NEW WORLD Part 2",
-    "Dr. STONE: SCIENCE FUTURE",
-    "Dr. STONE: SCIENCE FUTURE Part 2",
-    "Dr. STONE: SCIENCE FUTURE Part 3",
-
-    "Shingeki no Kyojin",
-    "Shingeki no Kyojin Season 2",
-    "Shingeki no Kyojin Season 3",
-    "Shingeki no Kyojin: The Final Season",
-
-    "Bleach",
-    "BLEACH: Sennen Kessen-hen",
-
-    "Fullmetal Alchemist: Brotherhood",
-
-    "Shigatsu wa Kimi no Uso",
-    "Kimi no Na wa.",
-    "Tenki no Ko"
-]
-
-
 QUERY = """
 query ($anime: String) {
 
@@ -194,33 +130,107 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
 async def main():
 
+    print("🚀 Starting anime ingestion...")
+
     await connect_db()
 
     async with httpx.AsyncClient() as client:
-        for anime_name in ANIME_LIST:
 
-            try:
+        # Naruto
+        await fetch_and_save(client, "Naruto")
+        await fetch_and_save(client, "Naruto: Shippuden")
+        await fetch_and_save(client, "Boruto: Naruto Next Generations")
+        await fetch_and_save(client, "BORUTO: NARUTO THE MOVIE")
+        await fetch_and_save(client,"ROAD OF NARUTO")
+        await fetch_and_save(client,"NARUTO: Dai Gekitotsu! Maboroshi no Chitei Iseki Dattebayo")
+        await fetch_and_save(client,"BORUTO: NARUTO THE MOVIE - Naruto ga Hokage ni Natta Hi")
+        await fetch_and_save(client,"NARUTO: Shippuuden - Hi no Ishi wo Tsugu Mono")
+        await fetch_and_save(client,"NARUTO: Blood Prison")
+        await fetch_and_save(client,"ROAD TO NINJA: NARUTO THE MOVIE")
+        await fetch_and_save(client,"NARUTO: Shippuuden - The Lost Tower")
+        await fetch_and_save(client,"THE LAST: NARUTO THE MOVIE")
+        await fetch_and_save(client,"NARUTO: Takigakure no Shitou - Ore ga Eiyuu Dattebayo!")
+        await fetch_and_save(client,"NARUTO: Shippuuden - Kizuna")
+        await fetch_and_save(client,"NARUTO: Honoo no Chuunin Shiken! Naruto vs Konohamaru!!")
+        await fetch_and_save(client,"NARUTO: THE CROSS ROADS")
+        await fetch_and_save(client,"NARUTO: Akaki Yotsuba no Clover wo Sagase")
+        await fetch_and_save(client,"NARUTO: Shippuuden - Sunny Side Battle!!!")
+        await fetch_and_save(client,"NARUTO: Shippuuden - Shippu! 'Konoha Gakuen Den")
 
-                await fetch_and_save(
-                    client,
-                    anime_name
-                )
+        # One Piece
+        await fetch_and_save(client, "ONE PIECE")
 
-                await asyncio.sleep(1)
+        # JJK
+        await fetch_and_save(client, "Jujutsu Kaisen")
+        await fetch_and_save(client, "Jujutsu Kaisen 2nd Season")
+        await fetch_and_save(client, "Jujutsu Kaisen 0")
 
-            except Exception as e:
+        # Demon Slayer
+        await fetch_and_save(client, "Kimetsu no Yaiba")
+        await fetch_and_save(client, "Kimetsu no Yaiba: Yuukaku-hen")
+        await fetch_and_save(client, "Kimetsu no Yaiba: Mugen Ressha-hen")
+        await fetch_and_save(client, "Kimetsu no Yaiba: Hashira Geiko-hen")
+        await fetch_and_save(client, "Kimetsu no Yaiba: Katanakaji no Sato-hen")
 
-                print(
-                    f"❌ Failed: {anime_name}"
-                )
+        # Solo Leveling
+        await fetch_and_save(client, "Ore dake Level Up na Ken")
+        await fetch_and_save(
+            client,
+            "Ore dake Level Up na Ken: Season 2 - Arise from the Shadow"
+        )
 
-                print(e)
+        # Chainsaw Man
+        await fetch_and_save(client, "Chainsaw Man")
+
+        # One Punch Man
+        await fetch_and_save(client, "One Punch Man")
+        await fetch_and_save(client, "One Punch Man 2")
+
+        # Frieren
+        await fetch_and_save(client, "Sousou no Frieren")
+        await fetch_and_save(client, "Sousou no Frieren 2nd Season")
+
+        # Dragon Ball
+        await fetch_and_save(client, "Dragon Ball")
+        await fetch_and_save(client, "Dragon Ball Z")
+        await fetch_and_save(client, "Dragon Ball Super")
+        await fetch_and_save(client, "Dragon Ball GT")
+        await fetch_and_save(client, "Dragon Ball Kai")
+        await fetch_and_save(client, "Dragon Ball DAIMA")
+
+        # Death Note
+        await fetch_and_save(client, "DEATH NOTE")
+
+        # Dr Stone
+        await fetch_and_save(client, "Dr. STONE")
+        await fetch_and_save(client, "Dr. STONE: STONE WARS")
+        await fetch_and_save(client, "Dr. STONE: Ryuusui")
+        # await fetch_and_save(client, "Dr. STONE: NEW WORLD")
+        # await fetch_and_save(client, "Dr. STONE: NEW WORLD Part 2")
+        # await fetch_and_save(client, "Dr. STONE: SCIENCE FUTURE")
+        # await fetch_and_save(client, "Dr. STONE: SCIENCE FUTURE Part 2")
+        # await fetch_and_save(client, "Dr. STONE: SCIENCE FUTURE Part 3")
+
+        # # AOT
+        # await fetch_and_save(client, "Shingeki no Kyojin")
+        # await fetch_and_save(client, "Shingeki no Kyojin Season 2")
+        # await fetch_and_save(client, "Shingeki no Kyojin Season 3")
+        # await fetch_and_save(client, "Shingeki no Kyojin: The Final Season")
+
+        # # Bleach
+        # await fetch_and_save(client, "Bleach")
+        # await fetch_and_save(client, "BLEACH: Sennen Kessen-hen")
+
+        # # FMAB
+        # await fetch_and_save(client, "Fullmetal Alchemist: Brotherhood")
+
+        # # Movies
+        # await fetch_and_save(client, "Shigatsu wa Kimi no Uso")
+        # await fetch_and_save(client, "Kimi no Na wa.")
+        # await fetch_and_save(client, "Tenki no Ko")
 
     await close_db()
 
 
-print(
-    "🚀 Starting anime ingestion..."
-)
-
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

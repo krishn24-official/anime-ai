@@ -8,7 +8,8 @@ from app.services.anime_service import (
     fetch_anime,
     fetch_anime_search,
     fetch_anime_characters,
-    fetch_anime_details
+    fetch_anime_details,
+    fetch_anime_summary
 )
 
 router = APIRouter(
@@ -92,3 +93,25 @@ async def get_anime_details(
         )
 
     return anime
+
+@router.get(
+    "/{anime_id}/summary"
+)
+async def get_anime_summary(
+    anime_id: str
+):
+
+    summary = await (
+        fetch_anime_summary(
+            anime_id
+        )
+    )
+
+    if not summary:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Anime not found"
+        )
+
+    return summary

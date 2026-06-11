@@ -33,6 +33,34 @@ async def search_character(
     )
 
 
+async def enrich_relationships_by_source(
+    relationships
+):
+
+    enriched = []
+
+    for relationship in relationships:
+
+        source = await get_character_basic(
+            relationship["source_id"]
+        )
+
+        enriched.append(
+            {
+                "relationship":
+                    relationship["relationship"],
+
+                "type":
+                    relationship["type"],
+
+                "target":
+                    source
+            }
+        )
+
+    return enriched
+
+
 async def enrich_relationships(
     relationships
 ):

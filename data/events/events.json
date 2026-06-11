@@ -1,0 +1,72 @@
+[
+  {
+    "_id": "event_naruto_chapter_1",
+
+    "title": "Naruto Chapter 1 Released",
+
+    "description": "Naruto Chapter 1 was published in Weekly Shonen Jump.",
+
+    "month": 9,
+    "day": 21,
+    "year": 1999,
+
+    "event_type": "manga_release",
+
+    "anime_id": null,
+
+    "manga_id": "manga_naruto",
+
+    "character_ids": [],
+
+    "episode_number": null,
+
+    "chapter_number": 1,
+
+    "image": null,
+
+    "tags": [
+      "naruto"
+    ],
+
+    "is_deleted": false,
+
+    "deleted_at": null
+  },
+
+  {
+    "_id": "event_gear5_debut",
+
+    "title": "Gear 5 Anime Debut",
+
+    "description": "Episode 1071 aired featuring Gear 5.",
+
+    "month": 8,
+    "day": 6,
+    "year": 2023,
+
+    "event_type": "anime_milestone",
+
+    "anime_id": "anime_one_piece",
+
+    "manga_id": null,
+
+    "character_ids": [
+      "char_monkey_d_luffy"
+    ],
+
+    "episode_number": 1071,
+
+    "chapter_number": null,
+
+    "image": null,
+
+    "tags": [
+      "one_piece",
+      "gear5"
+    ],
+
+    "is_deleted": false,
+
+    "deleted_at": null
+  }
+]

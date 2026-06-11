@@ -64,6 +64,23 @@ RELATIONSHIP_TYPES = [
     "other"
 ]
 
+EVENT_TYPES = [
+
+    "anime_release",
+
+    "anime_milestone",
+
+    "manga_release",
+
+    "manga_milestone",
+
+    "movie_release",
+
+    "character_debut",
+
+    "special"
+]
+
 
 # =========================
 # RELATIONSHIPS

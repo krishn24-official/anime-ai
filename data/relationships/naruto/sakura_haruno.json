@@ -316,6 +316,46 @@
   "deleted_at": null,
 
   "inverse_of": "rel_shino_sakura_classmate"
+},
+
+{
+  "_id": "rel_sakura_mebuki_daughter",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_mebuki_haruno",
+
+  "relationship": "daughter",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_mebuki_sakura_mother"
+},
+
+{
+  "_id": "rel_sakura_kizashi_daughter",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_kizashi_haruno",
+
+  "relationship": "daughter",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_kizashi_sakura_father"
 }
 
 ]

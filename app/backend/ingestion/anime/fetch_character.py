@@ -198,31 +198,47 @@ async def main():
     await connect_db()
 
     async with httpx.AsyncClient() as client:
-        await fetch_and_save(client, "Naruto")
+        # await fetch_and_save(client, "Naruto")
 
-        await fetch_and_save(client, "Naruto: Shippuden")
+        # await fetch_and_save(client, "Naruto: Shippuden")
 
-        await fetch_and_save(client, "Boruto: Naruto Next Generations")
+        # await fetch_and_save(client, "Boruto: Naruto Next Generations")
 
-        await fetch_and_save(client, "BORUTO: NARUTO THE MOVIE")
+        # await fetch_and_save(client, "BORUTO: NARUTO THE MOVIE")
 
-        # await fetch_and_save(client, "DEATH NOTE")
+        await fetch_and_save(client,"ROAD OF NARUTO")
+        await fetch_and_save(client,"NARUTO: Dai Gekitotsu! Maboroshi no Chitei Iseki Dattebayo")
+        await fetch_and_save(client,"BORUTO: NARUTO THE MOVIE - Naruto ga Hokage ni Natta Hi")
+        await fetch_and_save(client,"NARUTO: Shippuuden - Hi no Ishi wo Tsugu Mono")
+        await fetch_and_save(client,"NARUTO: Blood Prison")
+        await fetch_and_save(client,"ROAD TO NINJA: NARUTO THE MOVIE")
+        await fetch_and_save(client,"NARUTO: Shippuuden - The Lost Tower")
+        await fetch_and_save(client,"THE LAST: NARUTO THE MOVIE")
+        await fetch_and_save(client,"NARUTO: Takigakure no Shitou - Ore ga Eiyuu Dattebayo!")
+        await fetch_and_save(client,"NARUTO: Shippuuden - Kizuna")
+        await fetch_and_save(client,"NARUTO: Honoo no Chuunin Shiken! Naruto vs Konohamaru!!")
+        await fetch_and_save(client,"NARUTO: THE CROSS ROADS")
+        await fetch_and_save(client,"NARUTO: Akaki Yotsuba no Clover wo Sagase")
+        await fetch_and_save(client,"NARUTO: Shippuuden - Sunny Side Battle!!!")
+        await fetch_and_save(client,"NARUTO: Shippuuden - Shippu! 'Konoha Gakuen Den")
 
-        # await fetch_and_save(client, "ONE PIECE")
+        await fetch_and_save(client, "DEATH NOTE")
 
-        # await fetch_and_save(client, "Shingeki no Kyojin: The Final Season")
+        await fetch_and_save(client, "ONE PIECE")
 
-        # await fetch_and_save(client, "Shingeki no Kyojin Season 3")
+        await fetch_and_save(client, "Shingeki no Kyojin: The Final Season")
 
-        # await fetch_and_save(client, "Shingeki no Kyojin Season 2")
+        await fetch_and_save(client, "Shingeki no Kyojin Season 3")
 
-        # await fetch_and_save(client, "Shingeki no Kyojin")
+        await fetch_and_save(client, "Shingeki no Kyojin Season 2")
 
-        # await fetch_and_save(client, "Jujutsu Kaisen: Kaigyoku・Gyokusetsu")
-        # await fetch_and_save(client, "Jujutsu Kaisen 2nd Season")
-        # await fetch_and_save(client, "Jujutsu Kaisen: Shimetsu Kaiyuu - Zenpen")
-        # await fetch_and_save(client, "Jujutsu Kaisen 0")
-        # await fetch_and_save(client, "Jujutsu Kaisen")
+        await fetch_and_save(client, "Shingeki no Kyojin")
+
+        await fetch_and_save(client, "Jujutsu Kaisen: Kaigyoku・Gyokusetsu")
+        await fetch_and_save(client, "Jujutsu Kaisen 2nd Season")
+        await fetch_and_save(client, "Jujutsu Kaisen: Shimetsu Kaiyuu - Zenpen")
+        await fetch_and_save(client, "Jujutsu Kaisen 0")
+        await fetch_and_save(client, "Jujutsu Kaisen")
 
     await close_db()
 

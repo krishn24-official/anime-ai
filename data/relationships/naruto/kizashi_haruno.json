@@ -1,0 +1,61 @@
+[
+    {
+  "_id": "rel_kizashi_sakura_father",
+
+  "source_id": "char_kizashi_haruno",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sakura_kizashi_daughter"
+},
+
+{
+  "_id": "rel_kizashi_sasuke_father_in_law",
+
+  "source_id": "char_kizashi_haruno",
+
+  "target_id": "char_sasuke_uchiha",
+
+  "relationship": "father_in_law",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sasuke_kizashi_son_in_law"
+},
+
+{
+  "_id": "rel_kizashi_mebuki_husband",
+
+  "source_id": "char_kizashi_haruno",
+
+  "target_id": "char_mebuki_haruno",
+
+  "relationship": "husband",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_mebuki_kizashi_wife"
+}
+]

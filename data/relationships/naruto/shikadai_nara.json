@@ -1,0 +1,81 @@
+[
+    {
+  "_id": "rel_shikadai_shikamaru_son",
+
+  "source_id": "char_shikadai_nara",
+
+  "target_id": "char_shikamaru_nara",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shikamaru_shikadai_father"
+},
+
+{
+  "_id": "rel_shikadai_temari_son",
+
+  "source_id": "char_shikadai_nara",
+
+  "target_id": "char_temari",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_temari_shikadai_mother"
+},
+
+{
+  "_id": "rel_shikadai_shikaku_grandson",
+
+  "source_id": "char_shikadai_nara",
+
+  "target_id": "char_shikaku_nara",
+
+  "relationship": "grandson",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shikaku_shikadai_grandfather"
+},
+
+{
+  "_id": "rel_shikadai_yoshino_grandson",
+
+  "source_id": "char_shikadai_nara",
+
+  "target_id": "char_yoshino_nara",
+
+  "relationship": "grandson",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_yoshino_shikadai_grandmother"
+}
+]
