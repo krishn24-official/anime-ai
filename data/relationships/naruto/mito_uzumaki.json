@@ -1,1 +1,41 @@
-[]
+[
+    {
+  "_id": "rel_mito_hashirama_wife",
+
+  "source_id": "char_mito_uzumaki",
+
+  "target_id": "char_hashirama_senju",
+
+  "relationship": "wife",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hashirama_mito_husband"
+},
+
+{
+  "_id": "rel_mito_tsunade_grandmother",
+
+  "source_id": "char_mito_uzumaki",
+
+  "target_id": "char_tsunade_senju",
+
+  "relationship": "grandmother",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_tsunade_mito_granddaughter"
+}
+]

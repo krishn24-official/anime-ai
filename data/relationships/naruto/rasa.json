@@ -1,0 +1,101 @@
+[
+    {
+  "_id": "rel_rasa_temari_father",
+
+  "source_id": "char_rasa",
+
+  "target_id": "char_temari",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_temari_rasa_daughter"
+},
+
+{
+  "_id": "rel_rasa_shikamaru_father_in_law",
+
+  "source_id": "char_rasa",
+
+  "target_id": "char_shikamaru_nara",
+
+  "relationship": "father_in_law",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_shikamaru_rasa_son_in_law"
+},
+
+{
+  "_id": "rel_rasa_kankuro_father",
+
+  "source_id": "char_rasa",
+
+  "target_id": "char_kankuro",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_kankuro_rasa_son"
+},
+
+{
+  "_id": "rel_rasa_karura_husband",
+
+  "source_id": "char_rasa",
+
+  "target_id": "char_karura",
+
+  "relationship": "husband",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_karura_rasa_wife"
+},
+
+{
+  "_id": "rel_rasa_gaara_father",
+
+  "source_id": "char_rasa",
+
+  "target_id": "char_gaara",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_gaara_rasa_son"
+}
+]

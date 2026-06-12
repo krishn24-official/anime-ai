@@ -1,1 +1,21 @@
-[]
+[
+    {
+  "_id": "rel_kakashi_sakumo_son",
+
+  "source_id": "char_kakashi_hatake",
+
+  "target_id": "char_sakumo_hatake",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sakumo_kakashi_father"
+}
+]

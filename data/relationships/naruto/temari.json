@@ -77,5 +77,85 @@
   "deleted_at": null,
 
   "inverse_of": "rel_yoshino_temari_mother_in_law"
+},
+
+{
+  "_id": "rel_temari_rasa_daughter",
+
+  "source_id": "char_temari",
+
+  "target_id": "char_rasa",
+
+  "relationship": "daughter",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_rasa_temari_father"
+},
+
+{
+  "_id": "rel_temari_karura_daughter",
+
+  "source_id": "char_temari",
+
+  "target_id": "char_karura",
+
+  "relationship": "daughter",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_karura_temari_mother"
+},
+
+{
+  "_id": "rel_temari_kankuro_sister",
+
+  "source_id": "char_temari",
+
+  "target_id": "char_kankuro",
+
+  "relationship": "sister",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_kankuro_temari_brother"
+},
+
+{
+  "_id": "rel_temari_gaara_sister",
+
+  "source_id": "char_temari",
+
+  "target_id": "char_gaara",
+
+  "relationship": "sister",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_gaara_temari_brother"
 }
 ]

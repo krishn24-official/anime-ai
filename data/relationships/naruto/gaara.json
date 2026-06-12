@@ -1,8 +1,8 @@
 [
     {
-  "_id": "rel_kankuro_temari_brother",
+  "_id": "rel_gaara_temari_brother",
 
-  "source_id": "char_kankuro",
+  "source_id": "char_gaara",
 
   "target_id": "char_temari",
 
@@ -16,13 +16,13 @@
 
   "deleted_at": null,
 
-  "inverse_of": "rel_temari_kankuro_sister"
+  "inverse_of": "rel_temari_gaara_sister"
 },
 
 {
-  "_id": "rel_kankuro_shikamaru_brother_in_law",
+  "_id": "rel_gaara_shikamaru_brother_in_law",
 
-  "source_id": "char_kankuro",
+  "source_id": "char_gaara",
 
   "target_id": "char_shikamaru_nara",
 
@@ -36,13 +36,13 @@
 
   "deleted_at": null,
 
-  "inverse_of": "rel_shikamaru_kankuro_brother_in_law"
+  "inverse_of": "rel_shikamaru_gaara_brother_in_law"
 },
 
 {
-  "_id": "rel_kankuro_rasa_son",
+  "_id": "rel_gaara_rasa_son",
 
-  "source_id": "char_kankuro",
+  "source_id": "char_gaara",
 
   "target_id": "char_rasa",
 
@@ -56,13 +56,13 @@
 
   "deleted_at": null,
 
-  "inverse_of": "rel_rasa_kankuro_father"
+  "inverse_of": "rel_rasa_gaara_father"
 },
 
 {
-  "_id": "rel_kankuro_karura_son",
+  "_id": "rel_gaara_karura_son",
 
-  "source_id": "char_kankuro",
+  "source_id": "char_gaara",
 
   "target_id": "char_karura",
 
@@ -76,15 +76,15 @@
 
   "deleted_at": null,
 
-  "inverse_of": "rel_karura_kankuro_mother"
+  "inverse_of": "rel_karura_gaara_mother"
 },
 
 {
-  "_id": "rel_kankuro_gaara_brother",
+  "_id": "rel_gaara_kankuro_brother",
 
-  "source_id": "char_kankuro",
+  "source_id": "char_gaara",
 
-  "target_id": "char_gaara",
+  "target_id": "char_kankuro",
 
   "relationship": "brother",
 
@@ -96,6 +96,6 @@
 
   "deleted_at": null,
 
-  "inverse_of": "rel_gaara_kankuro_brother"
+  "inverse_of": "rel_kankuro_gaara_brother"
 }
 ]

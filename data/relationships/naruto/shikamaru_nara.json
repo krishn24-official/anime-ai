@@ -277,6 +277,86 @@
   "deleted_at": null,
 
   "inverse_of": "rel_yoshino_shikamaru_mother"
+},
+
+{
+  "_id": "rel_shikamaru_rasa_son_in_law",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_rasa",
+
+  "relationship": "son_in_law",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_rasa_shikamaru_father_in_law"
+},
+
+{
+  "_id": "rel_shikamaru_karura_son_in_law",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_karura",
+
+  "relationship": "son_in_law",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_karura_shikamaru_mother_in_law"
+},
+
+{
+  "_id": "rel_shikamaru_kankuro_brother_in_law",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_kankuro",
+
+  "relationship": "brother_in_law",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_kankuro_shikamaru_brother_in_law"
+},
+
+{
+  "_id": "rel_shikamaru_gaara_brother_in_law",
+
+  "source_id": "char_shikamaru_nara",
+
+  "target_id": "char_gaara",
+
+  "relationship": "brother_in_law",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_gaara_shikamaru_brother_in_law"
 }
 
 ]

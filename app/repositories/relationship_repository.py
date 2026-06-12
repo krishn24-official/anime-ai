@@ -1,6 +1,32 @@
 from app.db.mongo import get_db
 
 
+async def get_relationship_between(
+    id_a: str,
+    id_b: str
+):
+    """
+    Returns all relationship docs connecting id_a and id_b,
+    in either direction (a->b or b->a).
+    """
+
+    db = get_db()
+
+    return await (
+        db["relationships"]
+        .find(
+            {
+                "is_deleted": False,
+                "$or": [
+                    {"source_id": id_a, "target_id": id_b},
+                    {"source_id": id_b, "target_id": id_a}
+                ]
+            }
+        )
+        .to_list(None)
+    )
+
+
 async def get_relationships_by_source(
     source_id: str
 ):

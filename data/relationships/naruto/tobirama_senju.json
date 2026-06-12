@@ -1,1 +1,21 @@
-[]
+[
+    {
+  "_id": "rel_tobirama_hashirama_brother",
+
+  "source_id": "char_tobirama_senju",
+
+  "target_id": "char_hashirama_senju",
+
+  "relationship": "brother",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_hashirama_tobirama_brother"
+}
+]
