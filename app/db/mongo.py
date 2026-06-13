@@ -48,6 +48,11 @@ async def connect_db():
         "manga_id"
     )
 
+    # News pipeline indexes
+    await db["news"].create_index("url", unique=True)
+    await db["news"].create_index("category")
+    await db["news"].create_index("published_at")
+
     print("✅ MongoDB Connected")
 
 

@@ -1,0 +1,21 @@
+[
+    {
+  "_id": "rel_garp_luffy_grandfather",
+
+  "source_id": "char_garp",
+
+  "target_id": "char_luffy_monkey",
+
+  "relationship": "grandfather",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_luffy_garp_grandson"
+}
+]

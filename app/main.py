@@ -7,6 +7,7 @@ from app.api.routes.character import router
 from app.api.router import (
     api_router
 )
+from app.services.news_scheduler import start_news_scheduler, stop_news_scheduler
 
 app = FastAPI()
 
@@ -25,9 +26,12 @@ async def startup():
     await create_collections()
     await create_indexes()
 
+    start_news_scheduler()
+
 
 @app.on_event("shutdown")
 async def shutdown():
+    stop_news_scheduler()
     await close_db()
 
 

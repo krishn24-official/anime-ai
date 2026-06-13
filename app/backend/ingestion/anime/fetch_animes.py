@@ -137,74 +137,85 @@ async def main():
     async with httpx.AsyncClient() as client:
 
         # Naruto
-        await fetch_and_save(client, "Naruto")
-        await fetch_and_save(client, "Naruto: Shippuden")
-        await fetch_and_save(client, "Boruto: Naruto Next Generations")
-        await fetch_and_save(client, "BORUTO: NARUTO THE MOVIE")
-        await fetch_and_save(client,"ROAD OF NARUTO")
-        await fetch_and_save(client,"NARUTO: Dai Gekitotsu! Maboroshi no Chitei Iseki Dattebayo")
-        await fetch_and_save(client,"BORUTO: NARUTO THE MOVIE - Naruto ga Hokage ni Natta Hi")
-        await fetch_and_save(client,"NARUTO: Shippuuden - Hi no Ishi wo Tsugu Mono")
-        await fetch_and_save(client,"NARUTO: Blood Prison")
-        await fetch_and_save(client,"ROAD TO NINJA: NARUTO THE MOVIE")
-        await fetch_and_save(client,"NARUTO: Shippuuden - The Lost Tower")
-        await fetch_and_save(client,"THE LAST: NARUTO THE MOVIE")
-        await fetch_and_save(client,"NARUTO: Takigakure no Shitou - Ore ga Eiyuu Dattebayo!")
-        await fetch_and_save(client,"NARUTO: Shippuuden - Kizuna")
-        await fetch_and_save(client,"NARUTO: Honoo no Chuunin Shiken! Naruto vs Konohamaru!!")
-        await fetch_and_save(client,"NARUTO: THE CROSS ROADS")
-        await fetch_and_save(client,"NARUTO: Akaki Yotsuba no Clover wo Sagase")
-        await fetch_and_save(client,"NARUTO: Shippuuden - Sunny Side Battle!!!")
-        await fetch_and_save(client,"NARUTO: Shippuuden - Shippu! 'Konoha Gakuen Den")
+        # await fetch_and_save(client, "Naruto")
+        # await fetch_and_save(client, "Naruto: Shippuden")
+        # await fetch_and_save(client, "Boruto: Naruto Next Generations")
+        # await fetch_and_save(client, "BORUTO: NARUTO THE MOVIE")
+        # await fetch_and_save(client,"ROAD OF NARUTO")
+        # await fetch_and_save(client,"NARUTO: Dai Gekitotsu! Maboroshi no Chitei Iseki Dattebayo")
+        # await fetch_and_save(client,"BORUTO: NARUTO THE MOVIE - Naruto ga Hokage ni Natta Hi")
+        # await fetch_and_save(client,"NARUTO: Shippuuden - Hi no Ishi wo Tsugu Mono")
+        # await fetch_and_save(client,"NARUTO: Blood Prison")
+        # await fetch_and_save(client,"ROAD TO NINJA: NARUTO THE MOVIE")
+        # await fetch_and_save(client,"NARUTO: Shippuuden - The Lost Tower")
+        # await fetch_and_save(client,"THE LAST: NARUTO THE MOVIE")
+        # await fetch_and_save(client,"NARUTO: Takigakure no Shitou - Ore ga Eiyuu Dattebayo!")
+        # await fetch_and_save(client,"NARUTO: Shippuuden - Kizuna")
+        # await fetch_and_save(client,"NARUTO: Honoo no Chuunin Shiken! Naruto vs Konohamaru!!")
+        # await fetch_and_save(client,"NARUTO: THE CROSS ROADS")
+        # await fetch_and_save(client,"NARUTO: Akaki Yotsuba no Clover wo Sagase")
+        # await fetch_and_save(client,"NARUTO: Shippuuden - Sunny Side Battle!!!")
+        # await fetch_and_save(client,"NARUTO: Shippuuden - Shippu! 'Konoha Gakuen Den")
 
         # One Piece
         await fetch_and_save(client, "ONE PIECE")
+        await fetch_and_save(client, "ONE PIECE STAMPEDE")
+        await fetch_and_save(client, "ONE PIECE: ROMANCE DAWN STORY")
+        await fetch_and_save(client, "ONE PIECE HEROINES")
+        await fetch_and_save(client, "ONE PIECE: Heart of Gold")
+        await fetch_and_save(client, "ONE PIECE FILM: Z")
+        await fetch_and_save(client, "ONE PIECE FILM: RED")
+        await fetch_and_save(client, "ONE PIECE THE MOVIE: Omatsuri Danshaku to Himitsu no Shima")
+        await fetch_and_save(client, "ONE PIECE FILM: STRONG WORLD")
+        await fetch_and_save(client, "ONE PIECE FILM: GOLD")
+        await fetch_and_save(client, "ONE PIECE THE MOVIE: Karakuri-jou no Mecha Kyohei")
+        await fetch_and_save(client, "ONE PIECE FAN LETTER")
 
         # JJK
-        await fetch_and_save(client, "Jujutsu Kaisen")
-        await fetch_and_save(client, "Jujutsu Kaisen 2nd Season")
-        await fetch_and_save(client, "Jujutsu Kaisen 0")
+        # await fetch_and_save(client, "Jujutsu Kaisen")
+        # await fetch_and_save(client, "Jujutsu Kaisen 2nd Season")
+        # await fetch_and_save(client, "Jujutsu Kaisen 0")
 
         # Demon Slayer
-        await fetch_and_save(client, "Kimetsu no Yaiba")
-        await fetch_and_save(client, "Kimetsu no Yaiba: Yuukaku-hen")
-        await fetch_and_save(client, "Kimetsu no Yaiba: Mugen Ressha-hen")
-        await fetch_and_save(client, "Kimetsu no Yaiba: Hashira Geiko-hen")
-        await fetch_and_save(client, "Kimetsu no Yaiba: Katanakaji no Sato-hen")
+        # await fetch_and_save(client, "Kimetsu no Yaiba")
+        # await fetch_and_save(client, "Kimetsu no Yaiba: Yuukaku-hen")
+        # await fetch_and_save(client, "Kimetsu no Yaiba: Mugen Ressha-hen")
+        # await fetch_and_save(client, "Kimetsu no Yaiba: Hashira Geiko-hen")
+        # await fetch_and_save(client, "Kimetsu no Yaiba: Katanakaji no Sato-hen")
 
         # Solo Leveling
-        await fetch_and_save(client, "Ore dake Level Up na Ken")
-        await fetch_and_save(
-            client,
-            "Ore dake Level Up na Ken: Season 2 - Arise from the Shadow"
-        )
+        # await fetch_and_save(client, "Ore dake Level Up na Ken")
+        # await fetch_and_save(
+        #     client,
+        #     "Ore dake Level Up na Ken: Season 2 - Arise from the Shadow"
+        # )
 
         # Chainsaw Man
-        await fetch_and_save(client, "Chainsaw Man")
+        # await fetch_and_save(client, "Chainsaw Man")
 
-        # One Punch Man
-        await fetch_and_save(client, "One Punch Man")
-        await fetch_and_save(client, "One Punch Man 2")
+        # # One Punch Man
+        # await fetch_and_save(client, "One Punch Man")
+        # await fetch_and_save(client, "One Punch Man 2")
 
-        # Frieren
-        await fetch_and_save(client, "Sousou no Frieren")
-        await fetch_and_save(client, "Sousou no Frieren 2nd Season")
+        # # Frieren
+        # await fetch_and_save(client, "Sousou no Frieren")
+        # await fetch_and_save(client, "Sousou no Frieren 2nd Season")
 
-        # Dragon Ball
-        await fetch_and_save(client, "Dragon Ball")
-        await fetch_and_save(client, "Dragon Ball Z")
-        await fetch_and_save(client, "Dragon Ball Super")
-        await fetch_and_save(client, "Dragon Ball GT")
-        await fetch_and_save(client, "Dragon Ball Kai")
-        await fetch_and_save(client, "Dragon Ball DAIMA")
+        # # Dragon Ball
+        # await fetch_and_save(client, "Dragon Ball")
+        # await fetch_and_save(client, "Dragon Ball Z")
+        # await fetch_and_save(client, "Dragon Ball Super")
+        # await fetch_and_save(client, "Dragon Ball GT")
+        # await fetch_and_save(client, "Dragon Ball Kai")
+        # await fetch_and_save(client, "Dragon Ball DAIMA")
 
-        # Death Note
-        await fetch_and_save(client, "DEATH NOTE")
+        # # Death Note
+        # await fetch_and_save(client, "DEATH NOTE")
 
-        # Dr Stone
-        await fetch_and_save(client, "Dr. STONE")
-        await fetch_and_save(client, "Dr. STONE: STONE WARS")
-        await fetch_and_save(client, "Dr. STONE: Ryuusui")
+        # # Dr Stone
+        # await fetch_and_save(client, "Dr. STONE")
+        # await fetch_and_save(client, "Dr. STONE: STONE WARS")
+        # await fetch_and_save(client, "Dr. STONE: Ryuusui")
         # await fetch_and_save(client, "Dr. STONE: NEW WORLD")
         # await fetch_and_save(client, "Dr. STONE: NEW WORLD Part 2")
         # await fetch_and_save(client, "Dr. STONE: SCIENCE FUTURE")

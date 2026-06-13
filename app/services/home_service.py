@@ -4,6 +4,8 @@ from app.repositories.home_repository import (
     get_today_manga_anniversaries
 )
 
+from app.services.news_service import fetch_latest_news
+
 
 async def fetch_home_today():
 
@@ -19,6 +21,10 @@ async def fetch_home_today():
         get_today_manga_anniversaries()
     )
 
+    latest_news = await (
+        fetch_latest_news(limit=5)
+    )
+
     return {
 
         "birthdays":
@@ -30,5 +36,8 @@ async def fetch_home_today():
         "manga_anniversaries":
             manga_anniversaries,
 
-        "special_events": []
+        "special_events": [],
+
+        "latest_news":
+            latest_news
     }

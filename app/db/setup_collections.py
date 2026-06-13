@@ -7,7 +7,8 @@ COLLECTIONS = [
     "chapters",
     "anime",
     "episodes",
-    "voice_actors"
+    "voice_actors",
+    "news"
 ]
 
 async def create_collections():

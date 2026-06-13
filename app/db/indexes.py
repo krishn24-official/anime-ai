@@ -25,4 +25,9 @@ async def create_indexes():
     # voice actors
     await db.voice_actors.create_index("name")
 
+    # news
+    await db.news.create_index("url", unique=True)
+    await db.news.create_index("category")
+    await db.news.create_index("published_at")
+
     print("⚡ Indexes created")

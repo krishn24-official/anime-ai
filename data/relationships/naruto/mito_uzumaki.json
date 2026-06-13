@@ -37,5 +37,25 @@
   "deleted_at": null,
 
   "inverse_of": "rel_tsunade_mito_granddaughter"
+},
+
+{
+  "_id": "rel_mito_tobirama_sister_in_law",
+
+  "source_id": "char_mito_uzumaki",
+
+  "target_id": "char_tobirama_senju",
+
+  "relationship": "sister_in_law",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_tobirama_mito_brother_in_law"
 }
 ]
