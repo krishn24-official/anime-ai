@@ -8,7 +8,13 @@ COLLECTIONS = [
     "anime",
     "episodes",
     "voice_actors",
-    "news"
+    "news",
+    "users",
+    "movies",
+    "tv_series",
+    "ratings",
+    "watchlist",
+    "comments",
 ]
 
 async def create_collections():

@@ -40,6 +40,22 @@ from app.api.routes.news import (
     router as news_router
 )
 
+from app.api.routes.auth import (
+    router as auth_router
+)
+
+from app.api.routes.movies import (
+    router as movies_router
+)
+
+from app.api.routes.tv_series import (
+    router as tv_series_router
+)
+
+from app.api.routes.content import (
+    router as content_router
+)
+
 api_router = APIRouter()
 
 api_router.include_router(
@@ -80,4 +96,20 @@ api_router.include_router(
 
 api_router.include_router(
     news_router
+)
+
+api_router.include_router(
+    auth_router
+)
+
+api_router.include_router(
+    movies_router
+)
+
+api_router.include_router(
+    tv_series_router
+)
+
+api_router.include_router(
+    content_router
 )

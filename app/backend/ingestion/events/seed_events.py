@@ -14,15 +14,26 @@ EVENTS_DIR = Path(
 )
 
 
+def get_event_files(dir_path: Path):
+    return list(dir_path.glob("*.json"))
+
+
+def load_json_file(file_path: Path):
+    with open(
+        file_path,
+        "r",
+        encoding="utf-8"
+    ) as f:
+        return json.load(f)
+
+
 async def seed_events():
 
     await connect_db()
 
     db = get_db()
 
-    event_files = (
-        EVENTS_DIR.glob("*.json")
-    )
+    event_files = await asyncio.to_thread(get_event_files, EVENTS_DIR)
 
     total = 0
 
@@ -32,13 +43,7 @@ async def seed_events():
             f"\n📂 Reading: {file_path}"
         )
 
-        with open(
-            file_path,
-            "r",
-            encoding="utf-8"
-        ) as f:
-
-            events = json.load(f)
+        events = await asyncio.to_thread(load_json_file, file_path)
 
         for event in events:
 
@@ -67,4 +72,4 @@ if __name__ == "__main__":
 
     asyncio.run(
         seed_events()
-    )
+    )
