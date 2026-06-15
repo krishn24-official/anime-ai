@@ -93,3 +93,62 @@ async def search_manga(
         .limit(10)
         .to_list(None)
     )
+
+
+async def search_movies(
+    query: str
+):
+
+    db = get_db()
+
+    return await (
+        db["movies"]
+        .find(
+            {
+                "title": {
+                    "$regex": query,
+                    "$options": "i"
+                },
+                "is_deleted": {"$ne": True}
+            },
+            {
+                "_id": 1,
+                "title": 1,
+                "year": 1,
+                "images": 1,
+                "genres": 1,
+            }
+        )
+        .limit(10)
+        .to_list(None)
+    )
+
+
+async def search_tv_series(
+    query: str
+):
+
+    db = get_db()
+
+    return await (
+        db["tv_series"]
+        .find(
+            {
+                "title": {
+                    "$regex": query,
+                    "$options": "i"
+                },
+                "is_deleted": {"$ne": True}
+            },
+            {
+                "_id": 1,
+                "title": 1,
+                "year": 1,
+                "images": 1,
+                "genres": 1,
+                "total_seasons": 1,
+            }
+        )
+        .limit(10)
+        .to_list(None)
+    )
