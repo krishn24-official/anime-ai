@@ -1,0 +1,41 @@
+[
+    {
+  "_id": "rel_dragon_garp_son",
+
+  "source_id": "char_dragon",
+
+  "target_id": "char_garp",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_garp_dragon_father"
+},
+
+{
+  "_id": "rel_dragon_luffy_father",
+
+  "source_id": "char_dragon",
+
+  "target_id": "char_luffy_monkey",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_luffy_dragon_son"
+}
+]

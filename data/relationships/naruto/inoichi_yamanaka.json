@@ -1,1 +1,41 @@
-[]
+[
+    {
+  "_id": "rel_inoichi_ino_father",
+
+  "source_id": "char_inoichi_yamanaka",
+
+  "target_id": "char_ino_yamanaka",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_ino_inoichi_daughter"
+},
+
+{
+  "_id": "rel_inoichi_sai_father_in_law",
+
+  "source_id": "char_inoichi_yamanaka",
+
+  "target_id": "char_sai",
+
+  "relationship": "father_in_law",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sai_inoichi_son_in_law"
+}
+]

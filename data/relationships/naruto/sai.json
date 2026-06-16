@@ -17,6 +17,86 @@
   "deleted_at": null,
 
   "inverse_of": "rel_naruto_sai_teammate"
+},
+
+{
+  "_id": "rel_sai_ino_husband",
+
+  "source_id": "char_sai",
+
+  "target_id": "char_ino_yamanaka",
+
+  "relationship": "husband",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_ino_sai_wife"
+},
+
+{
+  "_id": "rel_sai_sakura_teammate",
+
+  "source_id": "char_sai",
+
+  "target_id": "char_sakura_haruno",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sakura_sai_teammate"
+},
+
+{
+  "_id": "rel_sai_inojin_father",
+
+  "source_id": "char_sai",
+
+  "target_id": "char_inojin_yamanaka",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_inojin_sai_son"
+},
+
+{
+  "_id": "rel_sai_inoichi_son_in_law",
+
+  "source_id": "char_sai",
+
+  "target_id": "char_inoichi_yamanaka",
+
+  "relationship": "son_in_law",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_inoichi_sai_father_in_law"
 }
 
 ]

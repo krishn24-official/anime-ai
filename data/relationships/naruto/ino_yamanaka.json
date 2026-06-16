@@ -197,6 +197,66 @@
   "deleted_at": null,
 
   "inverse_of": "rel_chouji_ino_teammate"
+},
+
+{
+  "_id": "rel_ino_sai_wife",
+
+  "source_id": "char_ino_yamanaka",
+
+  "target_id": "char_sai",
+
+  "relationship": "wife",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sai_ino_husband"
+},
+
+{
+  "_id": "rel_ino_inojin_mother",
+
+  "source_id": "char_ino_yamanaka",
+
+  "target_id": "char_inojin_yamanaka",
+
+  "relationship": "mother",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_inojin_ino_son"
+},
+
+{
+  "_id": "rel_ino_inoichi_daughter",
+
+  "source_id": "char_ino_yamanaka",
+
+  "target_id": "char_inoichi_yamanaka",
+
+  "relationship": "daughter",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_inoichi_ino_father"
 }
 
 

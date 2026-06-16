@@ -1,0 +1,41 @@
+[
+    {
+  "_id": "rel_inojin_ino_son",
+
+  "source_id": "char_inojin_yamanaka",
+
+  "target_id": "char_ino_yamanaka",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_ino_inojin_mother"
+},
+
+{
+  "_id": "rel_inojin_sai_son",
+
+  "source_id": "char_inojin_yamanaka",
+
+  "target_id": "char_sai",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sai_inojin_father"
+}
+]

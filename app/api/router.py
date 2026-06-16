@@ -56,6 +56,10 @@ from app.api.routes.content import (
     router as content_router
 )
 
+from app.api.routes.agent import (
+    router as agent_router
+)
+
 api_router = APIRouter()
 
 api_router.include_router(
@@ -112,4 +116,8 @@ api_router.include_router(
 
 api_router.include_router(
     content_router
+)
+
+api_router.include_router(
+    agent_router
 )

@@ -356,6 +356,26 @@
   "deleted_at": null,
 
   "inverse_of": "rel_kizashi_sakura_father"
+},
+
+{
+  "_id": "rel_sakura_sai_teammate",
+
+  "source_id": "char_sakura_haruno",
+
+  "target_id": "char_sai",
+
+  "relationship": "teammate",
+
+  "type": "team",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_sai_sakura_teammate"
 }
 
 ]

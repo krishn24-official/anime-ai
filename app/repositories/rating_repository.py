@@ -72,3 +72,56 @@ async def delete_rating(user_id, content_type: str, content_id):
         "content_type": content_type,
         "content_id": content_id,
     })
+
+
+async def get_top_rated(content_type: str | None = None, limit: int = 10):
+    """Aggregate top-rated content by average weight, optionally filtered by type."""
+    db = get_db()
+
+    match = {}
+    if content_type:
+        match["content_type"] = content_type
+
+    pipeline = [
+        *([ {"$match": match} ] if match else []),
+        {"$group": {
+            "_id": {
+                "content_type": "$content_type",
+                "content_id": "$content_id",
+            },
+            "average_weight": {"$avg": "$rating_weight"},
+            "count": {"$sum": 1},
+            # most common rating label for display
+            "top_rating": {"$max": "$rating"},
+        }},
+        {"$sort": {"average_weight": -1, "count": -1}},
+        {"$limit": limit},
+    ]
+
+    results = await db["ratings"].aggregate(pipeline).to_list(None)
+    return results
+
+
+async def get_watchlist_counts(content_type: str | None = None, limit: int = 10):
+    """Aggregate most-watchlisted content."""
+    db = get_db()
+
+    match = {}
+    if content_type:
+        match["content_type"] = content_type
+
+    pipeline = [
+        *([ {"$match": match} ] if match else []),
+        {"$group": {
+            "_id": {
+                "content_type": "$content_type",
+                "content_id": "$content_id",
+            },
+            "count": {"$sum": 1},
+        }},
+        {"$sort": {"count": -1}},
+        {"$limit": limit},
+    ]
+
+    results = await db["watchlist"].aggregate(pipeline).to_list(None)
+    return results

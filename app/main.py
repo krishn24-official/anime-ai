@@ -9,8 +9,17 @@ from app.api.router import (
 )
 from app.services.news_scheduler import start_news_scheduler, stop_news_scheduler
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(
     api_router

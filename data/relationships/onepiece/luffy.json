@@ -17,5 +17,25 @@
   "deleted_at": null,
 
   "inverse_of": "rel_garp_luffy_grandfather"
+},
+
+{
+  "_id": "rel_luffy_dragon_son",
+
+  "source_id": "char_luffy_monkey",
+
+  "target_id": "char_dragon",
+
+  "relationship": "son",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_dragon_luffy_father"
 }
 ]
