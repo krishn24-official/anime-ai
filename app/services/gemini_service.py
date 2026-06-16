@@ -131,6 +131,43 @@ async def ask_gemini_with_context(question: str, character_context: dict):
         return None
 
 
+IMAGE_SYSTEM_PROMPT = (
+    "You are an anime knowledge assistant. Analyze the provided image and answer "
+    "the user's question about it. Identify the character, anime, and provide "
+    "interesting context."
+)
+
+
+async def identify_image(message: str, image_base64: str, image_media_type: str | None = None) -> str | None:
+    """
+    Returns the image analysis from Gemini, or None if limits or keys prevent it.
+    """
+    if not GEMINI_API_KEY:
+        return None
+
+    if not _can_call_gemini():
+        return None
+
+    import base64
+    try:
+        image_bytes = base64.b64decode(image_base64)
+        image_part = {
+            "mime_type": image_media_type or "image/jpeg",
+            "data": image_bytes
+        }
+
+        model = genai.GenerativeModel(
+            model_name=MODEL_NAME,
+            system_instruction=IMAGE_SYSTEM_PROMPT
+        )
+        prompt = message or "Identify this anime character and describe them."
+        response = await model.generate_content_async([prompt, image_part])
+        return response.text.strip()
+    except Exception as e:
+        print(f"[gemini_service] image identify error: {e}")
+        return None
+
+
 NEWS_SYSTEM_PROMPT = (
     "You are a news editor for an entertainment app covering Anime, Games, "
     "Movies, and TV Series. For each article given (title + optional "

@@ -20,7 +20,8 @@ from app.services.chat_context_service import (
 )
 
 from app.services.gemini_service import (
-    ask_gemini_with_context
+    ask_gemini_with_context,
+    identify_image
 )
 
 
@@ -283,8 +284,15 @@ def detect_intent(message: str):
 
 
 async def process_chat_message(
-    message: str
+    message: str,
+    image_base64: str | None = None,
+    image_media_type: str | None = None
 ):
+    if image_base64:
+        result = await identify_image(message, image_base64, image_media_type)
+        if result:
+            return {"answer": result}
+        return {"answer": "Failed to analyze the image or Gemini API limit reached / not configured."}
 
     # --- Two-character relationship questions ---
     two_char = extract_two_character_query(message)

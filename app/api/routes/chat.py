@@ -19,6 +19,8 @@ async def chat(
 
     return await (
         process_chat_message(
-            payload.message
+            payload.message,
+            payload.image_base64,
+            payload.image_media_type
         )
     )
