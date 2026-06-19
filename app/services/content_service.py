@@ -138,10 +138,14 @@ def _serialize_comment(comment: dict) -> dict:
     return {
         "id": str(comment["_id"]),
         "user_id": str(comment["user_id"]),
+        "display_name": comment.get("display_name"),    # enriched by caller
+        "username": comment.get("username"),            # enriched by caller
         "content_type": comment["content_type"],
         "content_id": comment["content_id"],
         "text": comment["text"],
         "parent_id": str(comment["parent_id"]) if comment.get("parent_id") else None,
+        "is_public": comment.get("is_public", True),
+        "likes": comment.get("likes", 0),
         "created_at": comment["created_at"],
     }
 
@@ -191,6 +195,24 @@ async def fetch_comments(content_type: str, content_id: str):
     content_id = _validate(content_type, content_id)
 
     comments = await get_comments_for_content(content_type, content_id)
+
+    if not comments:
+        return []
+
+    # Batch fetch user display names
+    db = get_db()
+    user_ids = list({c["user_id"] for c in comments if c.get("user_id")})
+    users = await db["users"].find(
+        {"_id": {"$in": user_ids}},
+        {"_id": 1, "display_name": 1, "username": 1}
+    ).to_list(None)
+    user_map = {u["_id"]: u for u in users}
+
+    # Enrich comments with user info
+    for comment in comments:
+        user = user_map.get(comment.get("user_id"), {})
+        comment["display_name"] = user.get("display_name")
+        comment["username"] = user.get("username")
 
     return _build_comment_tree(comments)
 

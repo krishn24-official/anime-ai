@@ -10,11 +10,13 @@ COLLECTIONS = [
     "voice_actors",
     "news",
     "users",
+    "refresh_tokens",
     "movies",
     "tv_series",
     "ratings",
     "watchlist",
     "comments",
+    "tier_lists",
 ]
 
 async def create_collections():

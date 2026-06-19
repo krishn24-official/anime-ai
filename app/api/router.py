@@ -60,6 +60,14 @@ from app.api.routes.agent import (
     router as agent_router
 )
 
+from app.api.routes.game import (
+    router as game_router
+)
+
+from app.api.routes.tier_list import (
+    router as tier_list_router
+)
+
 api_router = APIRouter()
 
 api_router.include_router(
@@ -120,4 +128,12 @@ api_router.include_router(
 
 api_router.include_router(
     agent_router
+)
+
+api_router.include_router(
+    game_router
+)
+
+api_router.include_router(
+    tier_list_router
 )

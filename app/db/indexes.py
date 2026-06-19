@@ -32,6 +32,19 @@ async def create_indexes():
 
     # users
     await db.users.create_index("email", unique=True)
+    try:
+        await db.users.drop_index("username_1")
+    except Exception:
+        pass
+    await db.users.create_index("username", unique=True, sparse=True)
+
+    # refresh tokens
+    await db.refresh_tokens.create_index("token", unique=True)
+    await db.refresh_tokens.create_index("user_id")
+    await db.refresh_tokens.create_index(
+        "expires_at",
+        expireAfterSeconds=0   # MongoDB TTL index — auto-deletes expired tokens
+    )
 
     # ratings
     await db.ratings.create_index(
@@ -53,5 +66,10 @@ async def create_indexes():
     # movies / tv_series
     await db.movies.create_index("title")
     await db.tv_series.create_index("title")
+
+    # tier lists
+    await db.tier_lists.create_index("user_id")
+    await db.tier_lists.create_index("is_public")
+    await db.tier_lists.create_index([("is_public", 1), ("updated_at", -1)])
 
     print("⚡ Indexes created")

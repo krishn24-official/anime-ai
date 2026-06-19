@@ -10,6 +10,7 @@ from app.db.mongo import (
 from app.backend.transformers.character_transformer import (
     transform_character
 )
+from app.services.game_property_extractor import extract_game_properties
 
 
 ANILIST_URL = "https://graphql.anilist.co"
@@ -182,6 +183,23 @@ async def fetch_and_save(
     )
 
     print(f"  ✅ Saved: {formatted_character['_id']}")
+
+    # Auto-extract game properties if character has a description
+    description = formatted_character.get("description")
+    if description and not existing:
+        print(f"  🎮 Extracting game properties...")
+        game_properties = await extract_game_properties(
+            character_name=formatted_character["name"],
+            description=description,
+            gender=formatted_character.get("gender"),
+            anime_ids=formatted_character.get("anime_ids", []),
+        )
+        if game_properties:
+            await character_collection.update_one(
+                {"_id": formatted_character["_id"]},
+                {"$set": {"game_properties": game_properties}}
+            )
+            print(f"  🎮 Properties: {game_properties}")
 
 
 async def main():

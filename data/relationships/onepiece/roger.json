@@ -1,0 +1,21 @@
+[
+    {
+  "_id": "rel_roger_ace_father",
+
+  "source_id": "char_roger_gold",
+
+  "target_id": "char_ace_portgas",
+
+  "relationship": "father",
+
+  "type": "family",
+
+  "context": null,
+
+  "is_deleted": false,
+
+  "deleted_at": null,
+
+  "inverse_of": "rel_ace_roger_son"
+}
+]

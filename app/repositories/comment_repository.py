@@ -14,6 +14,8 @@ async def create_comment(user_id, content_type: str, content_id, text: str, pare
         "content_id": content_id,
         "text": text,
         "parent_id": parent_id,
+        "is_public": True,     # all comments are public by default
+        "likes": 0,
         "created_at": datetime.now(timezone.utc),
     }
 
@@ -23,11 +25,16 @@ async def create_comment(user_id, content_type: str, content_id, text: str, pare
 
 
 async def get_comments_for_content(content_type: str, content_id):
+    """Get all public comments for a content item."""
     db = get_db()
 
     return await (
         db["comments"]
-        .find({"content_type": content_type, "content_id": content_id})
+        .find({
+            "content_type": content_type,
+            "content_id": content_id,
+            "is_public": True,
+        })
         .sort("created_at", 1)
         .to_list(None)
     )
