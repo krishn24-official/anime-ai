@@ -2,7 +2,7 @@ import re
 import feedparser
 import httpx
 
-from app.services.news_date_utils import parse_published_entry
+from app.services.news_date_utils import parse_published_entry, extract_image_url
 
 
 def clean_description(text: str) -> str:
@@ -32,12 +32,15 @@ async def fetch_animecorner_news():
         elif hasattr(entry, "content") and entry.content:
             description = clean_description(entry.content[0].get("value", ""))
 
+        image_url = extract_image_url(entry)
+
         articles.append({
             "title": entry.title,
             "url": entry.link,
             "source": "animecorner",
             "description": description,
-            "published_at": published_at
+            "published_at": published_at,
+            "image_url": image_url
         })
 
     print("📰 AnimeCorner:", len(articles))

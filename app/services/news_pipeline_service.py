@@ -1,13 +1,13 @@
 import asyncio
 import time
+import re
+import httpx
 
 from app.backend.ingestion.news.sources.animecorner import fetch_animecorner_news
 from app.backend.ingestion.news.sources.animenewsnetwork import fetch_ann_news
 from app.backend.ingestion.news.sources.crunchyroll import fetch_crunchyroll_news
 from app.backend.ingestion.news.sources.mal_news import fetch_mal_news
 from app.backend.ingestion.news.sources.boxoffice import fetch_boxoffice_news
-from app.backend.ingestion.news.sources.screenrant import fetch_screenrant_news
-from app.backend.ingestion.news.sources.studio_press import fetch_studio_press
 from app.backend.ingestion.news.sources.youtube_rss import fetch_youtube_news
 
 from app.services.news_category_mapping import get_mapped_category, make_fallback_summary
@@ -22,10 +22,53 @@ SOURCES = [
     fetch_crunchyroll_news,
     fetch_mal_news,
     fetch_boxoffice_news,
-    fetch_screenrant_news,
-    fetch_studio_press,
     fetch_youtube_news,
 ]
+
+
+async def fetch_full_article_content(url: str) -> str | None:
+    """Fetch and extract the main text content of an article from its webpage."""
+    if not url:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=6.0) as client:
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+            r = await client.get(url, headers=headers, follow_redirects=True)
+            if r.status_code == 200:
+                html = r.text
+                paragraphs = re.findall(r"<p[^>]*>(.*?)</p>", html, re.DOTALL)
+                text_list = []
+                for p in paragraphs:
+                    p_clean = re.sub(r"<[^>]+>", "", p).strip()
+                    # Decode HTML entities
+                    p_clean = (p_clean
+                               .replace("&nbsp;", " ")
+                               .replace("&amp;", "&")
+                               .replace("&lt;", "<")
+                               .replace("&gt;", ">")
+                               .replace("&#8217;", "'")
+                               .replace("&#8216;", "'")
+                               .replace("&#8220;", '"')
+                               .replace("&#8221;", '"')
+                               .replace("&#8212;", "—")
+                               .replace("&mdash;", "—")
+                               .replace("&ndash;", "–")
+                               .replace("&#038;", "&")
+                               .replace("&#39;", "'"))
+                    
+                    # Filter out scripts, ads, menus, and very short lines
+                    if "{" in p_clean or "}" in p_clean or "function" in p_clean or "gpt-" in p_clean or "pmcCnx" in p_clean or "blogherads" in p_clean:
+                        continue
+                        
+                    if len(p_clean) > 50 and not any(kw in p_clean.lower() for kw in ["cookie", "subscribe", "newsletter", "follow us", "privacy policy", "terms of service"]):
+                        text_list.append(p_clean)
+                
+                # Combine paragraphs
+                full_text = "\n\n".join(text_list[:12])
+                return full_text if full_text.strip() else None
+    except Exception as e:
+        print(f"[news_pipeline] Failed to fetch full article content for {url}: {e}")
+    return None
 
 
 async def _fetch_all_sources():
@@ -92,6 +135,12 @@ async def run_news_pipeline():
         if not mapped_category:
             skipped_unmapped += 1
             continue
+
+        # If it's a website article, fetch full content
+        if article.get("source") != "youtube":
+            full_content = await fetch_full_article_content(url)
+            if full_content:
+                article["description"] = full_content
 
         article["category"] = mapped_category
         article["summary"] = make_fallback_summary(article)

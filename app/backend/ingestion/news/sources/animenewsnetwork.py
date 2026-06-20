@@ -3,7 +3,7 @@ import time
 import feedparser
 import httpx
 
-from app.services.news_date_utils import parse_published_entry
+from app.services.news_date_utils import parse_published_entry, extract_image_url
 
 
 def clean_description(text: str) -> str:
@@ -33,12 +33,15 @@ async def fetch_ann_news():
             if hasattr(entry, "summary"):
                 description = clean_description(entry.summary)
 
+            image_url = extract_image_url(entry)
+
             articles.append({
                 "title": entry.title,
                 "url": entry.link,
                 "source": "animenewsnetwork",
                 "description": description,
-                "published_at": published_at
+                "published_at": published_at,
+                "image_url": image_url
             })
 
     print("📰 ANN:", len(articles))

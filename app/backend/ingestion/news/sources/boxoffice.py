@@ -1,7 +1,7 @@
 import feedparser
 import httpx
 
-from app.services.news_date_utils import parse_published_entry
+from app.services.news_date_utils import parse_published_entry, extract_image_url
 
 BOXOFFICE_RSS = "https://deadline.com/feed/"
 
@@ -20,11 +20,14 @@ async def fetch_boxoffice_news():
             if not published_at:
                 continue
 
+            image_url = extract_image_url(entry)
+
             articles.append({
                 "title": entry.title,
                 "url": entry.link,
                 "source": "boxoffice",
-                "published_at": published_at
+                "published_at": published_at,
+                "image_url": image_url
             })
 
     except Exception as e:

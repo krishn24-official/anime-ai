@@ -9,32 +9,57 @@ SOURCE_CATEGORY_MAP = {
     "myanimelist": "Anime",
 
     "boxoffice": "Movies",
-    "screenrant": "Movies",
-    "entertainment_news": "Movies",
 }
 
 # YouTube channel name -> category. Channels not listed here are
 # unmapped and will be skipped by the pipeline (skipped_unmapped) until
 # added here.
 YOUTUBE_CHANNEL_CATEGORY_MAP = {
+    # 🎮 Games
     "IGN": "Games",
     "GameSpot": "Games",
     "PlayStation": "Games",
     "Xbox": "Games",
     "Nintendo": "Games",
+    "Eurogamer": "Games",
+    "PC Gamer": "Games",
+    "Bandai Namco": "Games",
+    "Ubisoft": "Games",
+    "Square Enix": "Games",
+    "Capcom": "Games",
+    "Epic Games": "Games",
+    "SEGA": "Games",
 
+    # 📚 Anime
     "Shonen Jump": "Anime",
+    "Kodansha": "Anime",
+    "VIZ Media": "Anime",
     "Aniplex USA": "Anime",
     "Toei Animation": "Anime",
     "Crunchyroll": "Anime",
+    "Netflix Anime": "Anime",
+    "Muse Asia": "Anime",
+    "Ani-One Asia": "Anime",
 
-    # Netflix/Marvel/DC post a mix of movie and TV-series content;
-    # default to "Movies" for now. Split into separate categories
-    # (e.g. "Marvel", "Netflix") later if desired -- just update this
-    # map and VALID_CATEGORIES in news_repository.py.
+    # 🎬 Movies
     "Netflix": "Movies",
+    "Prime Video": "Movies",
+    "Disney+": "Movies",
+    "Apple TV+": "Movies",
+    "HBO": "Movies",
     "Marvel": "Movies",
     "DC": "Movies",
+    "Warner Bros": "Movies",
+    "Sony Pictures": "Movies",
+    "Universal Pictures": "Movies",
+    "Paramount Pictures": "Movies",
+    "Lionsgate": "Movies",
+    "20th Century Studios": "Movies",
+    "A24": "Movies",
+    "Rotten Tomatoes Trailers": "Movies",
+    "T-Series": "Movies",
+    "Yash Raj Films": "Movies",
+    "Hombale Films": "Movies",
 }
 
 
