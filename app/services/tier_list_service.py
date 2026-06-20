@@ -174,7 +174,16 @@ async def search_content_for_tier_list(query: str, content_type: str | None = No
         # Use title or name field depending on collection
         name_field = "name" if ctype in ("character", "manga") else "title"
 
-        if ctype == "anime":
+        if ctype == "character":
+            query_filter = {
+                "$or": [
+                    {"name": {"$regex": query, "$options": "i"}},
+                    {"anime": {"$regex": query, "$options": "i"}},
+                    {"manga": {"$regex": query, "$options": "i"}},
+                ]
+            }
+            projection = {"_id": 1, "name": 1, "images": 1}
+        elif ctype == "anime":
             query_filter = {
                 "$or": [
                     {"title.english": {"$regex": query, "$options": "i"}},

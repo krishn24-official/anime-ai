@@ -6,16 +6,16 @@ scheduler = AsyncIOScheduler()
 
 
 def start_news_scheduler():
-    # Run every 30 minutes. Categorization is fully source/channel-mapped,
+    # Run every 5 minutes. Categorization is fully source/channel-mapped,
     # no AI calls involved.
     scheduler.add_job(
         run_news_pipeline,
         "interval",
-        minutes=30,
+        minutes=5,
         id="news_pipeline",
     )
     scheduler.start()
-    print("🕒 News pipeline scheduler started (every 30 min)")
+    print("🕒 News pipeline scheduler started (every 5 min)")
 
 
 def stop_news_scheduler():
