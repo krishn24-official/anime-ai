@@ -21,55 +21,68 @@ from app.services.chat_context_service import (
 
 from app.services.gemini_service import (
     ask_gemini_with_context,
-    identify_image
+    identify_image,
 )
 
 
-# Map of intent keywords -> (relationship name, type)
-# These are looked up via get_relationships_by_target:
-# i.e. "X's father" = relationship where target_id=X, relationship="father"
+# Map of intent keywords -> relationship name(s) to query.
+# sensei/teacher/mentor map to DIFFERENT relationship words in the DB
+# (see relationship_inverse_map.py), so each keyword queries its own
+# word specifically. "mentor" as a keyword queries all three since it's
+# often used generically by users.
 TARGET_RELATIONSHIP_INTENTS = {
-    "father": "father",
-    "dad": "father",
-    "mother": "mother",
-    "mom": "mother",
-    "sensei": "mentor",
-    "teacher": "mentor",
-    "mentor": "mentor",
-    "wife": "wife",
-    "husband": "husband",
-    "son": "son",
-    "daughter": "daughter",
-    "brother": "brother",
-    "sister": "sister",
-    "grandfather": "grandfather",
-    "grandmother": "grandmother",
-    "grandson": "grandson",
-    "granddaughter": "granddaughter",
-    "uncle": "uncle",
-    "aunt": "aunt",
-    "nephew": "nephew",
-    "niece": "niece",
-    "cousin": "cousin",
-    "crush": "crush",
-    "classmate": "classmate",
-    "teammate": "teammate",
+    "father": ["father"],
+    "dad": ["father"],
+    "mother": ["mother"],
+    "mom": ["mother"],
+    "sensei": ["sensei"],
+    "teacher": ["teacher"],
+    "mentor": ["sensei", "teacher", "mentor"],   # generic -> check all 3
+    "wife": ["wife"],
+    "husband": ["husband"],
+    "son": ["son"],
+    "daughter": ["daughter"],
+    "brother": ["brother"],
+    "sister": ["sister"],
+    "grandfather": ["grandfather"],
+    "grandmother": ["grandmother"],
+    "grandson": ["grandson"],
+    "granddaughter": ["granddaughter"],
+    "uncle": ["uncle"],
+    "aunt": ["aunt"],
+    "nephew": ["nephew"],
+    "niece": ["niece"],
+    "cousin": ["cousin"],
+    "crush": ["crush"],
+    "classmate": ["classmate"],
+    "teammate": ["teammate"],
+
+    # In-laws
+    "father_in_law": ["father_in_law"],
+    "mother_in_law": ["mother_in_law"],
+    "son_in_law": ["son_in_law"],
+    "daughter_in_law": ["daughter_in_law"],
+    "brother_in_law": ["brother_in_law"],
+    "sister_in_law": ["sister_in_law"],
+    "uncle_in_law": ["uncle_in_law"],
+    "aunt_in_law": ["aunt_in_law"],
+    "nephew_in_law": ["nephew_in_law"],
+    "niece_in_law": ["niece_in_law"],
+
+    # Step-family
+    "stepfather": ["stepfather"],
+    "stepmother": ["stepmother"],
+    "stepson": ["stepson"],
+    "stepdaughter": ["stepdaughter"],
+    "stepbrother": ["stepbrother"],
+    "stepsister": ["stepsister"],
 }
 
 
 def extract_character_query(message: str) -> str:
-    """
-    Pulls the likely character name out of a question like
-    "who is naruto's father" -> "naruto"
-    or "naruto's father" -> "naruto"
-    """
-
     text = message.lower().strip()
-
-    # normalize curly apostrophes to straight ones
     text = text.replace("\u2019", "'").replace("\u2018", "'")
 
-    # remove leading question phrases
     text = re.sub(
         r"^(who is|who's|whos|what is|whats|tell me about)\s+",
         "",
@@ -78,7 +91,6 @@ def extract_character_query(message: str) -> str:
 
     text = text.strip("? ").strip()
 
-    # "<relation> of <name>" -> <name>  e.g. "sister of naruto" -> "naruto"
     match = re.match(
         r"^(father|dad|mother|mom|sensei|teacher|mentor|wife|husband|"
         r"son|daughter|brother|sister|grandfather|grandmother|"
@@ -90,7 +102,6 @@ def extract_character_query(message: str) -> str:
     if match:
         return match.group(2).strip()
 
-    # "does X have a/an <relation>" -> X
     match = re.match(
         r"^does\s+(.+?)\s+have\s+(?:a|an)?\s*\w+$",
         text
@@ -99,7 +110,6 @@ def extract_character_query(message: str) -> str:
     if match:
         return match.group(1).strip()
 
-    # "does X have <relation>" (plural, no article) -> X
     match = re.match(
         r"^does\s+(.+?)\s+have\s+\w+$",
         text
@@ -108,12 +118,9 @@ def extract_character_query(message: str) -> str:
     if match:
         return match.group(1).strip()
 
-    # remove possessive + trailing relation word(s)
-    # e.g. "naruto's father" -> "naruto"
     if "'s" in text:
         text = text.split("'s")[0]
     else:
-        # fallback: try to drop a trailing known relation word
         for word in (
             "father", "dad", "mother", "mom", "sensei", "teacher",
             "mentor", "wife", "husband", "son", "daughter",
@@ -132,21 +139,10 @@ def extract_character_query(message: str) -> str:
 
 
 def extract_two_character_query(message: str):
-    """
-    Detects two-character questions and returns (name_a, name_b) or None.
-
-    Handles patterns like:
-      "are naruto and sasuke friends?"
-      "what is the relationship between naruto and sasuke"
-      "relationship between naruto and sasuke?"
-      "is naruto sasuke's rival?"
-    """
-
     text = message.lower().strip()
     text = text.replace("\u2019", "'").replace("\u2018", "'")
     text = text.strip("? ").strip()
 
-    # "relationship between X and Y"
     match = re.search(
         r"relationship between\s+(.+?)\s+and\s+(.+)$",
         text
@@ -155,7 +151,6 @@ def extract_two_character_query(message: str):
     if match:
         return match.group(1).strip(), match.group(2).strip()
 
-    # "are X and Y <something>" / "is X and Y <something>"
     match = re.search(
         r"^(?:are|is)\s+(.+?)\s+and\s+(.+?)\s+\w+$",
         text
@@ -164,7 +159,6 @@ def extract_two_character_query(message: str):
     if match:
         return match.group(1).strip(), match.group(2).strip()
 
-    # "is X Y's <relation>" e.g. "is naruto sasuke's rival"
     match = re.search(
         r"^is\s+(.+?)\s+(.+?)'s\s+\w+$",
         text
@@ -174,25 +168,6 @@ def extract_two_character_query(message: str):
         return match.group(1).strip(), match.group(2).strip()
 
     return None
-
-
-TWO_CHAR_RELATION_LABELS = {
-    "father": "child of",
-    "mother": "child of",
-    "son": "parent of",
-    "daughter": "parent of",
-    "brother": "sibling of",
-    "sister": "sibling of",
-    "wife": "spouse of",
-    "husband": "spouse of",
-    "mentor": "student of",
-    "rival": "rival of",
-    "crush": "has a crush on",
-    "teammate": "teammate of",
-    "classmate": "classmate of",
-    "friend": "friend of",
-    "best_friend": "best friend of",
-}
 
 
 SYMMETRIC_RELATIONS = {
@@ -210,7 +185,6 @@ async def describe_relationship_between(char_a, char_b):
     )
 
     if not relationships:
-
         return {
             "answer":
             f"I couldn't find any known relationship between "
@@ -251,26 +225,23 @@ async def describe_relationship_between(char_a, char_b):
         "answer": ". ".join(sentences) + "."
     }
 
-    message = message.lower()
-
-    for keyword in TARGET_RELATIONSHIP_INTENTS:
-        if keyword in message:
-            return keyword
-
-    if "family" in message:
-        return "family"
-
-    if "team" in message:
-        return "team"
-
-    return "unknown"
-
 
 def detect_intent(message: str):
 
     message = message.lower()
 
-    for keyword in TARGET_RELATIONSHIP_INTENTS:
+    # Normalize natural phrasing of in-law/step relations to match our
+    # underscore-joined keys, e.g. "father-in-law" / "father in law" -> "father_in_law"
+    message = re.sub(
+        r"\b(father|mother|son|daughter|brother|sister|uncle|aunt|nephew|niece)"
+        r"[\s-]+in[\s-]+law\b",
+        r"\1_in_law",
+        message
+    )
+
+    # Check longest keywords first so e.g. "father_in_law" matches before
+    # the shorter "father" substring collision.
+    for keyword in sorted(TARGET_RELATIONSHIP_INTENTS, key=len, reverse=True):
         if keyword in message:
             return keyword
 
@@ -286,13 +257,27 @@ def detect_intent(message: str):
 async def process_chat_message(
     message: str,
     image_base64: str | None = None,
-    image_media_type: str | None = None
+    image_media_type: str = "image/jpeg",
 ):
+    # --- Image recognition mode ---
+    # --- Image recognition mode ---
     if image_base64:
-        result = await identify_image(message, image_base64, image_media_type)
+        result = await identify_image(
+            message=message,
+            image_base64=image_base64,
+            image_media_type=image_media_type,
+        )
+
         if result:
             return {"answer": result}
-        return {"answer": "Failed to analyze the image or Gemini API limit reached / not configured."}
+
+        return {
+            "answer": (
+                "I received your image but couldn't analyze it right now "
+                "(daily AI limit reached or service unavailable). "
+                "Try describing the character in text and I'll help from my database."
+            )
+        }
 
     # --- Two-character relationship questions ---
     two_char = extract_two_character_query(message)
@@ -307,15 +292,11 @@ async def process_chat_message(
         if char_a and char_b:
             return await describe_relationship_between(char_a, char_b)
 
-        # If one or both names not found, fall through to
-        # single-character handling below (better than failing outright)
-
     name_query = extract_character_query(message)
 
     print(f"[chat] message={message!r} name_query={name_query!r}")
 
     if not name_query:
-
         return {
             "answer":
             "I couldn't understand which character you're asking about."
@@ -324,7 +305,6 @@ async def process_chat_message(
     character = await find_character(name_query)
 
     if not character:
-
         return {
             "answer":
             f"I couldn't find a character matching '{name_query}'."
@@ -332,44 +312,48 @@ async def process_chat_message(
 
     intent = detect_intent(message)
 
-    # father / mother / sensei -> look for relationships
-    # where THIS character is the target
     if intent in TARGET_RELATIONSHIP_INTENTS:
 
-        relationship_name = TARGET_RELATIONSHIP_INTENTS[intent]
+        relationship_names = TARGET_RELATIONSHIP_INTENTS[intent]
 
-        results = await get_relationships_by_target(
-            character["_id"],
-            relationship=relationship_name
-        )
+        all_results = []
+        for relationship_name in relationship_names:
+            results = await get_relationships_by_target(
+                character["_id"],
+                relationship=relationship_name
+            )
+            all_results.extend(results)
 
-        if not results:
-
+        if not all_results:
             return {
                 "answer":
-                f"I couldn't find a {intent} for "
-                f"{character['name']}."
+                f"I couldn't find a {intent} for {character['name']}."
             }
 
-        enriched = await enrich_relationships_by_source(results)
+        enriched = await enrich_relationships_by_source(all_results)
 
-        names = [r["target"]["name"] for r in enriched if r["target"]]
+        # Pair each name with the specific relationship word used
+        # (sensei vs teacher vs mentor), so the answer is precise
+        # even when multiple words were searched.
+        labeled = [
+            f"{r['target']['name']} ({r['relationship']})"
+            if len(relationship_names) > 1 else r["target"]["name"]
+            for r in enriched if r["target"]
+        ]
 
         return {
             "answer":
-            f"{character['name']}'s {intent} is "
-            f"{', '.join(names)}."
+            f"{character['name']}'s {intent} is {', '.join(labeled)}."
         }
-
-    # family / team -> use full context as before
-    details = await build_character_context(character["_id"])
 
     if intent == "family":
 
+        details = await build_character_context(character)
+
         family_names = [
             member["target"]["name"]
-            for member in details["family"]
-            if member["target"]
+            for member in details.get("family", [])
+            if member.get("target")
         ]
 
         if not family_names:
@@ -386,10 +370,12 @@ async def process_chat_message(
 
     if intent == "team":
 
+        details = await build_character_context(character)
+
         team_names = [
             member["target"]["name"]
-            for member in details["team"]
-            if member["target"]
+            for member in details.get("team", [])
+            if member.get("target")
         ]
 
         if not team_names:
@@ -404,38 +390,35 @@ async def process_chat_message(
             f"{', '.join(team_names)}"
         }
 
-    if intent == "unknown":
+    # intent == "unknown" — try Gemini, fall back to local data
+    gemini_answer = await ask_gemini_with_context(
+        message,
+        await build_character_context(character)
+    )
 
-        # Try Gemini first (only if API key set and under daily cap).
-        # If it returns None, fall back to local description-based answer.
-        gemini_answer = await ask_gemini_with_context(
-            message,
-            await build_character_context(character["_id"])
-        )
+    if gemini_answer:
+        return {"answer": gemini_answer}
 
-        if gemini_answer:
-            return {"answer": gemini_answer}
+    description = character.get("description")
+    role = character.get("role")
+    affiliations = character.get("affiliations") or []
 
-        description = character.get("description")
-        role = character.get("role")
-        affiliations = character.get("affiliations") or []
+    parts = []
 
-        parts = []
+    if description:
+        parts.append(description)
 
-        if description:
-            parts.append(description)
+    if role:
+        parts.append(f"Role: {role}.")
 
-        if role:
-            parts.append(f"Role: {role}.")
+    if affiliations:
+        parts.append(f"Affiliations: {', '.join(affiliations)}.")
 
-        if affiliations:
-            parts.append(f"Affiliations: {', '.join(affiliations)}.")
-
-        if parts:
-            return {
-                "answer":
-                f"{character['name']} - " + " ".join(parts)
-            }
+    if parts:
+        return {
+            "answer":
+            f"{character['name']} - " + " ".join(parts)
+        }
 
     return {
         "answer":

@@ -117,6 +117,7 @@ async def run_news_pipeline():
     saved = 0
     skipped_duplicate = 0
     skipped_unmapped = 0
+    processed_urls = set()
 
     for article in fresh_articles:
 
@@ -126,9 +127,11 @@ async def run_news_pipeline():
         if not url or not title:
             continue
 
-        if await article_exists(url):
+        if url in processed_urls or await article_exists(url):
             skipped_duplicate += 1
             continue
+
+        processed_urls.add(url)
 
         mapped_category = get_mapped_category(article)
 
@@ -145,8 +148,24 @@ async def run_news_pipeline():
         article["category"] = mapped_category
         article["summary"] = make_fallback_summary(article)
 
-        await insert_article(article)
-        saved += 1
+        try:
+            await insert_article(article)
+            saved += 1
+
+            try:
+                from app.services.websocket_manager import manager
+                from app.services.news_service import _serialize
+                await manager.broadcast({
+                    "type": "NEW_ARTICLE",
+                    "data": _serialize(article)
+                })
+            except Exception as ws_err:
+                print("[news_pipeline] websocket broadcast error:", ws_err)
+        except Exception as e:
+            if "duplicate key" in str(e).lower() or "11000" in str(e):
+                skipped_duplicate += 1
+            else:
+                raise e
 
     summary = {
         "fetched": len(raw_articles),

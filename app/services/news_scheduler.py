@@ -11,7 +11,7 @@ def start_news_scheduler():
     scheduler.add_job(
         run_news_pipeline,
         "interval",
-        minutes=5,
+        minutes=3,
         id="news_pipeline",
     )
     scheduler.start()

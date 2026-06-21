@@ -44,10 +44,7 @@ DEFAULT_INVERSE = {
     "mentor": "student",
     "sensei": "student",
     "teacher": "student",
-    "student": "mentor",
-
-    "master": "apprentice",
-    "apprentice": "master",
+    "student": "mentor",   # generic fallback if specific type isn't known
 
     "leader": "subordinate",
     "subordinate": "leader",
@@ -55,6 +52,29 @@ DEFAULT_INVERSE = {
     "crush": "crush",          # often one-directional in fiction, default same
     "enemy": "enemy",
     "ally": "ally",
+
+    # --- In-laws ---
+    "father_in_law": "child_in_law",
+    "mother_in_law": "child_in_law",
+    "son_in_law": "parent_in_law",
+    "daughter_in_law": "parent_in_law",
+    "parent_in_law": "child_in_law",
+    "child_in_law": "parent_in_law",
+
+    "brother_in_law": "brother_in_law",   # symmetric, listed for completeness
+    "sister_in_law": "sister_in_law",     # symmetric, listed for completeness
+
+    "uncle_in_law": "nephew_or_niece_in_law",
+    "aunt_in_law": "nephew_or_niece_in_law",
+    "nephew_in_law": "uncle_or_aunt_in_law",
+    "niece_in_law": "uncle_or_aunt_in_law",
+
+    "stepfather": "stepchild",
+    "stepmother": "stepchild",
+    "stepson": "stepparent",
+    "stepdaughter": "stepparent",
+    "stepbrother": "stepbrother",     # symmetric
+    "stepsister": "stepsister",       # symmetric
 }
 
 

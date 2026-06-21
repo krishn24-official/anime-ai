@@ -224,6 +224,13 @@ async def main():
         characters = [
 
             # Naruto
+            # "Sumire Kakei",
+            # "Wasabi Izuno",
+            # "Yahiko",
+            # "Portgas D. Rouge",
+            # "Sabo no Chichi",
+            # "Sabo no Haha",
+            "Olvia Nico",
             # "Naruto Uzumaki",
             # "Sasuke Uchiha",
             # "Sakura Haruno",
@@ -247,7 +254,7 @@ async def main():
 
             # # One Piece — D. family members use alias pattern
             # "Monkey D. Luffy",
-            (4884, False),                  # Monkey D. Dragon (AniList has just "Dragon", ID: 4884)
+            # (4884, False),                  # Monkey D. Dragon (AniList has just "Dragon", ID: 4884)
             # (8064, False),                # Monkey D. Garp (AniList has just "Garp", ID: 8064)
             # "Roronoa Zoro",
             # "Nami",

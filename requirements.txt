@@ -32,3 +32,4 @@ python-jose[cryptography]==3.3.0
 email-validator==2.2.0
 python-multipart==0.0.20
 cloudinary==1.41.0
+websockets==16.0

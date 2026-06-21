@@ -176,8 +176,6 @@ RELATIONSHIPS = {
         "sensei",
         "mentor",
         "teacher",
-        "master",
-        "apprentice"
     ],
 
 

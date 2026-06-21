@@ -56,15 +56,15 @@ CHANNELS = {
     # 🎬 Trailer Channels
     "Rotten Tomatoes Trailers": "UCE0Wkd9Jcn2-TNo5G8bLQrA",
 
-    # 🇮🇳 Indian Studios
-    "T-Series": "UChz5aEi3dfrDVC8-YJsMUDA",
-    "Yash Raj Films": "UCbTLwN10NoCU4WDzLf1JMOA",
-    "Hombale Films": "UCarJoVXH0T2pdtcHBu9J8Bw",
+    # # 🇮🇳 Indian Studios
+    # "T-Series": "UChz5aEi3dfrDVC8-YJsMUDA",
+    # "Yash Raj Films": "UCbTLwN10NoCU4WDzLf1JMOA",
+    # "Hombale Films": "UCarJoVXH0T2pdtcHBu9J8Bw",
 
-    # 🇮🇳 OTT India
-    "Netflix India": "UCim0ZIz8SAQGPvg4mJHG3JA",
-    "Prime Video India": "UC4zWG9LccdWGUlF77LZ8toA",
-    "Jio Studios": "UCcXQd6kHKm0b41x8zMVMmMg"
+    # # 🇮🇳 OTT India
+    # "Netflix India": "UCim0ZIz8SAQGPvg4mJHG3JA",
+    # "Prime Video India": "UC4zWG9LccdWGUlF77LZ8toA",
+    # "Jio Studios": "UCcXQd6kHKm0b41x8zMVMmMg"
 }
 
 YOUTUBE_NEWS_BLOCKLIST = [

@@ -60,8 +60,9 @@ async def main():
 
     await close_db()
 
-    # Deduplicate: only show ONE direction per pair+relationship in the
-    # export (the inverse is implied), to avoid cluttering the sheet.
+    # Deduplicate: only show ONE row per character pair (the inverse
+    # document is implied and not shown separately), to avoid cluttering
+    # the sheet with both directions.
     seen_pairs = set()
     rows = []
 
@@ -70,8 +71,8 @@ async def main():
         target_id = rel.get("target_id")
         relationship = rel.get("relationship", "")
 
-        # Skip if we've already exported the inverse of this pair
-        pair_key = tuple(sorted([source_id, target_id])) + (relationship,)
+        # Skip if we've already exported either direction of this pair
+        pair_key = tuple(sorted([source_id, target_id]))
         if pair_key in seen_pairs:
             continue
         seen_pairs.add(pair_key)
