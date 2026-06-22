@@ -34,6 +34,7 @@ def _serialize_user(user: dict) -> dict:
         "email": user["email"],
         "username": user.get("username"),
         "display_name": user.get("display_name"),
+        "is_admin": user.get("is_admin", False),
     }
 
 

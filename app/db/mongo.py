@@ -1,5 +1,5 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-from app.config import MONGO_URI
+from app.config import MONGO_URI, MONGO_DB_NAME
 
 client = None
 
@@ -12,46 +12,52 @@ async def connect_db():
 
     client = AsyncIOMotorClient(MONGO_URI)
 
-    db = client["anime_ai"]
+    db = client[MONGO_DB_NAME]
+
+    from app.db.index_utils import create_index_safely
 
     # INDEXES
-    await db["anime"].create_index("title.english")
-    await db["anime"].create_index("title.romaji")
-    await db["anime"].create_index("genres")
-    await db["anime"].create_index("tags")
-    await db["anime"].create_index("year")
-    await db["characters"].create_index("name")
-    await db["characters"].create_index("anime_ids")
-    await db["characters"].create_index("tags")
-    await db["characters"].create_index("gender")
-    await db["characters"].create_index("role")
-    await db["relationships"].create_index("source_id")
-    await db["relationships"].create_index("target_id")
-    await db["relationships"].create_index("relationship")
-    await db["relationships"].create_index("type")
-    await db["events"].create_index(
+    await create_index_safely(db["anime"], "title.english")
+    await create_index_safely(db["anime"], "title.romaji")
+    await create_index_safely(db["anime"], "genres")
+    await create_index_safely(db["anime"], "tags")
+    await create_index_safely(db["anime"], "year")
+    await create_index_safely(db["characters"], "name")
+    await create_index_safely(db["characters"], "anime_ids")
+    await create_index_safely(db["characters"], "tags")
+    await create_index_safely(db["characters"], "gender")
+    await create_index_safely(db["characters"], "role")
+    await create_index_safely(db["relationships"], "source_id")
+    await create_index_safely(db["relationships"], "target_id")
+    await create_index_safely(db["relationships"], "relationship")
+    await create_index_safely(db["relationships"], "type")
+    await create_index_safely(
+        db["events"],
         [
             ("month", 1),
             ("day", 1)
         ]
     )
 
-    await db["events"].create_index(
+    await create_index_safely(
+        db["events"],
         "event_type"
     )
 
-    await db["events"].create_index(
+    await create_index_safely(
+        db["events"],
         "anime_id"
     )
 
-    await db["events"].create_index(
+    await create_index_safely(
+        db["events"],
         "manga_id"
     )
 
     # News pipeline indexes
-    await db["news"].create_index("url", unique=True)
-    await db["news"].create_index("category")
-    await db["news"].create_index("published_at")
+    await create_index_safely(db["news"], "url", unique=True, sparse=True)
+    await create_index_safely(db["news"], "category")
+    await create_index_safely(db["news"], "published_at")
 
     print("✅ MongoDB Connected")
 
@@ -68,7 +74,7 @@ def get_db():
     if client is None:
         raise RuntimeError("MongoDB client is not connected")
 
-    return client["anime_ai"]
+    return client[MONGO_DB_NAME]
 
 
 def get_anime_collection():

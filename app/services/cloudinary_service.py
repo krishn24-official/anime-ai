@@ -1,3 +1,4 @@
+import asyncio
 import cloudinary
 import cloudinary.uploader
 
@@ -41,13 +42,15 @@ async def upload_image(
         return None
 
     try:
-        result = cloudinary.uploader.upload(
-            source,
-            folder=folder,
-            public_id=public_id,
-            overwrite=True,
-            resource_type="image",
-        )
+        def _upload():
+            return cloudinary.uploader.upload(
+                source,
+                folder=folder,
+                public_id=public_id,
+                overwrite=True,
+                resource_type="image",
+            )
+        result = await asyncio.to_thread(_upload)
         return result.get("secure_url")
 
     except Exception as e:

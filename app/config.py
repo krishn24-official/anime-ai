@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 MONGO_URI = os.getenv("MONGO_URI")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "anime_ai")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # ── OMDb ──────────────────────────────────────────────

@@ -37,16 +37,17 @@ async def get_user_by_id(user_id: str):
     return await db["users"].find_one({"_id": oid})
 
 
-async def create_user(email: str, hashed_password: str, username: str, display_name: str = ""):
+async def create_user(email: str, hashed_password: str, username: str):
     db = get_db()
 
     doc = {
         "email": email.lower(),
         "username": username.lower(),
         "password_hash": hashed_password,
-        "display_name": display_name or username,
+        "display_name": username,   # defaults to username
         "created_at": datetime.now(timezone.utc),
         "is_active": True,
+        "is_admin": False,
     }
 
     result = await db["users"].insert_one(doc)

@@ -50,3 +50,16 @@ async def get_optional_user(token: str | None = Depends(oauth2_scheme)) -> dict 
         return None
 
     return await get_user_by_id(user_id)
+
+
+async def get_current_admin(current_user: dict = Depends(get_current_user)) -> dict:
+    """Raises 403 if the authenticated user is not an admin.
+    Use for admin-only routes (e.g. manual news upload)."""
+
+    if not current_user.get("is_admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+
+    return current_user

@@ -1,75 +1,79 @@
 from app.db.mongo import get_db
+from app.db.index_utils import create_index_safely
 
 async def create_indexes():
     db = get_db()
 
     # characters
-    await db.characters.create_index("name")
-    await db.characters.create_index([("birth_month", 1), ("birth_day", 1)])
+    await create_index_safely(db.characters, "name")
+    await create_index_safely(db.characters, [("birth_month", 1), ("birth_day", 1)])
 
     # relationships
-    await db.relationships.create_index("source_id")
-    await db.relationships.create_index("target_id")
-    await db.relationships.create_index("relationship")
+    await create_index_safely(db.relationships, "source_id")
+    await create_index_safely(db.relationships, "target_id")
+    await create_index_safely(db.relationships, "relationship")
 
     # manga / chapters
-    await db.manga.create_index("name")
-    await db.chapters.create_index("manga_id")
-    await db.chapters.create_index("chapter_number")
+    await create_index_safely(db.manga, "name")
+    await create_index_safely(db.chapters, "manga_id")
+    await create_index_safely(db.chapters, "chapter_number")
 
     # anime / episodes
-    await db.anime.create_index("name")
-    await db.episodes.create_index("anime_id")
-    await db.episodes.create_index("episode_number")
+    await create_index_safely(db.anime, "name")
+    await create_index_safely(db.episodes, "anime_id")
+    await create_index_safely(db.episodes, "episode_number")
 
     # voice actors
-    await db.voice_actors.create_index("name")
+    await create_index_safely(db.voice_actors, "name")
 
     # news
-    await db.news.create_index("url", unique=True)
-    await db.news.create_index("category")
-    await db.news.create_index("published_at")
+    await create_index_safely(db.news, "url", unique=True, sparse=True)
+    await create_index_safely(db.news, "category")
+    await create_index_safely(db.news, "published_at")
 
     # users
-    await db.users.create_index("email", unique=True)
-    try:
-        await db.users.drop_index("username_1")
-    except Exception:
-        pass
-    await db.users.create_index("username", unique=True, sparse=True)
+    await create_index_safely(db.users, "email", unique=True)
+    await create_index_safely(db.users, "username", unique=True, sparse=True)
+    await create_index_safely(db.users, "is_admin")
+
+    # news (manual posts use source field to distinguish from RSS-fetched)
+    await create_index_safely(db.news, "source")
 
     # refresh tokens
-    await db.refresh_tokens.create_index("token", unique=True)
-    await db.refresh_tokens.create_index("user_id")
-    await db.refresh_tokens.create_index(
+    await create_index_safely(db.refresh_tokens, "token", unique=True)
+    await create_index_safely(db.refresh_tokens, "user_id")
+    await create_index_safely(
+        db.refresh_tokens,
         "expires_at",
         expireAfterSeconds=0   # MongoDB TTL index — auto-deletes expired tokens
     )
 
     # ratings
-    await db.ratings.create_index(
+    await create_index_safely(
+        db.ratings,
         [("user_id", 1), ("content_type", 1), ("content_id", 1)],
         unique=True
     )
-    await db.ratings.create_index([("content_type", 1), ("content_id", 1)])
+    await create_index_safely(db.ratings, [("content_type", 1), ("content_id", 1)])
 
     # watchlist
-    await db.watchlist.create_index(
+    await create_index_safely(
+        db.watchlist,
         [("user_id", 1), ("content_type", 1), ("content_id", 1)],
         unique=True
     )
 
     # comments
-    await db.comments.create_index([("content_type", 1), ("content_id", 1)])
-    await db.comments.create_index("parent_id")
+    await create_index_safely(db.comments, [("content_type", 1), ("content_id", 1)])
+    await create_index_safely(db.comments, "parent_id")
 
     # movies / tv_series
-    await db.movies.create_index("title")
-    await db.tv_series.create_index("title")
+    await create_index_safely(db.movies, "title")
+    await create_index_safely(db.tv_series, "title")
 
     # tier lists
-    await db.tier_lists.create_index("user_id")
-    await db.tier_lists.create_index("is_public")
-    await db.tier_lists.create_index([("is_public", 1), ("updated_at", -1)])
+    await create_index_safely(db.tier_lists, "user_id")
+    await create_index_safely(db.tier_lists, "is_public")
+    await create_index_safely(db.tier_lists, [("is_public", 1), ("updated_at", -1)])
 
     print("⚡ Indexes created")
