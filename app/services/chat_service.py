@@ -84,23 +84,28 @@ def extract_character_query(message: str) -> str:
     text = text.replace("\u2019", "'").replace("\u2018", "'")
 
     text = re.sub(
-        r"^(who is|who's|whos|what is|whats|tell me about)\s+",
+        r"^(who is|who's|whos|what is|whats|tell me about|show me|get)\s+",
         "",
         text
     )
 
     text = text.strip("? ").strip()
 
-    match = re.match(
-        r"^(father|dad|mother|mom|sensei|teacher|mentor|wife|husband|"
+    # Pattern 1: [relationship] of [character] or [relationship] members of [character]
+    rel_words_pattern = (
+        r"(father|dad|mother|mom|sensei|teacher|mentor|wife|husband|"
         r"son|daughter|brother|sister|grandfather|grandmother|"
         r"grandson|granddaughter|uncle|aunt|nephew|niece|cousin|"
-        r"crush|classmate|teammate|family|team)s?\s+of\s+(.+)$",
+        r"crush|classmate|teammate|family|team)"
+    )
+
+    match = re.match(
+        rf"^{rel_words_pattern}s?(\s+member)?s?\s+of\s+(.+)$",
         text
     )
 
     if match:
-        return match.group(2).strip()
+        return match.group(3).strip()
 
     match = re.match(
         r"^does\s+(.+?)\s+have\s+(?:a|an)?\s*\w+$",
@@ -118,24 +123,29 @@ def extract_character_query(message: str) -> str:
     if match:
         return match.group(1).strip()
 
-    if "'s" in text:
-        text = text.split("'s")[0]
-    else:
-        for word in (
-            "father", "dad", "mother", "mom", "sensei", "teacher",
-            "mentor", "wife", "husband", "son", "daughter",
-            "brother", "sister", "grandfather", "grandmother",
-            "grandson", "granddaughter", "uncle", "aunt",
-            "nephew", "niece", "cousin", "crush", "classmate",
-            "teammate", "family", "team"
-        ):
-            if text.endswith(word):
-                text = text[: -len(word)]
-                break
+    # Pattern 2: [character]'s [relationship] or [character]'a [relationship] [member(s)]
+    words_to_strip = [
+        "family members", "family member", "family",
+        "team members", "team member", "team",
+        "father", "dad", "mother", "mom", "sensei", "teacher", "mentor",
+        "wife", "husband", "son", "daughter", "brother", "sister",
+        "grandfather", "grandmother", "grandson", "granddaughter",
+        "uncle", "aunt", "nephew", "niece", "cousin", "crush", "classmate", "teammate"
+    ]
 
-    text = text.strip("? ").strip()
+    cleaned = text
+    for word in words_to_strip:
+        pattern = rf"\b{word}s?\b$"
+        if re.search(pattern, cleaned):
+            cleaned = re.sub(pattern, "", cleaned).strip()
+            break
 
-    return text
+    # Strip possessive suffixes like "'s", "'a", or ending "'"
+    cleaned = re.sub(r"['’][sa]$", "", cleaned)
+    cleaned = re.sub(r"['’]$", "", cleaned)
+    cleaned = cleaned.strip()
+
+    return cleaned
 
 
 def extract_two_character_query(message: str):
@@ -348,7 +358,7 @@ async def process_chat_message(
 
     if intent == "family":
 
-        details = await build_character_context(character)
+        details = await build_character_context(character) or {}
 
         family_names = [
             member["target"]["name"]
@@ -370,7 +380,7 @@ async def process_chat_message(
 
     if intent == "team":
 
-        details = await build_character_context(character)
+        details = await build_character_context(character) or {}
 
         team_names = [
             member["target"]["name"]

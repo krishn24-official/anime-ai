@@ -13,11 +13,23 @@ relationship words (not blocking — relationship is free-form).
 import asyncio
 import csv
 import re
+import sys
+
+# Ensure Unicode support in Windows console
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
 from app.db.mongo import connect_db, close_db, get_db
 from app.services.relationship_inverse_map import get_inverse_relationship, is_symmetric
 
-INPUT_FILE = "relationship_data_template.csv"
+import os
+
+INPUT_XLSX = "relationship_data_template.xlsx"
+INPUT_CSV = "relationship_data_template.csv"
 
 
 def _slug(text: str) -> str:
@@ -101,13 +113,41 @@ def _build_relationship_pair(row: dict) -> list[dict]:
 
 
 async def main():
-    print("🚀 Starting bulk relationship import from CSV...")
+    print("🚀 Starting bulk relationship import...")
 
-    try:
-        with open(INPUT_FILE, "r", encoding="utf-8") as f:
-            rows = [r for r in csv.DictReader(f) if any(r.values())]
-    except FileNotFoundError:
-        print(f"❌ {INPUT_FILE} not found. Run export_relationship_csv.py first.")
+    rows = []
+    input_file_used = None
+
+    if os.path.exists(INPUT_XLSX):
+        input_file_used = INPUT_XLSX
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(input_file_used, data_only=True)
+            sheet = wb.active
+            header_row = next(sheet.iter_rows(max_row=1, values_only=True), None)
+            if header_row:
+                headers = [str(h).strip() if h is not None else "" for h in header_row]
+                for r in sheet.iter_rows(min_row=2, values_only=True):
+                    if not any(val is not None and str(val).strip() != "" for val in r):
+                        continue
+                    row_dict = {}
+                    for i, val in enumerate(r):
+                        if i < len(headers) and headers[i]:
+                            row_dict[headers[i]] = str(val).strip() if val is not None else ""
+                    rows.append(row_dict)
+        except Exception as e:
+            print(f"❌ Error reading {input_file_used}: {e}")
+            return
+    elif os.path.exists(INPUT_CSV):
+        input_file_used = INPUT_CSV
+        try:
+            with open(input_file_used, "r", encoding="utf-8") as f:
+                rows = [r for r in csv.DictReader(f) if any(r.values())]
+        except Exception as e:
+            print(f"❌ Error reading {input_file_used}: {e}")
+            return
+    else:
+        print(f"❌ Neither {INPUT_XLSX} nor {INPUT_CSV} was found. Run export_relationship_csv.py first.")
         return
 
     # Drop the example/template row if present
@@ -118,7 +158,7 @@ async def main():
                 and "(example)" in r.get("source_name", ""))
     ]
 
-    print(f"📊 Read {len(rows)} rows from {INPUT_FILE}\n")
+    print(f"📊 Read {len(rows)} rows from {input_file_used}\n")
 
     await connect_db()
     db = get_db()

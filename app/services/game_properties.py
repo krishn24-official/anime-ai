@@ -10,6 +10,19 @@ or create a new group — the extractor prompt auto-includes all of them.
 
 GAME_PROPERTIES = {
 
+    # ── Anime Origin ───────────────────────────────────────────────
+    "inAttackOnTitan": "The character originates from Attack on Titan",
+    "inNaruto":        "The character originates from Naruto",
+    "inOnePiece":      "The character originates from One Piece",
+    "inBleach":        "The character originates from Bleach",
+    "inDragonBall":    "The character originates from Dragon Ball",
+    "inJujutsuKaisen": "The character originates from Jujutsu Kaisen",
+    "inDemonSlayer":   "The character originates from Demon Slayer",
+    "inChainsawMan":   "The character originates from Chainsaw Man",
+    "inSoloLeveling":  "The character originates from Solo Leveling",
+    "inOnePunchMan":   "The character originates from One Punch Man",
+    "inFullmetalAlchemist": "The character originates from Fullmetal Alchemist",
+
     # ── Gender ────────────────────────────────────────────────────────
     "isMale":           "The character is male",
     "isFemale":         "The character is female or identifies as female",
@@ -140,6 +153,20 @@ GAME_PROPERTIES = {
 # Questions shown to the user in the game
 # Each question maps to one property key
 GAME_QUESTIONS = [
+    
+    # Anime Origin (ask these first)
+    {"key": "inAttackOnTitan", "text": "Is your character from Attack on Titan?"},
+    {"key": "inNaruto",        "text": "Is your character from Naruto?"},
+    {"key": "inOnePiece",      "text": "Is your character from One Piece?"},
+    {"key": "inBleach",        "text": "Is your character from Bleach?"},
+    {"key": "inDragonBall",    "text": "Is your character from Dragon Ball?"},
+    {"key": "inJujutsuKaisen", "text": "Is your character from Jujutsu Kaisen?"},
+    {"key": "inDemonSlayer",   "text": "Is your character from Demon Slayer?"},
+    {"key": "inChainsawMan",   "text": "Is your character from Chainsaw Man?"},
+    {"key": "inSoloLeveling",  "text": "Is your character from Solo Leveling?"},
+    {"key": "inOnePunchMan",   "text": "Is your character from One Punch Man?"},
+    {"key": "inFullmetalAlchemist", "text": "Is your character from Fullmetal Alchemist?"},
+
     # Gender
     {"key": "isMale",           "text": "Is your character male?"},
     {"key": "isFemale",         "text": "Is your character female?"},

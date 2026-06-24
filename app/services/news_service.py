@@ -9,6 +9,12 @@ from app.repositories.news_repository import (
 
 
 def _serialize(article: dict) -> dict:
+    published_at = article.get("published_at")
+    if hasattr(published_at, "isoformat"):
+        published_at = published_at.isoformat()
+    elif published_at is not None:
+        published_at = str(published_at)
+
     return {
         "id": str(article.get("_id")),
         "title": article.get("title"),
@@ -18,7 +24,7 @@ def _serialize(article: dict) -> dict:
         "summary": article.get("summary"),
         "description": article.get("description"),
         "image_url": article.get("image_url"),
-        "published_at": article.get("published_at"),
+        "published_at": published_at,
     }
 
 
