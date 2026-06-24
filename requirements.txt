@@ -16,15 +16,8 @@ email_validator
 et_xmlfile
 fastapi
 feedparser
-google-ai-generativelanguage
-google-api-core
 google-api-python-client
-google-auth
-google-auth-httplib2
 google-generativeai
-googleapis-common-protos
-grpcio
-grpcio-status
 h11
 httpcore
 httplib2
@@ -36,8 +29,6 @@ openpyxl
 packaging
 passlib
 pluggy
-proto-plus
-protobuf
 pyasn1
 pyasn1_modules
 pycparser
