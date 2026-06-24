@@ -4,6 +4,7 @@ from app.repositories.search_repository import (
     search_manga,
     search_movies,
     search_tv_series,
+    search_organizations,
 )
 
 
@@ -16,6 +17,7 @@ async def global_search(
     manga = await search_manga(query)
     movies = await search_movies(query)
     tv_series = await search_tv_series(query)
+    organizations = await search_organizations(query)
 
     return {
         "characters": characters,
@@ -23,4 +25,5 @@ async def global_search(
         "manga": manga,
         "movies": movies,
         "tv_series": tv_series,
+        "organizations": organizations,
     }

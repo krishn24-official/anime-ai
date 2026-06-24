@@ -152,3 +152,43 @@ async def search_tv_series(
         .limit(10)
         .to_list(None)
     )
+
+
+async def search_organizations(
+    query: str
+):
+    db = get_db()
+    results = await (
+        db["organizations"]
+        .find(
+            {
+                "name": {
+                    "$regex": query,
+                    "$options": "i"
+                },
+                "is_deleted": {"$ne": True}
+            },
+            {
+                "_id": 1,
+                "name": 1,
+                "type": 1,
+                "images": 1,
+                "anime_ids": 1,
+                "manga_id": 1
+            }
+        )
+        .limit(10)
+        .to_list(None)
+    )
+    # Map _id to id in repo or service. Let's return mapped dictionaries
+    return [
+        {
+            "id": str(org["_id"]),
+            "name": org.get("name"),
+            "type": org.get("type"),
+            "images": org.get("images", {"logo": "", "banner": ""}),
+            "anime_ids": org.get("anime_ids", []),
+            "manga_id": org.get("manga_id")
+        }
+        for org in results
+    ]

@@ -29,16 +29,16 @@ async def seed_collection(folder_path, collection_name):
         try:
             data = await asyncio.to_thread(load_json_file, file)
 
-            if isinstance(data, list):
-                for item in data:
-                    try:
-                        await db[collection_name].replace_one(
-                            {"_id": item["_id"]},
-                            item,
-                            upsert=True,
-                        )
-                    except Exception as exc:
-                        print(f"⚠️ Failed to upsert item in {collection_name}: {exc}")
+            items = data if isinstance(data, list) else [data]
+            for item in items:
+                try:
+                    await db[collection_name].replace_one(
+                        {"_id": item["_id"]},
+                        item,
+                        upsert=True,
+                    )
+                except Exception as exc:
+                    print(f"⚠️ Failed to upsert item in {collection_name}: {exc}")
 
             print(f"✅ Seeded {collection_name} from {os.path.basename(file)}")
 
@@ -62,6 +62,7 @@ async def seed_all():
     await seed_collection(os.path.join(BASE_DIR, "chapters"), "chapters")
     await seed_collection(os.path.join(BASE_DIR, "relationships"), "relationships")
     await seed_collection(os.path.join(BASE_DIR, "voice_actors"), "voice_actors")
+    await seed_collection(os.path.join(BASE_DIR, "organizations"), "organizations")
 
     print("🚀 Seeding complete")
 

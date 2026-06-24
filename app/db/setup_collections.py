@@ -17,6 +17,7 @@ COLLECTIONS = [
     "watchlist",
     "comments",
     "tier_lists",
+    "organizations",
 ]
 
 async def create_collections():

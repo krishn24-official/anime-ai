@@ -20,6 +20,7 @@ from app.repositories.search_repository import (
     search_manga,
     search_movies,
     search_tv_series,
+    search_organizations,
 )
 from app.repositories.chat_repository import find_character
 from app.repositories.rating_repository import get_top_rated, get_watchlist_counts
@@ -121,6 +122,7 @@ async def tool_search_content(query: str) -> str:
     manga = await search_manga(query)
     movies = await search_movies(query)
     tv_series = await search_tv_series(query)
+    organizations = await search_organizations(query)
 
     result = {
         "characters": [{"name": c.get("name"), "id": str(c.get("_id"))} for c in characters],
@@ -128,6 +130,7 @@ async def tool_search_content(query: str) -> str:
         "manga": [{"name": m.get("name"), "id": str(m.get("_id"))} for m in manga],
         "movies": [{"title": mv.get("title"), "id": str(mv.get("_id"))} for mv in movies],
         "tv_series": [{"title": tv.get("title"), "id": str(tv.get("_id"))} for tv in tv_series],
+        "organizations": [{"name": o.get("name"), "id": str(o.get("id"))} for o in organizations],
     }
 
     total = sum(len(v) for v in result.values())
@@ -261,6 +264,32 @@ async def tool_get_content_trends(
         return json.dumps(enriched, default=_serialize)
 
 
+async def tool_get_organization_info(name: str) -> str:
+    db = get_db()
+    org = await db["organizations"].find_one({
+        "name": {"$regex": f"^{name}$", "$options": "i"},
+        "is_deleted": {"$ne": True}
+    })
+    if not org:
+        cursor = db["organizations"].find({
+            "name": {"$regex": name, "$options": "i"},
+            "is_deleted": {"$ne": True}
+        })
+        orgs = await cursor.to_list(1)
+        if orgs:
+            org = orgs[0]
+
+    if not org:
+        return f"Organization '{name}' not found in the database."
+
+    from app.services.organization_service import fetch_organization_details
+    details = await fetch_organization_details(str(org["_id"]))
+    if not details:
+        return f"Could not fetch details for organization '{name}'."
+
+    return json.dumps(details, default=_serialize)
+
+
 # --- Tool dispatcher ---
 TOOL_REGISTRY = {
     "get_today_birthdays": tool_get_today_birthdays,
@@ -270,6 +299,7 @@ TOOL_REGISTRY = {
     "search_content": tool_search_content,
     "get_character_info": tool_get_character_info,
     "get_content_trends": tool_get_content_trends,
+    "get_organization_info": tool_get_organization_info,
 }
 
 

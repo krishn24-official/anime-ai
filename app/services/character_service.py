@@ -9,6 +9,10 @@ from app.repositories.relationship_repository import (
     get_relationships_by_type
 )
 
+from app.repositories.organization_repository import (
+    find_organizations_by_names
+)
+
 
 async def fetch_all_characters():
 
@@ -145,13 +149,29 @@ async def fetch_character_details(
         combat
     )
 
+    affiliations = character.get("affiliations", [])
+    organizations = []
+    if affiliations:
+        org_docs = await find_organizations_by_names(affiliations)
+        organizations = [
+            {
+                "id": str(org["_id"]),
+                "name": org.get("name"),
+                "type": org.get("type"),
+                "images": org.get("images", {"logo": "", "banner": ""}),
+                "status": org.get("status")
+            }
+            for org in org_docs
+        ]
+
     return {
         "character": character,
         "family": family,
         "friends": friends,
         "team": team,
         "mentors": mentors,
-        "combat": combat
+        "combat": combat,
+        "organizations": organizations
     }
 
 async def fetch_character_summary(

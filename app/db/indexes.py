@@ -76,4 +76,10 @@ async def create_indexes():
     await create_index_safely(db.tier_lists, "is_public")
     await create_index_safely(db.tier_lists, [("is_public", 1), ("updated_at", -1)])
 
+    # organizations
+    await create_index_safely(db.organizations, "name", unique=True)
+    await create_index_safely(db.organizations, "type")
+    await create_index_safely(db.organizations, "anime_ids")
+    await create_index_safely(db.organizations, "manga_id")
+
     print("⚡ Indexes created")

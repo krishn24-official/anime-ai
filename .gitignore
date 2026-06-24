@@ -1,11 +1,9 @@
-# Python
-venv/
+.env
+.venv/
 __pycache__/
 *.pyc
-
-# Env / secrets
-.env
-
-# OS / editor
+*.pyo
+*.csv
+*.xlsx
 .DS_Store
 .vscode/

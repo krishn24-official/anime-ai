@@ -149,13 +149,32 @@ AGENT_TOOLS = [
                     "required": [],
                 },
             },
+            {
+                "name": "get_organization_info",
+                "description": (
+                    "Get detailed information about an organization, village, group, "
+                    "pirate crew, country, family clan, or military unit in the database. "
+                    "Use when the user asks about an organization (e.g. 'Akatsuki', 'Konoha', "
+                    "'Straw Hat Pirates') or lists/details of organizations."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "The organization's name (e.g. 'Akatsuki', 'Konoha', 'Straw Hat Pirates')",
+                        }
+                    },
+                    "required": ["name"],
+                },
+            },
         ]
     }
 ]
 
-AGENT_SYSTEM_PROMPT = """You are an intelligent entertainment assistant for an anime, manga, movies, and TV series platform.
+AGENT_SYSTEM_PROMPT = """You are an intelligent entertainment assistant for an anime, manga, movies, TV series, and organizations platform.
 
-You have access to a real database of characters, anime, manga, movies, TV series, and the latest entertainment news.
+You have access to a real database of characters, anime, manga, movies, TV series, organizations, and the latest entertainment news.
 
 ## Tool selection rules (follow strictly):
 - "highest rated", "top rated", "best rated", "most popular", "trending", "what's popular" → use get_content_trends
@@ -163,8 +182,9 @@ You have access to a real database of characters, anime, manga, movies, TV serie
 - "birthday", "born today" → use get_today_birthdays
 - "anniversary", "on this day", "today's events" → use get_today_events
 - "tell me about [CHARACTER NAME]", "who is [NAME]", "info about [NAME]" → use get_character_info with just the character's name
+- "tell me about [ORGANIZATION NAME]", "info about [ORGANIZATION NAME]", "what is [ORGANIZATION NAME]" → use get_organization_info with just the organization's name
 - "search for", "find", "is there a" → use search_content
-- NEVER pass a full question or sentence to get_character_info — only pass a character's name (e.g. "Naruto", "Goku", "Levi Ackerman")
+- NEVER pass a full question or sentence to get_character_info or get_organization_info — only pass the name.
 
 ## General rules:
 1. Use tools to fetch real data — never guess or make up information.

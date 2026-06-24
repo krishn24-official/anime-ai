@@ -1,0 +1,50 @@
+[
+  {
+    "_id": "org_konohagakure",
+    "name": "Konoha",
+    "type": "village",
+    "status": "active",
+    "description": "Konohagakure is the Hidden Leaf Village of the Land of Fire, founded by Hashirama Senju and Madara Uchiha.",
+    "leader_id": "char_naruto_uzumaki",
+    "founded_by_id": "char_hashirama_senju",
+    "headquarters": null,
+    "anime_ids": ["anime_naruto"],
+    "manga_id": "manga_naruto",
+    "images": {
+      "logo": "https://example.com/konoha_logo.png",
+      "banner": "https://example.com/konoha_banner.png"
+    },
+    "tags": ["ninja", "village", "fire"],
+    "members": [
+      { "char_id": "char_naruto_uzumaki", "title": "7th Hokage", "order": 7 },
+      { "char_id": "char_kakashi_hatake", "title": "6th Hokage", "order": 6 }
+    ],
+    "affiliated_characters": [
+      { "char_id": "char_naruto_uzumaki", "role": "Shinobi / Hokage" }
+    ]
+  },
+  {
+    "_id": "org_akatsuki",
+    "name": "Akatsuki",
+    "type": "organization",
+    "status": "disbanded",
+    "description": "A group of rogue shinobi working together as mercenaries to capture all Tailed Beasts.",
+    "leader_id": "char_pain",
+    "founded_by_id": "char_yahiko",
+    "headquarters": null,
+    "anime_ids": ["anime_naruto"],
+    "manga_id": "manga_naruto",
+    "images": {
+      "logo": "https://example.com/akatsuki_logo.png",
+      "banner": "https://example.com/akatsuki_banner.png"
+    },
+    "tags": ["rogue", "mercenary", "villains"],
+    "members": [
+      { "char_id": "char_pain", "title": "Leader", "order": 1 },
+      { "char_id": "char_itachi_uchiha", "title": "Member", "order": 2 }
+    ],
+    "affiliated_characters": [
+      { "char_id": "char_itachi_uchiha", "role": "Rogue Shinobi" }
+    ]
+  }
+]

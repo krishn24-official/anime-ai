@@ -1,0 +1,26 @@
+[
+  {
+    "_id": "org_straw_hat_pirates",
+    "name": "Straw Hat Pirates",
+    "type": "pirate_crew",
+    "status": "active",
+    "description": "A pirate crew originating from the East Blue, led by Monkey D. Luffy.",
+    "leader_id": "char_luffy",
+    "founded_by_id": "char_luffy",
+    "headquarters": null,
+    "anime_ids": ["anime_onepiece"],
+    "manga_id": "manga_onepiece",
+    "images": {
+      "logo": "https://example.com/strawhat_logo.png",
+      "banner": "https://example.com/strawhat_banner.png"
+    },
+    "tags": ["pirates", "straw hat", "liberation"],
+    "members": [
+      { "char_id": "char_luffy", "title": "Captain", "order": 1 },
+      { "char_id": "char_zoro", "title": "First Mate / Swordsman", "order": 2 }
+    ],
+    "affiliated_characters": [
+      { "char_id": "char_luffy", "role": "Captain" }
+    ]
+  }
+]
