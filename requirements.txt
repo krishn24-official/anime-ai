@@ -27,7 +27,6 @@ iniconfig
 motor
 openpyxl
 packaging
-passlib
 pluggy
 pyasn1
 pyasn1_modules
