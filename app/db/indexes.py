@@ -82,4 +82,4 @@ async def create_indexes():
     await create_index_safely(db.organizations, "anime_ids")
     await create_index_safely(db.organizations, "manga_id")
 
-    print("⚡ Indexes created")
+    print("Indexes created")

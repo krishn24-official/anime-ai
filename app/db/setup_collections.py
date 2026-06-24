@@ -27,6 +27,6 @@ async def create_collections():
     for name in COLLECTIONS:
         if name not in existing:
             await db.create_collection(name)
-            print(f"✅ Created collection: {name}")
+            print(f"Created collection: {name}")
         else:
-            print(f"ℹ️ Exists: {name}")
+            print(f"Exists: {name}")

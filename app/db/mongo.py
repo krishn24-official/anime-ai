@@ -59,7 +59,7 @@ async def connect_db():
     await create_index_safely(db["news"], "category")
     await create_index_safely(db["news"], "published_at")
 
-    print("✅ MongoDB Connected")
+    print("MongoDB Connected")
 
 
 async def close_db():
@@ -67,7 +67,7 @@ async def close_db():
 
     if client:
         client.close()
-        print("❌ MongoDB Disconnected")
+        print("MongoDB Disconnected")
 
 
 def get_db():

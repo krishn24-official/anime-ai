@@ -15,14 +15,14 @@ def load_json_file(file_path: str):
         return json.load(f)
 
 
-# 🔥 Seed one collection from multiple files
+# Seed one collection from multiple files
 async def seed_collection(folder_path, collection_name):
     db = get_db()
 
     files = await asyncio.to_thread(get_glob_files, folder_path)
 
     if not files:
-        print(f"⚠️ No files found in {folder_path}")
+        print(f"No files found in {folder_path}")
         return
 
     for file in files:
@@ -38,20 +38,20 @@ async def seed_collection(folder_path, collection_name):
                         upsert=True,
                     )
                 except Exception as exc:
-                    print(f"⚠️ Failed to upsert item in {collection_name}: {exc}")
+                    print(f"Failed to upsert item in {collection_name}: {exc}")
 
-            print(f"✅ Seeded {collection_name} from {os.path.basename(file)}")
+            print(f"Seeded {collection_name} from {os.path.basename(file)}")
 
         except Exception as e:
-            print(f"❌ Error in {file}: {e}")
+            print(f"Error in {file}: {e}")
 
 
-# 🔥 Main seeder
+# Main seeder
 async def seed_all():
     await connect_db()
     db = get_db()
 
-    print("🔥 USING DB:", db.name)
+    print("Using DB:", db.name)
 
     BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../data"))
 
@@ -64,7 +64,7 @@ async def seed_all():
     await seed_collection(os.path.join(BASE_DIR, "voice_actors"), "voice_actors")
     await seed_collection(os.path.join(BASE_DIR, "organizations"), "organizations")
 
-    print("🚀 Seeding complete")
+    print("Seeding complete")
 
 
 if __name__ == "__main__":

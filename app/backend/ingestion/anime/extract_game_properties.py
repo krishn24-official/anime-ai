@@ -23,14 +23,14 @@ async def process_character(col, character: dict) -> bool:
 
     # Skip if already processed
     if existing:
-        print(f"  ⏭  Skipping (already has {len(existing)} properties): {name}")
+        print(f"  Skipping (already has {len(existing)} properties): {name}")
         return False
 
     if not description:
-        print(f"  ⚠️  No description, skipping: {name}")
+        print(f"  No description, skipping: {name}")
         return False
 
-    print(f"  🔍 Extracting: {name}")
+    print(f"  Extracting: {name}")
 
     properties = await extract_game_properties(
         character_name=name,
@@ -44,15 +44,15 @@ async def process_character(col, character: dict) -> bool:
             {"_id": character["_id"]},
             {"$set": {"game_properties": properties}}
         )
-        print(f"  ✅ {name}: {properties}")
+        print(f"  {name}: {properties}")
     else:
-        print(f"  ❌ No properties extracted: {name}")
+        print(f"  No properties extracted: {name}")
 
     return True
 
 
 async def main():
-    print("🚀 Starting game property extraction...")
+    print("Starting game property extraction...")
 
     await connect_db()
 
@@ -72,7 +72,7 @@ async def main():
         }
     ).to_list(None)
 
-    print(f"📊 Found {len(characters)} characters\n")
+    print(f"Found {len(characters)} characters\n")
 
     processed = 0
     skipped = 0
@@ -90,7 +90,7 @@ async def main():
 
     await close_db()
 
-    print(f"\n🏁 Done. Processed: {processed}, Skipped: {skipped}")
+    print(f"\nDone. Processed: {processed}, Skipped: {skipped}")
 
 
 if __name__ == "__main__":
