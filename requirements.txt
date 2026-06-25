@@ -24,7 +24,6 @@ httplib2
 httpx
 idna
 iniconfig
-motor
 openpyxl
 packaging
 pluggy
@@ -34,7 +33,7 @@ pycparser
 pydantic
 pydantic_core
 Pygments
-pymongo
+pymongo>=4.9.0
 pyparsing
 pytest
 pytest-asyncio

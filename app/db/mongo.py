@@ -1,4 +1,4 @@
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import AsyncMongoClient
 from app.config import MONGO_URI, MONGO_DB_NAME
 
 client = None
@@ -10,7 +10,7 @@ async def connect_db():
     if not MONGO_URI:
         raise RuntimeError("MONGO_URI is not set")
 
-    client = AsyncIOMotorClient(MONGO_URI)
+    client = AsyncMongoClient(MONGO_URI)
 
     db = client[MONGO_DB_NAME]
 
@@ -66,7 +66,7 @@ async def close_db():
     global client
 
     if client:
-        client.close()
+        await client.close()
         print("MongoDB Disconnected")
 
 
