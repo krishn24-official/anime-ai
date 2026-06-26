@@ -93,6 +93,17 @@ async def enrich_relationships(
     return enriched
 
 
+def deduplicate_by_target(relationships):
+    seen = set()
+    unique = []
+    for r in relationships:
+        target_id = r.get("target_id")
+        if target_id not in seen:
+            seen.add(target_id)
+            unique.append(r)
+    return unique
+
+
 async def fetch_character_details(
     character_id: str
 ):
@@ -104,30 +115,30 @@ async def fetch_character_details(
     if not character:
         return None
 
-    family = await get_relationships_by_type(
+    family = deduplicate_by_target(await get_relationships_by_type(
         character_id,
         "family"
-    )
+    ))
 
-    friends = await get_relationships_by_type(
+    friends = deduplicate_by_target(await get_relationships_by_type(
         character_id,
         "friendship"
-    )
+    ))
 
-    team = await get_relationships_by_type(
+    team = deduplicate_by_target(await get_relationships_by_type(
         character_id,
         "team"
-    )
+    ))
 
-    mentors = await get_relationships_by_type(
+    mentors = deduplicate_by_target(await get_relationships_by_type(
         character_id,
         "mentor"
-    )
+    ))
 
-    combat = await get_relationships_by_type(
+    combat = deduplicate_by_target(await get_relationships_by_type(
         character_id,
         "combat"
-    )
+    ))
 
     family = await enrich_relationships(
         family
@@ -185,30 +196,30 @@ async def fetch_character_summary(
     if not character:
         return None
 
-    family = await get_relationships_by_type(
+    family = deduplicate_by_target(await get_relationships_by_type(
         character_id,
         "family"
-    )
+    ))
 
-    friends = await get_relationships_by_type(
+    friends = deduplicate_by_target(await get_relationships_by_type(
         character_id,
         "friendship"
-    )
+    ))
 
-    team = await get_relationships_by_type(
+    team = deduplicate_by_target(await get_relationships_by_type(
         character_id,
         "team"
-    )
+    ))
 
-    mentors = await get_relationships_by_type(
+    mentors = deduplicate_by_target(await get_relationships_by_type(
         character_id,
         "mentor"
-    )
+    ))
 
-    combat = await get_relationships_by_type(
+    combat = deduplicate_by_target(await get_relationships_by_type(
         character_id,
         "combat"
-    )
+    ))
 
     return {
 

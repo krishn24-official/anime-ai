@@ -342,13 +342,20 @@ async def process_chat_message(
 
         enriched = await enrich_relationships_by_source(all_results)
 
+        seen_targets = set()
+        unique_enriched = []
+        for r in enriched:
+            if r["target"] and r["target"]["_id"] not in seen_targets:
+                seen_targets.add(r["target"]["_id"])
+                unique_enriched.append(r)
+
         # Pair each name with the specific relationship word used
         # (sensei vs teacher vs mentor), so the answer is precise
         # even when multiple words were searched.
         labeled = [
             f"{r['target']['name']} ({r['relationship']})"
             if len(relationship_names) > 1 else r["target"]["name"]
-            for r in enriched if r["target"]
+            for r in unique_enriched
         ]
 
         return {
