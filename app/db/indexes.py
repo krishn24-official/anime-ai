@@ -5,7 +5,10 @@ async def create_indexes():
     db = get_db()
 
     # characters
+        # characters
     await create_index_safely(db.characters, "name")
+    await create_index_safely(db.characters, [("name", "text")])          # ADD
+    await create_index_safely(db.characters, "game_properties")           # ADD
     await create_index_safely(db.characters, [("birth_month", 1), ("birth_day", 1)])
 
     # relationships
@@ -19,7 +22,8 @@ async def create_indexes():
     await create_index_safely(db.chapters, "chapter_number")
 
     # anime / episodes
-    await create_index_safely(db.anime, "name")
+    await create_index_safely(db.anime, "title.english")                  # CHANGED
+    await create_index_safely(db.anime, "title.romaji")                   # CHANGED
     await create_index_safely(db.episodes, "anime_id")
     await create_index_safely(db.episodes, "episode_number")
 
@@ -30,6 +34,14 @@ async def create_indexes():
     await create_index_safely(db.news, "url", unique=True, sparse=True)
     await create_index_safely(db.news, "category")
     await create_index_safely(db.news, "published_at")
+    await create_index_safely(db.news, [("category", 1), ("published_at", -1)])  # ADD
+    await create_index_safely(db.news, "source")
+
+    # organizations
+    await create_index_safely(db.organizations, "name")                   # REMOVED unique=True
+    await create_index_safely(db.organizations, "type")
+    await create_index_safely(db.organizations, "anime_ids")
+    await create_index_safely(db.organizations, "manga_id")
 
     # users
     await create_index_safely(db.users, "email", unique=True)

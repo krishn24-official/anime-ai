@@ -10,11 +10,11 @@ from app.config import GEMINI_API_KEY
 
 genai.configure(api_key=GEMINI_API_KEY)
 
-MODEL_NAME = "gemini-2.5-flash-lite"
+MODEL_NAME = "gemini-2.0-flash"
 
-# Hard cap on Gemini calls per day for the chat bot (gemini-2.5-flash-lite
-# free tier = 20 RPD). Tune via GEMINI_DAILY_LIMIT if you upgrade.
-DAILY_LIMIT = int(os.getenv("GEMINI_DAILY_LIMIT", "18"))
+# Hard cap on Gemini calls per day for the chat bot (gemini-2.0-flash
+# free tier = 200 RPD). Tune via GEMINI_DAILY_LIMIT if you upgrade.
+DAILY_LIMIT = int(os.getenv("GEMINI_DAILY_LIMIT", "180"))
 
 # Separate model + limit for the news pipeline. gemini-2.0-flash has a
 # much higher free-tier daily limit (200 RPD) than gemini-2.5-flash-lite

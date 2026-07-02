@@ -103,7 +103,7 @@ async def run_agent(user_message: str) -> dict:
 
         # Use Gemini only for synthesis (no tools, just summarize the data)
         synthesis_model = genai.GenerativeModel(
-            model_name="gemini-2.5-flash-lite",
+            model_name="gemini-2.0-flash",
             system_instruction=(
                 "You are a helpful entertainment assistant. "
                 "The user asked a question and we fetched relevant data from our database. "
@@ -122,7 +122,8 @@ async def run_agent(user_message: str) -> dict:
             response = await synthesis_model.generate_content_async(synthesis_prompt)
             answer = response.text.strip()
         except Exception as e:
-            answer = f"Agent error during synthesis: {e}"
+            # Quota hit or error — return raw data directly, still useful
+            answer = tool_result
 
         return {
             "answer": answer,
@@ -132,7 +133,7 @@ async def run_agent(user_message: str) -> dict:
 
     # --- Slow path: full Gemini tool-calling loop ---
     model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash-lite",
+        model_name="gemini-2.0-flash",
         system_instruction=AGENT_SYSTEM_PROMPT,
         tools=_build_gemini_tools(),
     )
