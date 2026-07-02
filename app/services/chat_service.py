@@ -90,10 +90,10 @@ _ALL_INTENT_KEYWORDS = list(TARGET_RELATIONSHIP_INTENTS.keys()) + ["family", "te
 
 def fuzzy_match_intent(word: str) -> str | None:
     """
-    Returns the closest intent keyword if similarity >= 60%, else None.
+    Returns the closest intent keyword if similarity >= 80%, else None.
     Handles typos like 'taemmates' -> 'teammate', 'clasmetes' -> 'classmate'.
     """
-    matches = difflib.get_close_matches(word, _ALL_INTENT_KEYWORDS, n=1, cutoff=0.6)
+    matches = difflib.get_close_matches(word, _ALL_INTENT_KEYWORDS, n=1, cutoff=0.8)
     return matches[0] if matches else None
 
 
