@@ -1,0 +1,44 @@
+[
+  {
+    "_id": "org_tokyo_jujutsu_high",
+    "name": "Tokyo Jujutsu High",
+    "native_name": "東京都立呪術高等専門学校",
+    "category": "academy",
+    "status": "active",
+    "description": "School for training Jujutsu Sorcerers.",
+    "parent_entity_id": null,
+    "anime_ids": ["anime_jujutsu_kaisen"],
+    "manga_ids": ["manga_jujutsu_kaisen"],
+    "images": {
+      "logo": "",
+      "banner": ""
+    },
+    "tags": [
+      "sorcerers"
+    ],
+    "source_metadata": {},
+    "is_deleted": false,
+    "deleted_at": null
+  },
+  {
+    "_id": "org_cursed_spirits",
+    "name": "Cursed Spirits",
+    "native_name": "呪霊",
+    "category": "species_group",
+    "status": "active",
+    "description": "Manifestations born from cursed energy.",
+    "parent_entity_id": null,
+    "anime_ids": ["anime_jujutsu_kaisen"],
+    "manga_ids": ["manga_jujutsu_kaisen"],
+    "images": {
+      "logo": "",
+      "banner": ""
+    },
+    "tags": [
+      "curse"
+    ],
+    "source_metadata": {},
+    "is_deleted": false,
+    "deleted_at": null
+  }
+]

@@ -1,0 +1,86 @@
+[
+  {
+    "_id": "org_survey_corps",
+    "name": "Survey Corps",
+    "native_name": "調査兵団",
+    "category": "military",
+    "status": "active",
+    "description": "Military branch dedicated to exploring beyond the Walls.",
+    "parent_entity_id": null,
+    "anime_ids": ["anime_attack_on_titan"],
+    "manga_ids": ["manga_attack_on_titan"],
+    "images": {
+      "logo": "",
+      "banner": ""
+    },
+    "tags": [
+      "military"
+    ],
+    "source_metadata": {},
+    "is_deleted": false,
+    "deleted_at": null
+  },
+  {
+    "_id": "org_military_police",
+    "name": "Military Police Brigade",
+    "native_name": "憲兵団",
+    "category": "military",
+    "status": "active",
+    "description": "Military branch responsible for maintaining internal order.",
+    "parent_entity_id": null,
+    "anime_ids": ["anime_attack_on_titan"],
+    "manga_ids": ["manga_attack_on_titan"],
+    "images": {
+      "logo": "",
+      "banner": ""
+    },
+    "tags": [
+      "military"
+    ],
+    "source_metadata": {},
+    "is_deleted": false,
+    "deleted_at": null
+  },
+  {
+    "_id": "org_nine_titans",
+    "name": "Nine Titans",
+    "native_name": "九つの巨人",
+    "category": "species_group",
+    "status": "active",
+    "description": "The nine intelligent Titan powers inherited through Eldians.",
+    "parent_entity_id": null,
+    "anime_ids": ["anime_attack_on_titan"],
+    "manga_ids": ["manga_attack_on_titan"],
+    "images": {
+      "logo": "",
+      "banner": ""
+    },
+    "tags": [
+      "titans"
+    ],
+    "source_metadata": {},
+    "is_deleted": false,
+    "deleted_at": null
+  },
+  {
+    "_id": "org_reiss_family",
+    "name": "Reiss Family",
+    "native_name": "レイス家",
+    "category": "clan",
+    "status": "active",
+    "description": "The true royal family within the Walls.",
+    "parent_entity_id": null,
+    "anime_ids": ["anime_attack_on_titan"],
+    "manga_ids": ["manga_attack_on_titan"],
+    "images": {
+      "logo": "",
+      "banner": ""
+    },
+    "tags": [
+      "royal_blood"
+    ],
+    "source_metadata": {},
+    "is_deleted": false,
+    "deleted_at": null
+  }
+]

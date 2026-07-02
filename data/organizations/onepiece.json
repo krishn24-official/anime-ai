@@ -2,25 +2,85 @@
   {
     "_id": "org_straw_hat_pirates",
     "name": "Straw Hat Pirates",
-    "type": "pirate_crew",
+    "native_name": "麦わらの一味",
+    "category": "pirate_crew",
     "status": "active",
-    "description": "A pirate crew originating from the East Blue, led by Monkey D. Luffy.",
-    "leader_id": "char_luffy",
-    "founded_by_id": "char_luffy",
-    "headquarters": null,
-    "anime_ids": ["anime_onepiece"],
-    "manga_id": "manga_onepiece",
+    "description": "Pirate crew led by Monkey D. Luffy.",
+    "parent_entity_id": null,
+    "anime_ids": ["anime_one_piece"],
+    "manga_ids": ["manga_one_piece"],
     "images": {
-      "logo": "https://example.com/strawhat_logo.png",
-      "banner": "https://example.com/strawhat_banner.png"
+      "logo": "",
+      "banner": ""
     },
-    "tags": ["pirates", "straw hat", "liberation"],
-    "members": [
-      { "char_id": "char_luffy", "title": "Captain", "order": 1 },
-      { "char_id": "char_zoro", "title": "First Mate / Swordsman", "order": 2 }
+    "tags": [
+      "pirates"
     ],
-    "affiliated_characters": [
-      { "char_id": "char_luffy", "role": "Captain" }
-    ]
+    "source_metadata": {},
+    "is_deleted": false,
+    "deleted_at": null
+  },
+  {
+    "_id": "org_marines",
+    "name": "Marines",
+    "native_name": "海軍",
+    "category": "military",
+    "status": "active",
+    "description": "Military force serving the World Government.",
+    "parent_entity_id": "org_world_government",
+    "anime_ids": ["anime_one_piece"],
+    "manga_ids": ["manga_one_piece"],
+    "images": {
+      "logo": "",
+      "banner": ""
+    },
+    "tags": [
+      "justice"
+    ],
+    "source_metadata": {},
+    "is_deleted": false,
+    "deleted_at": null
+  },
+  {
+    "_id": "org_holy_knights",
+    "name": "Holy Knights",
+    "native_name": "神の騎士団",
+    "category": "organization",
+    "status": "active",
+    "description": "Elite enforcers serving the Celestial Dragons.",
+    "parent_entity_id": "org_world_government",
+    "anime_ids": ["anime_one_piece"],
+    "manga_ids": ["manga_one_piece"],
+    "images": {
+      "logo": "",
+      "banner": ""
+    },
+    "tags": [
+      "world_government"
+    ],
+    "source_metadata": {},
+    "is_deleted": false,
+    "deleted_at": null
+  },
+  {
+    "_id": "org_celestial_dragons",
+    "name": "Celestial Dragons",
+    "native_name": "天竜人",
+    "category": "government",
+    "status": "active",
+    "description": "World Nobles who rule over the World Government.",
+    "parent_entity_id": "org_world_government",
+    "anime_ids": ["anime_one_piece"],
+    "manga_ids": ["manga_one_piece"],
+    "images": {
+      "logo": "",
+      "banner": ""
+    },
+    "tags": [
+      "world_nobles"
+    ],
+    "source_metadata": {},
+    "is_deleted": false,
+    "deleted_at": null
   }
 ]

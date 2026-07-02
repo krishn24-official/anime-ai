@@ -231,7 +231,7 @@ async def main():
             # "Sabo no Chichi",
             # "Sabo no Haha",
             # "Olvia Nico",
-            "Cobra Nefertari",
+            # "Cobra Nefertari",
             # "Naruto Uzumaki",
             # "Sasuke Uchiha",
             # "Sakura Haruno",

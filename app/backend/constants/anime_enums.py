@@ -81,6 +81,81 @@ EVENT_TYPES = [
     "special"
 ]
 
+ENTITY_CATEGORIES = [
+    # Geographic
+    "village",
+    "city",
+    "town",
+    "country",
+    "kingdom",
+    "island",
+    "continent",
+    "realm",
+    "dimension",
+
+    # Organizations
+    "organization",
+    "military",
+    "government",
+    "academy",
+    "guild",
+    "pirate_crew",
+    "crime_organization",
+    "mercenary_group",
+    "religious_group",
+
+    # Family / Social
+    "clan",
+    "family",
+    "tribe",
+    "house",
+
+    # Military Divisions
+    "division",
+    "squad",
+    "corps",
+    "unit",
+
+    # Species / Race
+    "species",
+    "species_group",
+    "race",
+
+    # Schools
+    "school",
+    "college",
+
+    # Misc
+    "other"
+]
+
+ENTITY_RELATIONSHIPS = [
+
+    "parent",
+
+    "subdivision",
+
+    "branch",
+
+    "allied_with",
+
+    "enemy_of",
+
+    "merged_into",
+
+    "successor_of",
+
+    "predecessor_of",
+
+    "located_in",
+
+    "governs",
+
+    "protected_by",
+
+    "controlled_by"
+]
+
 
 # =========================
 # RELATIONSHIPS
@@ -197,11 +272,43 @@ RELATIONSHIPS = {
     # =====================
 
     "organization": [
+
+        # Membership
         "member",
+        "former_member",
+
+        # Leadership
         "leader",
-        "subordinate",
+        "former_leader",
+        "captain",
+        "vice_captain",
         "commander",
-        "captain"
+        "chief",
+        "chairman",
+        "elder",
+
+        # Administrative
+        "founder",
+        "co_founder",
+        "successor",
+        "advisor",
+        "representative",
+
+        # Educational
+        "teacher",
+        "student",
+        "principal",
+        "instructor",
+
+        # Military
+        "soldier",
+        "officer",
+        "general",
+
+        # Special
+        "guardian",
+        "bodyguard",
+        "ambassador"
     ],
 
 
