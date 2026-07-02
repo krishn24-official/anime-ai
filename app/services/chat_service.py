@@ -1,7 +1,13 @@
+import difflib
 import re
 
+from app.repositories.home_repository import get_today_birthdays
+from app.repositories.news_repository import get_latest_news
+from app.repositories.rating_repository import get_top_rated
+
 from app.repositories.chat_repository import (
-    find_character
+    find_character,
+    find_character_candidates,
 )
 
 from app.repositories.relationship_repository import (
@@ -77,6 +83,18 @@ TARGET_RELATIONSHIP_INTENTS = {
     "stepbrother": ["stepbrother"],
     "stepsister": ["stepsister"],
 }
+
+# Flat list of all recognised intent keywords — used for fuzzy matching.
+_ALL_INTENT_KEYWORDS = list(TARGET_RELATIONSHIP_INTENTS.keys()) + ["family", "team"]
+
+
+def fuzzy_match_intent(word: str) -> str | None:
+    """
+    Returns the closest intent keyword if similarity >= 60%, else None.
+    Handles typos like 'taemmates' -> 'teammate', 'clasmetes' -> 'classmate'.
+    """
+    matches = difflib.get_close_matches(word, _ALL_INTENT_KEYWORDS, n=1, cutoff=0.6)
+    return matches[0] if matches else None
 
 
 def extract_character_query(message: str) -> str:
@@ -261,6 +279,12 @@ def detect_intent(message: str):
     if "team" in message:
         return "team"
 
+    # Fuzzy fallback: check each word in the message for a close intent match.
+    for word in message.split():
+        matched = fuzzy_match_intent(word)
+        if matched:
+            return matched
+
     return "unknown"
 
 
@@ -269,6 +293,58 @@ async def process_chat_message(
     image_base64: str | None = None,
     image_media_type: str = "image/jpeg",
 ):
+    msg_lower = message.lower()
+
+    # --- Fast-path intercepts: Bypass Gemini for standard platform queries ---
+
+    # 1. News for birthday characters
+    if "news" in msg_lower and "birthday" in msg_lower:
+        birthdays = await get_today_birthdays()
+        if not birthdays:
+            return {"answer": "There are no character birthdays today, so there's no news about them!"}
+
+        bday_names = [b.get("name") for b in birthdays if b.get("name")]
+        news_articles = await get_latest_news(limit=20)
+        relevant_news = []
+        for article in news_articles:
+            text_to_search = (article.get("title", "") + " " + article.get("summary", "")).lower()
+            if any(name.lower() in text_to_search for name in bday_names):
+                relevant_news.append(article)
+
+        if not relevant_news:
+            return {
+                "answer": f"Today's birthdays are: {', '.join(bday_names)}! But I couldn't find any recent news specifically about them."
+            }
+
+        news_text = "\n\n".join([f"**{a.get('title')}**\n{a.get('summary', '')}" for a in relevant_news[:3]])
+        return {
+            "answer": f"Yes! Here is the latest news for today's birthday characters ({', '.join(bday_names)}):\n\n{news_text}"
+        }
+
+    # 2. Birthdays
+    if "birthday" in msg_lower:
+        birthdays = await get_today_birthdays()
+        if not birthdays:
+            return {"answer": "There are no character birthdays today."}
+        names = [b.get("name") for b in birthdays if b.get("name")]
+        return {"answer": f"The following characters are celebrating their birthday today: **{', '.join(names)}**!"}
+
+    # 3. Latest News
+    if "news" in msg_lower:
+        articles = await get_latest_news(limit=3)
+        if not articles:
+            return {"answer": "I couldn't find any recent anime news."}
+        news_text = "\n\n".join([f"**{a.get('title')}**\n{a.get('summary', '')[:150]}..." for a in articles])
+        return {"answer": f"Here is the latest anime news:\n\n{news_text}"}
+
+    # 4. Recommendations
+    if "recommend" in msg_lower or "must-watch" in msg_lower:
+        top = await get_top_rated("anime", limit=3)
+        if not top:
+            return {"answer": "I don't have any anime recommendations right now."}
+        recs = "\n".join([f"• **{a.get('title', {}).get('english') or a.get('title', {}).get('romaji')}**" for a in top])
+        return {"answer": f"Here are some highly-rated anime I recommend watching:\n\n{recs}"}
+
     # --- Image recognition mode ---
     # --- Image recognition mode ---
     if image_base64:
@@ -312,13 +388,58 @@ async def process_chat_message(
             "I couldn't understand which character you're asking about."
         }
 
-    character = await find_character(name_query)
+    candidates = await find_character_candidates(name_query)
 
-    if not character:
+    if not candidates:
         return {
             "answer":
             f"I couldn't find a character matching '{name_query}'."
         }
+
+    if len(candidates) > 1:
+        # Score candidates based on word similarity to the query
+        # This handles cases where the query has an unstripped typo (e.g. "sasuke's teamamtes")
+        # "sasuke" will be a 100% (1.0) match to "Sasuke Uchiha", so we can auto-select it.
+        best_candidate = None
+        highest_score = 0.0
+
+        query_words = set(re.sub(r"[^\w\s]", "", name_query.lower()).split())
+
+        for c in candidates:
+            cand_words = set(re.sub(r"[^\w\s]", "", c["name"].lower()).split())
+            max_word_score = 0.0
+            
+            # Check if any query word exactly matches a candidate word (100% score)
+            if query_words.intersection(cand_words):
+                max_word_score = 1.0
+            else:
+                # Otherwise, compute highest difflib similarity between any word pair
+                for qw in query_words:
+                    for cw in cand_words:
+                        score = difflib.SequenceMatcher(None, qw, cw).ratio()
+                        if score > max_word_score:
+                            max_word_score = score
+            
+            if max_word_score > highest_score:
+                highest_score = max_word_score
+                best_candidate = c
+
+        # If we have a very confident match (> 90%), skip disambiguation and auto-select
+        if highest_score > 0.90 and best_candidate:
+            character = best_candidate
+        else:
+            # No clear winner — return disambiguation options
+            return {
+                "answer": (
+                    f"I found multiple characters matching '{name_query}'. "
+                    "Which one did you mean?"
+                ),
+                "disambiguation": [c["name"] for c in candidates],
+                "name_query": name_query,
+                "original_message": message,
+            }
+    else:
+        character = candidates[0]
 
     intent = detect_intent(message)
 
