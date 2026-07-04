@@ -126,8 +126,10 @@ async def find_character_candidates(name: str, limit: int = 5) -> list:
     clean_for_fuzzy = re.sub(r"['’]s\b", "", name_clean.lower())
     clean_for_fuzzy = re.sub(r"[^\w\s]", "", clean_for_fuzzy)
 
+    stop_words = {"the", "and", "for", "with", "about", "anime", "character", "who", "what", "is", "tell", "me", "show"}
+
     for query_word in clean_for_fuzzy.split():
-        if len(query_word) < 3:
+        if len(query_word) < 3 or query_word in stop_words:
             continue
         close_words = difflib.get_close_matches(
             query_word, all_index_words, n=3, cutoff=0.70

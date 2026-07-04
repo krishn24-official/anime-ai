@@ -345,6 +345,22 @@ async def process_chat_message(
         recs = "\n".join([f"• **{a.get('title', {}).get('english') or a.get('title', {}).get('romaji')}**" for a in top])
         return {"answer": f"Here are some highly-rated anime I recommend watching:\n\n{recs}"}
 
+    # 5. Anime specific queries
+    if "anime" in msg_lower and not image_base64:
+        anime_query = re.sub(r"^(who is|who's|whos|what is|whats|tell me about|show me|get)\s+", "", msg_lower)
+        anime_query = anime_query.replace("the anime", "").replace("an anime", "").replace("anime", "").strip("? ")
+        
+        if len(anime_query) > 2:
+            from app.repositories.anime_repository import search_anime
+            anime_results = await search_anime(anime_query)
+            if anime_results:
+                anime = anime_results[0]
+                title = anime.get("title", {}).get("english") or anime.get("title", {}).get("romaji") or "Unknown"
+                desc = anime.get("description", "No description available.")
+                import re as regex
+                desc = regex.sub(r'<[^>]+>', '', desc)
+                return {"answer": f"**{title}**\n\n{desc}"}
+
     # --- Image recognition mode ---
     # --- Image recognition mode ---
     if image_base64:
@@ -391,6 +407,10 @@ async def process_chat_message(
     candidates = await find_character_candidates(name_query)
 
     if not candidates:
+        # Try a general query before giving up
+        gemini_answer = await ask_gemini_with_context(message, {})
+        if gemini_answer:
+            return {"answer": gemini_answer}
         return {
             "answer":
             f"I couldn't find a character matching '{name_query}'."

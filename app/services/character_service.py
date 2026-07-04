@@ -2,7 +2,8 @@ from app.repositories.character_repository import (
     get_all_characters,
     get_character_by_id,
     search_characters,
-    get_character_basic
+    get_character_basic,
+    get_birthdays_by_date_range
 )
 
 from app.repositories.relationship_repository import (
@@ -17,6 +18,10 @@ from app.repositories.organization_repository import (
 async def fetch_all_characters():
 
     return await get_all_characters()
+
+
+async def fetch_birthdays_by_date_range(start_date: str, end_date: str):
+    return await get_birthdays_by_date_range(start_date, end_date)
 
 
 async def fetch_character(

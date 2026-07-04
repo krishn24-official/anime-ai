@@ -1,6 +1,7 @@
 from fastapi import (
     APIRouter,
-    HTTPException
+    HTTPException,
+    Query
 )
 
 from app.services.character_service import (
@@ -8,7 +9,8 @@ from app.services.character_service import (
     fetch_character,
     search_character,
     fetch_character_details,
-    fetch_character_summary
+    fetch_character_summary,
+    fetch_birthdays_by_date_range
 )
 
 router = APIRouter(
@@ -23,6 +25,14 @@ async def get_characters():
     return await (
         fetch_all_characters()
     )
+
+
+@router.get("/birthdays/range")
+async def get_birthdays_range(
+    start_date: str = Query(..., description="Start date in YYYY-MM-DD format"),
+    end_date: str = Query(..., description="End date in YYYY-MM-DD format")
+):
+    return await fetch_birthdays_by_date_range(start_date, end_date)
 
 @router.get("/{character_id}")
 
