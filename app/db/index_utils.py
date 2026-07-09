@@ -9,7 +9,11 @@ def normalize_keys(keys):
             if isinstance(k, str):
                 normalized.append((k, 1))
             elif isinstance(k, (list, tuple)) and len(k) == 2:
-                normalized.append((k[0], int(k[1])))
+                try:
+                    val = int(k[1])
+                except (ValueError, TypeError):
+                    val = k[1]
+                normalized.append((k[0], val))
             else:
                 raise ValueError(f"Invalid key format: {k}")
         return normalized
@@ -49,7 +53,11 @@ async def create_index_safely(collection, keys, name=None, **kwargs):
         info_keys = []
         for k in info.get("key", []):
             if len(k) == 2:
-                info_keys.append((k[0], int(k[1])))
+                try:
+                    val = int(k[1])
+                except (ValueError, TypeError):
+                    val = k[1]
+                info_keys.append((k[0], val))
 
         keys_match = (info_keys == normalized)
 
