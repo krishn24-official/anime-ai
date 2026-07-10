@@ -5,10 +5,62 @@ from app.backend.ingestion.tmdb_client import (
     search_tv,
     get_movie_details,
     get_tv_details,
+    discover_movies,
+    discover_tv,
 )
 from app.backend.ingestion.tmdb_mapper import map_movie, map_tv_series
 from app.repositories.movie_repository import upsert_movie
 from app.repositories.tv_series_repository import upsert_tv_series
+
+
+async def sync_discover_movies(pages: int = 5, sort_by: str = "popularity.desc", **filters) -> dict:
+    saved = 0
+    failed = 0
+
+    for page in range(1, pages + 1):
+        response = await discover_movies(page=page, sort_by=sort_by, **filters)
+        results = response.get("results", [])
+        print(f"  Page {page}: found {len(results)} movies")
+
+        for item in results:
+            details = await get_movie_details(item["id"])
+
+            if not details:
+                failed += 1
+                print(f"    [FAIL] Could not fetch details for tmdb_id={item['id']}")
+                continue
+
+            doc = map_movie(details)
+            await upsert_movie(doc)
+            saved += 1
+            print(f"    [OK] {doc['_id']} - {doc['title']} ({doc.get('year', '?')})")
+
+    return {"saved": saved, "failed": failed}
+
+
+async def sync_discover_tv(pages: int = 5, sort_by: str = "popularity.desc", **filters) -> dict:
+    saved = 0
+    failed = 0
+
+    for page in range(1, pages + 1):
+        response = await discover_tv(page=page, sort_by=sort_by, **filters)
+        results = response.get("results", [])
+        print(f"  Page {page}: found {len(results)} TV series")
+
+        for item in results:
+            details = await get_tv_details(item["id"])
+
+            if not details:
+                failed += 1
+                print(f"    [FAIL] Could not fetch details for tmdb_id={item['id']}")
+                continue
+
+            doc = map_tv_series(details)
+            await upsert_tv_series(doc)
+            saved += 1
+            print(f"    [OK] {doc['_id']} - {doc['title']} ({doc.get('year', '?')})")
+
+    return {"saved": saved, "failed": failed}
 
 
 async def sync_trending_movies(pages: int = 1) -> dict:
@@ -17,16 +69,20 @@ async def sync_trending_movies(pages: int = 1) -> dict:
 
     for page in range(1, pages + 1):
         results = await get_trending_movies(page=page)
+        print(f"  Page {page}: found {len(results)} trending movies")
 
         for item in results:
             details = await get_movie_details(item["id"])
 
             if not details:
                 failed += 1
+                print(f"    [FAIL] Could not fetch details for tmdb_id={item['id']}")
                 continue
 
-            await upsert_movie(map_movie(details))
+            doc = map_movie(details)
+            await upsert_movie(doc)
             saved += 1
+            print(f"    [OK] {doc['_id']} - {doc['title']} ({doc.get('year', '?')})")
 
     return {"saved": saved, "failed": failed}
 
@@ -37,16 +93,20 @@ async def sync_trending_tv(pages: int = 1) -> dict:
 
     for page in range(1, pages + 1):
         results = await get_trending_tv(page=page)
+        print(f"  Page {page}: found {len(results)} trending TV series")
 
         for item in results:
             details = await get_tv_details(item["id"])
 
             if not details:
                 failed += 1
+                print(f"    [FAIL] Could not fetch details for tmdb_id={item['id']}")
                 continue
 
-            await upsert_tv_series(map_tv_series(details))
+            doc = map_tv_series(details)
+            await upsert_tv_series(doc)
             saved += 1
+            print(f"    [OK] {doc['_id']} - {doc['title']} ({doc.get('year', '?')})")
 
     return {"saved": saved, "failed": failed}
 

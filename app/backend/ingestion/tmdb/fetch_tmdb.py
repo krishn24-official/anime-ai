@@ -1,6 +1,13 @@
 import asyncio
+import sys
+import io
+
+# Fix Windows console encoding for emoji
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 from app.db.mongo import connect_db, close_db
+from app.backend.ingestion.tmdb_client import close_client
 from app.services.tmdb_sync_service import (
     sync_trending_movies,
     sync_trending_tv,
@@ -12,14 +19,16 @@ from app.services.tmdb_sync_service import (
 async def main():
     print("Connecting to MongoDB...")
     await connect_db()
-    print("Connected. Starting TMDB sync...")
+    print("Connected. Starting TMDB sync...\n")
 
-    # --- Trending (default) ---
+    # --- Trending (2 pages = ~40 movies + ~40 TV series) ---
+    print("=== Fetching Trending Movies (2 pages) ===")
     movies_result = await sync_trending_movies(pages=2)
-    print("🎬 Trending movies:", movies_result)
+    print(f"Movies result: saved={movies_result['saved']}, failed={movies_result['failed']}\n")
 
+    print("=== Fetching Trending TV Series (2 pages) ===")
     tv_result = await sync_trending_tv(pages=2)
-    print("📺 Trending TV series:", tv_result)
+    print(f"TV Series result: saved={tv_result['saved']}, failed={tv_result['failed']}\n")
 
     # --- Specific titles (optional) ---
     # Uncomment and edit to add specific titles:
@@ -32,6 +41,7 @@ async def main():
     #     doc = await add_tv_series_by_title(title)
     #     print("Added TV series:", doc["_id"] if doc else f"NOT FOUND: {title}")
 
+    await close_client()
     await close_db()
     print("Done.")
 

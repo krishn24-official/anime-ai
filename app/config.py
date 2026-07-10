@@ -11,6 +11,11 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 OMDB_API_KEY = os.getenv("OMDB_API_KEY")
 OMDB_BASE_URL = "https://www.omdbapi.com/"
 
+# ── TMDb ──────────────────────────────────────────────
+TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+TMDB_BASE_URL = "https://api.themoviedb.org/3"
+TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p"
+
 # ── Cloudinary ────────────────────────────────────────
 CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
 CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
