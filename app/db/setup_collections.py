@@ -18,6 +18,9 @@ COLLECTIONS = [
     "comments",
     "tier_lists",
     "organizations",
+    "trending",
+    "trending_mentions",
+    "search_logs",
 ]
 
 async def create_collections():

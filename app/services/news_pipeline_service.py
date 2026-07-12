@@ -12,6 +12,8 @@ from app.backend.ingestion.news.sources.youtube_rss import fetch_youtube_news
 
 from app.services.news_category_mapping import get_mapped_category, make_fallback_summary
 from app.repositories.news_repository import article_exists, insert_article
+from app.services import title_matcher
+from app.services import trending_service
 
 
 LAST_24_HOURS = 24 * 60 * 60
@@ -111,6 +113,12 @@ async def run_news_pipeline():
     raw_articles = await _fetch_all_sources()
     print(f"[news_pipeline] fetched {len(raw_articles)} raw articles")
 
+    try:
+        alias_index = await title_matcher.build_alias_index()
+    except Exception as e:
+        print(f"[news_pipeline] failed to build alias index: {e}")
+        alias_index = []
+
     fresh_articles = [a for a in raw_articles if _is_fresh(a)]
     print(f"[news_pipeline] {len(fresh_articles)} fresh (last 24h)")
 
@@ -166,6 +174,12 @@ async def run_news_pipeline():
                 skipped_duplicate += 1
             else:
                 raise e
+        else:
+            if alias_index:
+                try:
+                    await trending_service.scan_article_for_mentions(article, alias_index)
+                except Exception as match_err:
+                    print("[news_pipeline] title matcher error:", match_err)
 
     summary = {
         "fetched": len(raw_articles),
@@ -174,6 +188,12 @@ async def run_news_pipeline():
         "skipped_duplicate": skipped_duplicate,
         "skipped_unmapped": skipped_unmapped,
     }
+
+    try:
+        trending_summary = await trending_service.recompute_news_trending()
+        summary.update(trending_summary)
+    except Exception as trend_err:
+        print(f"[news_pipeline] failed to recompute trending: {trend_err}")
 
     print("[news_pipeline] done:", summary)
     return summary

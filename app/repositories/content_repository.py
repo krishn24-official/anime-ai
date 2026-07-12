@@ -1,0 +1,196 @@
+from datetime import datetime
+from app.db.mongo import get_db
+
+import calendar
+
+async def get_dated_releases_range(start_date: str, end_date: str):
+    db = get_db()
+    results = []
+
+    # 1. Movies (release_start)
+    movie_cursor = db["movies"].find(
+        {
+            "release_date": {"$gte": start_date, "$lte": end_date},
+            "is_deleted": {"$ne": True}
+        },
+        {"_id": 1, "title": 1, "images.poster": 1, "release_date": 1}
+    )
+    movies = await movie_cursor.to_list(None)
+    for m in movies:
+        results.append({
+            "content_type": "movie",
+            "content_id": str(m["_id"]),
+            "title": m.get("title", ""),
+            "poster_image": m.get("images", {}).get("poster"),
+            "date": m.get("release_date"),
+            "event_type": "release_start"
+        })
+
+    # 2. TV Series (release_start & release_end)
+    tv_start_cursor = db["tv_series"].find(
+        {
+            "first_air_date": {"$gte": start_date, "$lte": end_date},
+            "is_deleted": {"$ne": True}
+        },
+        {"_id": 1, "title": 1, "images.poster": 1, "first_air_date": 1}
+    )
+    tv_starts = await tv_start_cursor.to_list(None)
+    for tv in tv_starts:
+        results.append({
+            "content_type": "tv_series",
+            "content_id": str(tv["_id"]),
+            "title": tv.get("title", ""),
+            "poster_image": tv.get("images", {}).get("poster"),
+            "date": tv.get("first_air_date"),
+            "event_type": "release_start"
+        })
+
+    tv_end_cursor = db["tv_series"].find(
+        {
+            "last_air_date": {"$gte": start_date, "$lte": end_date},
+            "is_deleted": {"$ne": True}
+        },
+        {"_id": 1, "title": 1, "images.poster": 1, "last_air_date": 1}
+    )
+    tv_ends = await tv_end_cursor.to_list(None)
+    for tv in tv_ends:
+        results.append({
+            "content_type": "tv_series",
+            "content_id": str(tv["_id"]),
+            "title": tv.get("title", ""),
+            "poster_image": tv.get("images", {}).get("poster"),
+            "date": tv.get("last_air_date"),
+            "event_type": "release_end"
+        })
+
+    # 3. Anime
+    start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+    end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+
+    anime_cursor = db["anime"].find(
+        {
+            "is_deleted": {"$ne": True},
+            "$or": [
+                {"release_date.precision": "day", "release_date.year": {"$gte": start_dt.year, "$lte": end_dt.year}},
+                {"end_date.precision": "day", "end_date.year": {"$gte": start_dt.year, "$lte": end_dt.year}}
+            ]
+        },
+        {"_id": 1, "title": 1, "images.poster": 1, "release_date": 1, "end_date": 1}
+    )
+    animes = await anime_cursor.to_list(None)
+    for a in animes:
+        title_obj = a.get("title", {})
+        title_str = title_obj.get("english") or title_obj.get("romaji") or title_obj.get("japanese") or ""
+        poster = a.get("images", {}).get("poster")
+
+        rd = a.get("release_date")
+        if rd and rd.get("precision") == "day" and rd.get("year") and rd.get("month") and rd.get("day"):
+            date_str = f"{rd['year']:04d}-{rd['month']:02d}-{rd['day']:02d}"
+            if start_date <= date_str <= end_date:
+                results.append({
+                    "content_type": "anime",
+                    "content_id": str(a["_id"]),
+                    "title": title_str,
+                    "poster_image": poster,
+                    "date": date_str,
+                    "event_type": "release_start"
+                })
+
+        ed = a.get("end_date")
+        if ed and ed.get("precision") == "day" and ed.get("year") and ed.get("month") and ed.get("day"):
+            date_str = f"{ed['year']:04d}-{ed['month']:02d}-{ed['day']:02d}"
+            if start_date <= date_str <= end_date:
+                results.append({
+                    "content_type": "anime",
+                    "content_id": str(a["_id"]),
+                    "title": title_str,
+                    "poster_image": poster,
+                    "date": date_str,
+                    "event_type": "release_end"
+                })
+
+    results.sort(key=lambda x: x["date"])
+    return results
+
+
+async def get_announced_releases_range(start_date: str, end_date: str):
+    db = get_db()
+    results = []
+
+    def process_precision_date(doc, date_obj, event_type, content_type, title_str):
+        if not date_obj or date_obj.get("precision") not in ("month", "year"):
+            return
+
+        y = date_obj.get("year")
+        precision = date_obj.get("precision")
+        if not y:
+            return
+
+        if precision == "month":
+            m = date_obj.get("month", 12)
+            _, last_day = calendar.monthrange(y, m)
+            pinned_date = f"{y:04d}-{m:02d}-{last_day:02d}"
+            label = datetime(y, m, 1).strftime("%B %Y")
+        else:
+            pinned_date = f"{y:04d}-12-31"
+            label = str(y)
+
+        if start_date <= pinned_date <= end_date:
+            results.append({
+                "content_type": content_type,
+                "content_id": str(doc["_id"]),
+                "title": title_str,
+                "poster_image": doc.get("images", {}).get("poster"),
+                "pinned_date": pinned_date,
+                "label": label,
+                "event_type": event_type
+            })
+
+    # 1. Movies (release_precision)
+    movie_cursor = db["movies"].find(
+        {
+            "release_precision": {"$exists": True, "$ne": None},
+            "is_deleted": {"$ne": True}
+        },
+        {"_id": 1, "title": 1, "images.poster": 1, "release_precision": 1}
+    )
+    movies = await movie_cursor.to_list(None)
+    for m in movies:
+        process_precision_date(m, m.get("release_precision"), "announced_start", "movie", m.get("title", ""))
+
+    # 2. TV Series (first_air_precision and last_air_precision)
+    tv_cursor = db["tv_series"].find(
+        {
+            "$or": [
+                {"first_air_precision": {"$exists": True, "$ne": None}},
+                {"last_air_precision": {"$exists": True, "$ne": None}}
+            ],
+            "is_deleted": {"$ne": True}
+        },
+        {"_id": 1, "title": 1, "images.poster": 1, "first_air_precision": 1, "last_air_precision": 1}
+    )
+    tvs = await tv_cursor.to_list(None)
+    for tv in tvs:
+        process_precision_date(tv, tv.get("first_air_precision"), "announced_start", "tv_series", tv.get("title", ""))
+        process_precision_date(tv, tv.get("last_air_precision"), "announced_end", "tv_series", tv.get("title", ""))
+
+    # 3. Anime (release_date and end_date)
+    anime_cursor = db["anime"].find(
+        {
+            "$or": [
+                {"release_date.precision": {"$in": ["month", "year"]}},
+                {"end_date.precision": {"$in": ["month", "year"]}}
+            ],
+            "is_deleted": {"$ne": True}
+        },
+        {"_id": 1, "title": 1, "images.poster": 1, "release_date": 1, "end_date": 1}
+    )
+    animes = await anime_cursor.to_list(None)
+    for a in animes:
+        title_obj = a.get("title", {})
+        title_str = title_obj.get("english") or title_obj.get("romaji") or title_obj.get("japanese") or ""
+        process_precision_date(a, a.get("release_date"), "announced_start", "anime", title_str)
+        process_precision_date(a, a.get("end_date"), "announced_end", "anime", title_str)
+
+    results.sort(key=lambda x: x["pinned_date"])
+    return results

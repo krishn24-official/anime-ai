@@ -27,6 +27,7 @@ from app.repositories.rating_repository import get_top_rated, get_watchlist_coun
 from app.services.chat_context_service import build_character_context
 from app.services.rating_scale import weight_to_label
 from app.db.mongo import get_db
+from app.services.content_lookup import resolve_content_title
 
 
 def _serialize(obj):
@@ -206,17 +207,8 @@ async def tool_get_content_trends(
             cid = r["_id"]["content_id"]
 
             # Fetch title from the right collection
-            collection_map = {
-                "anime": "anime", "manga": "manga",
-                "movie": "movies", "tv_series": "tv_series",
-            }
-            col = collection_map.get(ctype)
-            doc = await db[col].find_one({"_id": cid}, {"title": 1, "name": 1}) if col else None
-            title = (
-                (doc.get("title") if isinstance(doc.get("title"), str) else
-                 doc.get("title", {}).get("english") or doc.get("title", {}).get("romaji"))
-                if doc else cid
-            ) or doc.get("name") if doc else cid
+            doc_info = await resolve_content_title(ctype, cid)
+            title = doc_info["title"] if doc_info else cid
 
             enriched.append({
                 "content_type": ctype,
@@ -240,22 +232,13 @@ async def tool_get_content_trends(
             cid = r["_id"]["content_id"]
             avg_weight = round(r["average_weight"], 2)
 
-            collection_map = {
-                "anime": "anime", "manga": "manga",
-                "movie": "movies", "tv_series": "tv_series",
-            }
-            col = collection_map.get(ctype)
-            doc = await db[col].find_one({"_id": cid}, {"title": 1, "name": 1}) if col else None
-            title = (
-                (doc.get("title") if isinstance(doc.get("title"), str) else
-                 doc.get("title", {}).get("english") or doc.get("title", {}).get("romaji"))
-                if doc else cid
-            ) or (doc.get("name") if doc else cid)
+            doc_info = await resolve_content_title(ctype, cid)
+            title = doc_info["title"] if doc_info else cid
 
             enriched.append({
                 "content_type": ctype,
                 "content_id": cid,
-                "title": title or cid,
+                "title": title,
                 "average_rating": weight_to_label(avg_weight),
                 "average_weight": avg_weight,
                 "rating_count": r["count"],

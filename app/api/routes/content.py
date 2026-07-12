@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from typing import Literal
 
@@ -18,6 +18,52 @@ class RatingRequest(BaseModel):
 class CommentRequest(BaseModel):
     text: str
     parent_id: str | None = None
+
+
+# --- Upcoming ---
+
+@router.get("/content/upcoming")
+async def get_upcoming(dated_limit: int = 10, seasonal_limit: int = 10):
+    try:
+        return await content_service.get_upcoming_releases(dated_limit, seasonal_limit)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+from app.repositories.content_repository import get_dated_releases_range, get_announced_releases_range
+
+@router.get("/content/releases-range")
+async def get_releases_range(start_date: str = Query(...), end_date: str = Query(...)):
+    try:
+        return await get_dated_releases_range(start_date, end_date)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/content/announced-range")
+async def get_announced_range(start_date: str = Query(...), end_date: str = Query(...)):
+    try:
+        return await get_announced_releases_range(start_date, end_date)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- Trending ---
+
+from app.services.trending_service import get_trending_content
+
+@router.get("/content/trending")
+async def get_trending(limit: int = 10):
+    try:
+        return await get_trending_content(limit)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # --- Ratings ---

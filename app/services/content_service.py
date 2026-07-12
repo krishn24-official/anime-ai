@@ -1,4 +1,5 @@
 from bson import ObjectId
+from datetime import datetime, timedelta
 
 from app.services.content_types import (
     is_valid_content_type,
@@ -25,6 +26,10 @@ from app.repositories.comment_repository import (
     get_comments_for_content,
     get_comment_by_id,
     delete_comment,
+)
+from app.repositories.content_repository import (
+    get_dated_releases_range,
+    get_announced_releases_range,
 )
 
 
@@ -230,3 +235,29 @@ async def remove_comment(user_id: ObjectId, comment_id: str):
         raise ContentError(403, "You can only delete your own comments")
 
     await delete_comment(comment_oid)
+
+# --- Upcoming ---
+
+async def get_upcoming_releases(dated_limit: int = 10, seasonal_limit: int = 10):
+    start_date = datetime.utcnow().strftime("%Y-%m-%d")
+    end_date = (datetime.utcnow() + timedelta(days=90)).strftime("%Y-%m-%d")
+    
+    dated_items = await get_dated_releases_range(start_date=start_date, end_date=end_date)
+    estimated_items = await get_announced_releases_range(start_date=start_date, end_date=end_date)
+    
+    dated_mapped = []
+    for d in dated_items[:dated_limit]:
+        d_copy = dict(d)
+        d_copy["release_date"] = d_copy.get("date")
+        dated_mapped.append(d_copy)
+
+    estimated_mapped = []
+    for e in estimated_items[:seasonal_limit]:
+        e_copy = dict(e)
+        e_copy["season_label"] = e_copy.get("label")
+        estimated_mapped.append(e_copy)
+    
+    return {
+        "dated": dated_mapped,
+        "estimated": estimated_mapped
+    }

@@ -51,7 +51,8 @@ async def get_rating_stats(content_type: str, content_id):
         }},
     ]
 
-    result = await db["ratings"].aggregate(pipeline).to_list(None)
+    cursor = await db["ratings"].aggregate(pipeline)
+    result = await cursor.to_list(None)
 
     if not result:
         return {"average_rating": None, "average_weight": 0, "count": 0}
@@ -98,7 +99,8 @@ async def get_top_rated(content_type: str | None = None, limit: int = 10):
         {"$limit": limit},
     ]
 
-    results = await db["ratings"].aggregate(pipeline).to_list(None)
+    cursor = await db["ratings"].aggregate(pipeline)
+    results = await cursor.to_list(None)
     return results
 
 
@@ -123,5 +125,6 @@ async def get_watchlist_counts(content_type: str | None = None, limit: int = 10)
         {"$limit": limit},
     ]
 
-    results = await db["watchlist"].aggregate(pipeline).to_list(None)
+    cursor = await db["watchlist"].aggregate(pipeline)
+    results = await cursor.to_list(None)
     return results

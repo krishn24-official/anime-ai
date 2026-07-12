@@ -76,6 +76,10 @@ from app.api.routes.organizations import (
     router as organizations_router
 )
 
+from app.api.routes.admin_content import (
+    router as admin_content_router
+)
+
 api_router = APIRouter()
 
 api_router.include_router(
@@ -152,4 +156,8 @@ api_router.include_router(
 
 api_router.include_router(
     organizations_router
+)
+
+api_router.include_router(
+    admin_content_router
 )

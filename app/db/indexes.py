@@ -94,4 +94,38 @@ async def create_indexes():
     await create_index_safely(db.organizations, "anime_ids")
     await create_index_safely(db.organizations, "manga_id")
 
+    # trending
+    await create_index_safely(
+        db.trending,
+        [("content_type", 1), ("content_id", 1)],
+        unique=True
+    )
+    await create_index_safely(db.trending, [("pinned", -1), ("score", -1)])
+    await create_index_safely(
+        db.trending,
+        "expires_at",
+        expireAfterSeconds=0
+    )
+
+    # trending_mentions
+    await create_index_safely(db.trending_mentions, [("content_id", 1), ("matched_at", -1)])
+    await create_index_safely(
+        db.trending_mentions,
+        [("content_id", 1), ("news_id", 1)],
+        unique=True
+    )
+    await create_index_safely(
+        db.trending_mentions,
+        "matched_at",
+        expireAfterSeconds=172800  # 48 hours
+    )
+
+    # search_logs
+    await create_index_safely(db.search_logs, [("content_id", 1), ("searched_at", -1)])
+    await create_index_safely(
+        db.search_logs,
+        "searched_at",
+        expireAfterSeconds=10800  # 3 hours
+    )
+
     print("Indexes created")
