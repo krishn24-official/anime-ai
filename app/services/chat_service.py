@@ -509,9 +509,9 @@ async def process_chat_message(
         details = await build_character_context(character) or {}
 
         family_names = [
-            member["target"]["name"]
+            member["target"]["name"].strip()
             for member in details.get("family", [])
-            if member.get("target")
+            if member.get("target") and member["target"].get("name", "").strip()
         ]
 
         if not family_names:
@@ -531,9 +531,9 @@ async def process_chat_message(
         details = await build_character_context(character) or {}
 
         team_names = [
-            member["target"]["name"]
+            member["target"]["name"].strip()
             for member in details.get("team", [])
-            if member.get("target")
+            if member.get("target") and member["target"].get("name", "").strip()
         ]
 
         if not team_names:
@@ -548,38 +548,7 @@ async def process_chat_message(
             f"{', '.join(team_names)}"
         }
 
-    # intent == "unknown" — try Gemini, fall back to local data
-    gemini_answer = await ask_gemini_with_context(
-        message,
-        await build_character_context(character)
-    )
-
-    if gemini_answer:
-        return {"answer": gemini_answer}
-
-    description = character.get("description")
-    role = character.get("role")
-    affiliations = character.get("affiliations") or []
-
-    parts = []
-
-    if description:
-        parts.append(description)
-
-    if role:
-        parts.append(f"Role: {role}.")
-
-    if affiliations:
-        parts.append(f"Affiliations: {', '.join(affiliations)}.")
-
-    if parts:
-        return {
-            "answer":
-            f"{character['name']} - " + " ".join(parts)
-        }
-
-    return {
-        "answer":
-        f"I found {character['name']} but couldn't determine "
-        f"the question type."
-    }
+    from app.services.character_profile_formatter import format_character_profile
+    details = await build_character_context(character) or {}
+    profile_text = format_character_profile(character, details)
+    return {"answer": profile_text}
