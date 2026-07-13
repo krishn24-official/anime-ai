@@ -63,7 +63,7 @@ async def create_index_safely(collection, keys, name=None, **kwargs):
 
         options_match = True
         # Compare important options that define index specs
-        for opt in ["unique", "sparse", "expireAfterSeconds"]:
+        for opt in ["unique", "sparse", "expireAfterSeconds", "partialFilterExpression"]:
             expected = kwargs.get(opt)
             actual = info.get(opt)
             # Treat missing or False/None as equivalent

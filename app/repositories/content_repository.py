@@ -109,6 +109,59 @@ async def get_dated_releases_range(start_date: str, end_date: str):
                     "event_type": "release_end"
                 })
 
+    # 4. Episodes and Chapters
+    from app.services.content_lookup import resolve_content_title
+    
+    ep_cursor = db["episodes"].find(
+        {
+            "release_date": {"$gte": start_date, "$lte": end_date},
+            "is_deleted": {"$ne": True}
+        }
+    )
+    episodes = await ep_cursor.to_list(None)
+    for ep in episodes:
+        parent_type = "anime" if ep.get("anime_id") else "tv_series"
+        parent_id = ep.get("anime_id") or ep.get("tv_series_id")
+        doc_info = await resolve_content_title(parent_type, parent_id)
+        if doc_info:
+            ep_num = ep.get("episode_number")
+            ep_title = ep.get("title")
+            name_label = f"Episode {ep_num}: {ep_title}" if ep_title else f"Episode {ep_num}"
+            results.append({
+                "content_type": "episode",
+                "content_id": str(ep["_id"]),
+                "parent_title": doc_info["title"],
+                "parent_id": parent_id,
+                "title": name_label,
+                "poster_image": doc_info["poster_image"],
+                "date": ep.get("release_date"),
+                "event_type": "episode_release",
+                "summary": ep.get("summary")
+            })
+
+    ch_cursor = db["chapters"].find(
+        {
+            "release_date": {"$gte": start_date, "$lte": end_date},
+            "is_deleted": {"$ne": True}
+        }
+    )
+    chapters = await ch_cursor.to_list(None)
+    for ch in chapters:
+        doc_info = await resolve_content_title("manga", ch.get("manga_id"))
+        if doc_info:
+            ch_num = ch.get("chapter_number")
+            results.append({
+                "content_type": "chapter",
+                "content_id": str(ch["_id"]),
+                "parent_title": doc_info["title"],
+                "parent_id": ch.get("manga_id"),
+                "title": f"Chapter {ch_num}",
+                "poster_image": doc_info["poster_image"],
+                "date": ch.get("release_date"),
+                "event_type": "chapter_release",
+                "summary": ch.get("summary")
+            })
+
     results.sort(key=lambda x: x["date"])
     return results
 
@@ -194,3 +247,4 @@ async def get_announced_releases_range(start_date: str, end_date: str):
 
     results.sort(key=lambda x: x["pinned_date"])
     return results
+

@@ -18,14 +18,37 @@ async def create_indexes():
 
     # manga / chapters
     await create_index_safely(db.manga, "name")
-    await create_index_safely(db.chapters, "manga_id")
-    await create_index_safely(db.chapters, "chapter_number")
+    await create_index_safely(
+        db.chapters, 
+        [("manga_id", 1), ("chapter_number", 1)], 
+        unique=True
+    )
 
     # anime / episodes
     await create_index_safely(db.anime, "title.english")                  # CHANGED
     await create_index_safely(db.anime, "title.romaji")                   # CHANGED
-    await create_index_safely(db.episodes, "anime_id")
-    await create_index_safely(db.episodes, "episode_number")
+    
+    try:
+        await db.episodes.drop_index("anime_id_1")
+    except Exception:
+        pass
+    try:
+        await db.episodes.drop_index("episode_number_1")
+    except Exception:
+        pass
+
+    await create_index_safely(
+        db.episodes, 
+        [("anime_id", 1), ("episode_number", 1)], 
+        unique=True,
+        partialFilterExpression={"anime_id": {"$type": "string"}}
+    )
+    await create_index_safely(
+        db.episodes, 
+        [("tv_series_id", 1), ("episode_number", 1)], 
+        unique=True,
+        partialFilterExpression={"tv_series_id": {"$type": "string"}}
+    )
 
     # voice actors
     await create_index_safely(db.voice_actors, "name")

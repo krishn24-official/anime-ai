@@ -553,3 +553,173 @@ async def delete_existing_tv_series(
     if not success:
         raise HTTPException(status_code=404, detail="TV Series not found")
     return {"status": "ok"}
+
+# --- Episodes Admin ---
+
+@router.get("/episodes")
+async def list_episodes(
+    parent_id: str,
+    parent_type: str,
+    include_deleted: bool = False,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.repositories.episode_repository import list_episodes_for_admin
+    return await list_episodes_for_admin(parent_id, parent_type, include_deleted)
+
+class CreateEpisodeRequest(BaseModel):
+    parent_type: str
+    parent_content_id: str
+    episode_number: int
+    title: Optional[str] = None
+    release_date: Optional[str] = None
+    director: Optional[str] = None
+    arc: Optional[str] = None
+    is_filler: bool = False
+    canon_type: Optional[str] = None
+    summary: Optional[str] = None
+
+@router.post("/episodes")
+async def create_new_episode(
+    req: CreateEpisodeRequest,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.services.episode_admin_service import create_episode
+    try:
+        return await create_episode(
+            admin_id=str(current_admin["_id"]),
+            parent_type=req.parent_type,
+            parent_content_id=req.parent_content_id,
+            episode_number=req.episode_number,
+            title=req.title,
+            release_date=req.release_date,
+            director=req.director,
+            arc=req.arc,
+            is_filler=req.is_filler,
+            canon_type=req.canon_type,
+            summary=req.summary
+        )
+    except ValueError as e:
+        if "already exists" in str(e):
+            raise HTTPException(status_code=409, detail=str(e))
+        elif "not found" in str(e):
+            raise HTTPException(status_code=404, detail=str(e))
+        else:
+            raise HTTPException(status_code=400, detail=str(e))
+
+class UpdateEpisodeRequest(BaseModel):
+    title: Optional[str] = None
+    release_date: Optional[str] = None
+    director: Optional[str] = None
+    arc: Optional[str] = None
+    is_filler: Optional[bool] = None
+    canon_type: Optional[str] = None
+    summary: Optional[str] = None
+
+@router.patch("/episodes/{content_id}")
+async def update_existing_episode(
+    content_id: str,
+    req: UpdateEpisodeRequest,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.services.episode_admin_service import update_episode
+    try:
+        success = await update_episode(
+            content_id=content_id,
+            title=req.title,
+            release_date=req.release_date,
+            director=req.director,
+            arc=req.arc,
+            is_filler=req.is_filler,
+            canon_type=req.canon_type,
+            summary=req.summary
+        )
+        if not success:
+            raise HTTPException(status_code=404, detail="Episode not found")
+        return {"status": "ok"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/episodes/{content_id}")
+async def delete_existing_episode(
+    content_id: str,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.services.episode_admin_service import delete_episode
+    success = await delete_episode(content_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Episode not found")
+    return {"status": "ok"}
+
+
+# --- Chapters Admin ---
+
+@router.get("/chapters")
+async def list_chapters(
+    manga_id: str,
+    include_deleted: bool = False,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.repositories.chapter_repository import list_chapters_for_admin
+    return await list_chapters_for_admin(manga_id, include_deleted)
+
+class CreateChapterRequest(BaseModel):
+    manga_id: str
+    chapter_number: int
+    release_date: Optional[str] = None
+    summary: Optional[str] = None
+
+@router.post("/chapters")
+async def create_new_chapter(
+    req: CreateChapterRequest,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.services.chapter_admin_service import create_chapter
+    try:
+        return await create_chapter(
+            admin_id=str(current_admin["_id"]),
+            manga_id=req.manga_id,
+            chapter_number=req.chapter_number,
+            release_date=req.release_date,
+            summary=req.summary
+        )
+    except ValueError as e:
+        if "already exists" in str(e):
+            raise HTTPException(status_code=409, detail=str(e))
+        elif "not found" in str(e):
+            raise HTTPException(status_code=404, detail=str(e))
+        else:
+            raise HTTPException(status_code=400, detail=str(e))
+
+class UpdateChapterRequest(BaseModel):
+    release_date: Optional[str] = None
+    summary: Optional[str] = None
+
+@router.patch("/chapters/{content_id}")
+async def update_existing_chapter(
+    content_id: str,
+    req: UpdateChapterRequest,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.services.chapter_admin_service import update_chapter
+    try:
+        success = await update_chapter(
+            content_id=content_id,
+            release_date=req.release_date,
+            summary=req.summary
+        )
+        if not success:
+            raise HTTPException(status_code=404, detail="Chapter not found")
+        return {"status": "ok"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/chapters/{content_id}")
+async def delete_existing_chapter(
+    content_id: str,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.services.chapter_admin_service import delete_chapter
+    success = await delete_chapter(content_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Chapter not found")
+    return {"status": "ok"}

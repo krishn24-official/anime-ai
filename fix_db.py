@@ -1,20 +1,15 @@
 import asyncio
-from app.db.mongo import get_db, connect_db
 from bson import ObjectId
+from app.db.mongo import connect_db, get_db
 
 async def fix():
     await connect_db()
     db = get_db()
-    doc = await db['anime'].find_one({'_id': 'anime_one_piece_heroines'})
-    if doc and 'updated_by' in doc.get('source_metadata', {}):
-        val = doc['source_metadata']['updated_by']
-        if isinstance(val, ObjectId):
-            await db['anime'].update_one({'_id': doc['_id']}, {'$set': {'source_metadata.updated_by': str(val)}})
-            print('Fixed updated_by')
-    if doc and 'created_by' in doc.get('source_metadata', {}):
-        val = doc['source_metadata']['created_by']
-        if isinstance(val, ObjectId):
-            await db['anime'].update_one({'_id': doc['_id']}, {'$set': {'source_metadata.created_by': str(val)}})
-            print('Fixed created_by')
-            
+    for coll in ['episodes', 'chapters']:
+        cursor = db[coll].find({})
+        async for doc in cursor:
+            if isinstance(doc.get('created_by'), ObjectId):
+                await db[coll].update_one({'_id': doc['_id']}, {'$set': {'created_by': str(doc['created_by'])}})
+    print('Fixed')
+
 asyncio.run(fix())

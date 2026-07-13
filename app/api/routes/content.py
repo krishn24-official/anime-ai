@@ -20,16 +20,7 @@ class CommentRequest(BaseModel):
     parent_id: str | None = None
 
 
-# --- Upcoming ---
 
-@router.get("/content/upcoming")
-async def get_upcoming(dated_limit: int = 10, seasonal_limit: int = 10):
-    try:
-        return await content_service.get_upcoming_releases(dated_limit, seasonal_limit)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
 
 from app.repositories.content_repository import get_dated_releases_range, get_announced_releases_range
 
