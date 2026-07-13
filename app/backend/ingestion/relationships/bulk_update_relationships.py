@@ -32,17 +32,7 @@ INPUT_XLSX = "relationship_data_template.xlsx"
 INPUT_CSV = "relationship_data_template.csv"
 
 
-def _slug(text: str) -> str:
-    """Simplify a character _id into a short slug for building relationship _ids."""
-    text = text.replace("char_", "")
-    text = re.sub(r"[^a-z0-9_]", "", text.lower())
-    return text
-
-
-def _make_rel_id(source_id: str, target_id: str, relationship: str) -> str:
-    rel_word = re.sub(r"[^a-z0-9_]", "_", relationship.strip().lower())
-    return f"rel_{_slug(source_id)}_{_slug(target_id)}_{rel_word}"
-
+from app.services.relationship_admin_service import build_relationship_pair
 
 async def _validate_rows(rows: list[dict], known_ids: set[str]) -> list[str]:
     warnings = []
@@ -67,50 +57,6 @@ async def _validate_rows(rows: list[dict], known_ids: set[str]) -> list[str]:
             warnings.append(f"Row {i}: source_id and target_id are the same ('{source_id}') — skipped")
 
     return warnings
-
-
-def _build_relationship_pair(row: dict) -> list[dict]:
-    """Returns 1 or 2 relationship documents (forward + inverse)."""
-    source_id = row["source_id"].strip()
-    target_id = row["target_id"].strip()
-    relationship = row["relationship"].strip().lower()
-    rel_type = row.get("type", "").strip() or None
-    context = row.get("context", "").strip() or None
-    explicit_inverse = row.get("inverse_relationship", "").strip() or None
-
-    forward_id = _make_rel_id(source_id, target_id, relationship)
-    inverse_relationship = get_inverse_relationship(relationship, explicit_inverse)
-    inverse_id = _make_rel_id(target_id, source_id, inverse_relationship)
-
-    forward_doc = {
-        "_id": forward_id,
-        "source_id": source_id,
-        "target_id": target_id,
-        "relationship": relationship,
-        "type": rel_type,
-        "context": context,
-        "is_deleted": False,
-        "deleted_at": None,
-        "inverse_of": inverse_id,
-    }
-
-    # If symmetric and no explicit inverse override, forward == inverse
-    # relationship word — still create a separate doc for the reverse
-    # direction so queries from either side work.
-    inverse_doc = {
-        "_id": inverse_id,
-        "source_id": target_id,
-        "target_id": source_id,
-        "relationship": inverse_relationship,
-        "type": rel_type,
-        "context": context,
-        "is_deleted": False,
-        "deleted_at": None,
-        "inverse_of": forward_id,
-    }
-
-    return [forward_doc, inverse_doc]
-
 
 async def main():
     print("🚀 Starting bulk relationship import...")
@@ -202,7 +148,14 @@ async def main():
             skipped += 1
             continue
 
-        docs = _build_relationship_pair(row)
+        docs = build_relationship_pair(
+            source_id=row.get("source_id", ""),
+            target_id=row.get("target_id", ""),
+            relationship=row.get("relationship", ""),
+            rel_type=row.get("type", ""),
+            context=row.get("context", ""),
+            explicit_inverse=row.get("inverse_relationship", "")
+        )
 
         for doc in docs:
             await col.replace_one(

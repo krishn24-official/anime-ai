@@ -52,6 +52,9 @@ DEFAULT_INVERSE = {
     "crush": "crush",          # often one-directional in fiction, default same
     "enemy": "enemy",
     "ally": "ally",
+    
+    "appears_in": "features",
+    "features": "appears_in",
 
     # --- In-laws ---
     "father_in_law": "child_in_law",

@@ -61,6 +61,7 @@ RELATIONSHIP_TYPES = [
     "combat",
     "organization",
     "political",
+    "media",
     "other"
 ]
 

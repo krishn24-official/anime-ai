@@ -723,3 +723,87 @@ async def delete_existing_chapter(
     if not success:
         raise HTTPException(status_code=404, detail="Chapter not found")
     return {"status": "ok"}
+
+# --- Relationships Admin ---
+
+@router.get("/relationships/search-entities")
+async def get_relationship_entities(
+    q: str,
+    limit: int = 10,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.repositories.relationship_repository import search_relationship_entities
+    if not q or len(q) < 2:
+        return []
+    return await search_relationship_entities(q, limit)
+
+@router.get("/relationships/check")
+async def check_relationship_duplicate(
+    source_id: str,
+    target_id: str,
+    relationship: str,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.services.relationship_admin_service import check_relationship_exists
+    existing = await check_relationship_exists(source_id, target_id, relationship)
+    if existing:
+        return {"exists": True, "context": existing.get("context", "")}
+    return {"exists": False}
+
+class CreateRelationshipRequest(BaseModel):
+    source_id: str
+    target_id: str
+    relationship: str
+    type: Optional[str] = None
+    context: Optional[str] = None
+    inverse_relationship: Optional[str] = None
+    overwrite: bool = False
+
+@router.post("/relationships")
+async def create_new_relationship(
+    req: CreateRelationshipRequest,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.services.relationship_admin_service import create_relationship
+    try:
+        result = await create_relationship(
+            admin_id=str(current_admin["_id"]),
+            source_id=req.source_id,
+            target_id=req.target_id,
+            relationship=req.relationship,
+            rel_type=req.type,
+            context=req.context,
+            explicit_inverse=req.inverse_relationship,
+            overwrite=req.overwrite
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/relationships/types")
+async def get_relationship_types(current_admin: dict = Depends(get_current_admin)):
+    from app.backend.constants.anime_enums import RELATIONSHIP_TYPES
+    return RELATIONSHIP_TYPES
+
+@router.get("/relationships/common-words")
+async def get_relationship_common_words(current_admin: dict = Depends(get_current_admin)):
+    from app.services.relationship_inverse_map import SYMMETRIC_RELATIONS, DEFAULT_INVERSE
+    
+    words = set(SYMMETRIC_RELATIONS)
+    
+    exclusions = {
+        "nephew_or_niece", 
+        "uncle_or_aunt", 
+        "nephew_or_niece_in_law", 
+        "uncle_or_aunt_in_law"
+    }
+    
+    for k, v in DEFAULT_INVERSE.items():
+        if k not in exclusions:
+            words.add(k)
+        if v not in exclusions:
+            words.add(v)
+            
+    return sorted(list(words))
