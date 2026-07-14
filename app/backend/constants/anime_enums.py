@@ -323,3 +323,27 @@ RELATIONSHIPS = {
         "bodyguard"
     ]
 }
+
+RELATIONSHIP_WORDS = sorted({
+    # Family
+    "father", "mother", "son", "daughter", "parent", "child",
+    "grandfather", "grandmother", "grandson", "granddaughter",
+    "uncle", "aunt", "nephew", "niece",
+    "brother", "sister", "sibling", "cousin", "twin",
+    "stepfather", "stepmother", "stepson", "stepdaughter", "stepbrother", "stepsister",
+    # In-laws
+    "father_in_law", "mother_in_law", "son_in_law", "daughter_in_law",
+    "parent_in_law", "child_in_law", "brother_in_law", "sister_in_law",
+    "uncle_in_law", "aunt_in_law", "nephew_in_law", "niece_in_law",
+    # Marriage / romance
+    "husband", "wife", "spouse", "crush",
+    # Mentorship
+    "mentor", "sensei", "teacher", "student",
+    # Social / team
+    "friend", "best_friend", "rival", "enemy", "ally",
+    "teammate", "classmate", "leader", "subordinate",
+    # Organization roles (added from real usage, not previously in relationship_inverse_map.py)
+    "captain", "vice_captain", "commander", "member",
+    # Media / content
+    "appears_in", "features",
+})

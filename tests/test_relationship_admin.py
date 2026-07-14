@@ -112,14 +112,39 @@ async def test_create_appears_in_relationship(db_setup):
     doc2 = await db["relationships"].find_one({"_id": inv_id})
     
     assert doc1 is not None
-    assert doc2 is not None
+    assert doc2 is None
     assert doc1["relationship"] == "appears_in"
-    assert doc2["relationship"] == "features"
     
     # Clean up
     await db["characters"].delete_many({"_id": "char_99"})
     await db["anime"].delete_many({"_id": "anime_99"})
-    await db["relationships"].delete_many({"_id": {"$in": [rel_id, inv_id]}})
+    await db["relationships"].delete_many({"_id": rel_id})
+
+@pytest.mark.asyncio
+async def test_create_member_relationship(db_setup):
+    db = get_db()
+    await db["characters"].insert_one({"_id": "char_99", "is_deleted": False})
+    await db["organizations"].insert_one({"_id": "org_99", "is_deleted": False})
+    
+    res = await create_relationship(
+        "admin", "char_99", "org_99", "member", "organization", None, None
+    )
+    assert res["status"] == "created"
+    
+    rel_id = _make_rel_id("char_99", "org_99", "member")
+    inv_id = _make_rel_id("org_99", "char_99", "has_member")
+    
+    doc1 = await db["relationships"].find_one({"_id": rel_id})
+    doc2 = await db["relationships"].find_one({"_id": inv_id})
+    
+    assert doc1 is not None
+    assert doc2 is None
+    assert doc1["relationship"] == "member"
+    
+    # Clean up
+    await db["characters"].delete_many({"_id": "char_99"})
+    await db["organizations"].delete_many({"_id": "org_99"})
+    await db["relationships"].delete_many({"_id": rel_id})
 
 
 @pytest.mark.asyncio
@@ -144,3 +169,58 @@ async def test_search_relationship_entities_cross_collection(db_setup):
     # Clean up
     await db["characters"].delete_many({"_id": "char_n1"})
     await db["anime"].delete_many({"_id": "anime_n1"})
+
+@pytest.mark.asyncio
+async def test_create_relationship_automatic_inverse(db_setup):
+    db = get_db()
+    await db["characters"].insert_many([
+        {"_id": "char_naruto", "is_deleted": False},
+        {"_id": "char_boruto", "is_deleted": False}
+    ])
+    
+    res = await create_relationship("admin", "char_naruto", "char_boruto", "father", "family", None, None)
+    
+    rel_id = _make_rel_id("char_naruto", "char_boruto", "father")
+    # DEFAULT_INVERSE for father is child
+    inv_id = _make_rel_id("char_boruto", "char_naruto", "child")
+    
+    doc1 = await db["relationships"].find_one({"_id": rel_id})
+    doc2 = await db["relationships"].find_one({"_id": inv_id})
+    
+    assert doc1 is not None
+    assert doc2 is not None
+    assert doc1["relationship"] == "father"
+    assert doc2["relationship"] == "child"
+    assert doc2["source_id"] == "char_boruto"
+    assert doc2["target_id"] == "char_naruto"
+
+    # Clean up
+    await db["characters"].delete_many({"_id": {"$in": ["char_naruto", "char_boruto"]}})
+    await db["relationships"].delete_many({"_id": {"$in": [rel_id, inv_id]}})
+
+@pytest.mark.asyncio
+async def test_create_relationship_explicit_inverse(db_setup):
+    db = get_db()
+    await db["characters"].insert_many([
+        {"_id": "char_minato", "is_deleted": False},
+        {"_id": "char_naruto", "is_deleted": False}
+    ])
+    
+    res = await create_relationship("admin", "char_minato", "char_naruto", "father", "family", None, "son")
+    
+    rel_id = _make_rel_id("char_minato", "char_naruto", "father")
+    inv_id = _make_rel_id("char_naruto", "char_minato", "son")
+    
+    doc1 = await db["relationships"].find_one({"_id": rel_id})
+    doc2 = await db["relationships"].find_one({"_id": inv_id})
+    
+    assert doc1 is not None
+    assert doc2 is not None
+    assert doc1["relationship"] == "father"
+    assert doc2["relationship"] == "son"
+    assert doc2["source_id"] == "char_naruto"
+    assert doc2["target_id"] == "char_minato"
+    
+    # Clean up
+    await db["characters"].delete_many({"_id": {"$in": ["char_minato", "char_naruto"]}})
+    await db["relationships"].delete_many({"_id": {"$in": [rel_id, inv_id]}})

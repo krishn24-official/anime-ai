@@ -21,8 +21,8 @@ def build_relationship_pair(
     rel_type: str | None, 
     context: str | None, 
     explicit_inverse: str | None
-) -> list[dict]:
-    """Returns 1 or 2 relationship documents (forward + inverse)."""
+) -> tuple[dict, dict | None]:
+    """Returns (forward_doc, inverse_doc). Inverse is None if either entity is not a character."""
     source_id = source_id.strip()
     target_id = target_id.strip()
     relationship = relationship.strip().lower()
@@ -31,8 +31,15 @@ def build_relationship_pair(
     explicit_inverse = explicit_inverse.strip() if explicit_inverse else None
 
     forward_id = _make_rel_id(source_id, target_id, relationship)
-    inverse_relationship = get_inverse_relationship(relationship, explicit_inverse)
-    inverse_id = _make_rel_id(target_id, source_id, inverse_relationship)
+    
+    is_char_to_char = source_id.startswith("char_") and target_id.startswith("char_")
+    
+    if is_char_to_char:
+        inverse_relationship = get_inverse_relationship(relationship, explicit_inverse)
+        inverse_id = _make_rel_id(target_id, source_id, inverse_relationship)
+    else:
+        inverse_relationship = None
+        inverse_id = None
 
     forward_doc = {
         "_id": forward_id,
@@ -46,6 +53,9 @@ def build_relationship_pair(
         "inverse_of": inverse_id,
     }
 
+    if not is_char_to_char:
+        return forward_doc, None
+
     inverse_doc = {
         "_id": inverse_id,
         "source_id": target_id,
@@ -58,7 +68,7 @@ def build_relationship_pair(
         "inverse_of": forward_id,
     }
 
-    return [forward_doc, inverse_doc]
+    return forward_doc, inverse_doc
 
 
 async def resolve_entity_type(entity_id: str) -> str | None:
@@ -130,7 +140,7 @@ async def create_relationship(
             "existing": existing
         }
         
-    docs = build_relationship_pair(source_id, target_id, relationship, rel_type, context, explicit_inverse)
+    docs = [d for d in build_relationship_pair(source_id, target_id, relationship, rel_type, context, explicit_inverse) if d is not None]
     
     db = get_db()
     col = db["relationships"]

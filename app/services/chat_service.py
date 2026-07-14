@@ -107,6 +107,7 @@ def extract_character_query(message: str) -> str:
         text
     )
 
+    text = re.sub(r"^character:\s*", "", text)
     text = text.strip("? ").strip()
 
     # Pattern 1: [relationship] of [character] or [relationship] members of [character]
@@ -345,21 +346,97 @@ async def process_chat_message(
         recs = "\n".join([f"• **{a.get('title', {}).get('english') or a.get('title', {}).get('romaji')}**" for a in top])
         return {"answer": f"Here are some highly-rated anime I recommend watching:\n\n{recs}"}
 
+    # 4.5. Attribute QA Engine
+    from app.services.attribute_query_service import detect_attribute_intent
+    attr_intent = detect_attribute_intent(message)
+    if attr_intent and not image_base64:
+        ent_name, attr_key, explicit_type = attr_intent
+        types_list = [explicit_type] if explicit_type else ["character", "anime", "movie", "tv_series"]
+        
+        from app.repositories.relationship_repository import search_relationship_entities
+        candidates = await search_relationship_entities(ent_name, limit=5, types_list=types_list)
+        
+        if not candidates:
+            return {"answer": f"I couldn't find anything matching '{ent_name}' to look up '{attr_key.replace('_', ' ')}'."}
+            
+        if len(candidates) == 1:
+            m = candidates[0]
+            m_type = m["entity_type"]
+            from app.services.attribute_formatter import format_attribute_response
+            
+            from app.db.mongo import get_db
+            db = get_db()
+            
+            full_doc = None
+            if m_type == "anime":
+                full_doc = await db["anime"].find_one({"_id": m["id"]})
+            elif m_type == "movie":
+                full_doc = await db["movies"].find_one({"_id": m["id"]})
+            elif m_type == "tv_series":
+                full_doc = await db["tv_series"].find_one({"_id": m["id"]})
+            elif m_type == "character":
+                full_doc = await db["characters"].find_one({"_id": m["id"]})
+                
+            if full_doc:
+                return {"answer": format_attribute_response(full_doc, m_type, attr_key)}
+            else:
+                return {"answer": f"Could not retrieve full details for {m['name']}."}
+        else:
+            def format_media_type(t: str):
+                if t == "tv_series": return "TV Series"
+                return t.title()
+
+            disambiguation_options = []
+            for c in candidates:
+                disambig_str = f"{format_media_type(c['entity_type'])}: {c['name']}"
+                disambig_str += f" - {attr_key.replace('_', ' ')}"
+                disambiguation_options.append(disambig_str)
+                
+            return {
+                "answer": (
+                    f"I found multiple matches for '{ent_name}'. "
+                    f"Which one did you mean for '{attr_key.replace('_', ' ')}'?"
+                ),
+                "disambiguation": disambiguation_options,
+                "name_query": ent_name,
+                "original_message": message,
+            }
+
     # 5. Anime specific queries
     if "anime" in msg_lower and not image_base64:
         anime_query = re.sub(r"^(who is|who's|whos|what is|whats|tell me about|show me|get)\s+", "", msg_lower)
-        anime_query = anime_query.replace("the anime", "").replace("an anime", "").replace("anime", "").strip("? ")
-        
+        anime_query = re.sub(r"\b(the |an )?animes?\b", "", anime_query).strip("? :")
         if len(anime_query) > 2:
-            from app.repositories.anime_repository import search_anime
+            from app.repositories.search_repository import search_anime
+            from app.services.content_profile_formatter import format_content_profile
             anime_results = await search_anime(anime_query)
             if anime_results:
-                anime = anime_results[0]
-                title = anime.get("title", {}).get("english") or anime.get("title", {}).get("romaji") or "Unknown"
-                desc = anime.get("description", "No description available.")
-                import re as regex
-                desc = regex.sub(r'<[^>]+>', '', desc)
-                return {"answer": f"**{title}**\n\n{desc}"}
+                return {"answer": format_content_profile(anime_results[0], "anime")}
+            return {"answer": f"I couldn't find an anime matching '{anime_query}'."}
+
+    # 6. Movie specific queries
+    if "movie" in msg_lower and not image_base64:
+        movie_query = re.sub(r"^(who is|who's|whos|what is|whats|tell me about|show me|get)\s+", "", msg_lower)
+        movie_query = re.sub(r"\b(the |a )?movies?\b", "", movie_query).strip("? :")
+        if len(movie_query) > 2:
+            from app.repositories.search_repository import search_movies
+            from app.services.content_profile_formatter import format_content_profile
+            movie_results = await search_movies(movie_query)
+            if movie_results:
+                return {"answer": format_content_profile(movie_results[0], "movie")}
+            return {"answer": f"I couldn't find a movie matching '{movie_query}'."}
+
+    # 7. TV Series specific queries
+    if any(kw in msg_lower for kw in ["tv show", "tv series", " series"]) and not image_base64:
+        tv_query = re.sub(r"^(who is|who's|whos|what is|whats|tell me about|show me|get)\s+", "", msg_lower)
+        tv_query = re.sub(r"\b(the |a )?(tv shows?|tv series|series)\b", "", tv_query).strip("? :")
+        if len(tv_query) > 2:
+            from app.repositories.search_repository import search_tv_series
+            from app.services.content_profile_formatter import format_content_profile
+            tv_results = await search_tv_series(tv_query)
+            if tv_results:
+                return {"answer": format_content_profile(tv_results[0], "tv_series")}
+            return {"answer": f"I couldn't find a TV series matching '{tv_query}'."}
 
     # --- Image recognition mode ---
     # --- Image recognition mode ---
@@ -406,60 +483,91 @@ async def process_chat_message(
 
     candidates = await find_character_candidates(name_query)
 
-    if not candidates:
+    from app.repositories.relationship_repository import search_relationship_entities
+    media_candidates = await search_relationship_entities(name_query, limit=5, types_list=["anime", "movie", "tv_series"])
+
+    total_candidates = len(candidates) + len(media_candidates)
+
+    if total_candidates == 0:
         # Try a general query before giving up
         gemini_answer = await ask_gemini_with_context(message, {})
         if gemini_answer:
             return {"answer": gemini_answer}
         return {
             "answer":
-            f"I couldn't find a character matching '{name_query}'."
+            f"I couldn't find anything matching '{name_query}'."
         }
 
-    if len(candidates) > 1:
-        # Score candidates based on word similarity to the query
-        # This handles cases where the query has an unstripped typo (e.g. "sasuke's teamamtes")
-        # "sasuke" will be a 100% (1.0) match to "Sasuke Uchiha", so we can auto-select it.
+    if total_candidates > 1:
+        # Score character candidates
         best_candidate = None
         highest_score = 0.0
 
-        query_words = set(re.sub(r"[^\w\s]", "", name_query.lower()).split())
+        if candidates:
+            query_words = set(re.sub(r"[^\w\s]", "", name_query.lower()).split())
 
-        for c in candidates:
-            cand_words = set(re.sub(r"[^\w\s]", "", c["name"].lower()).split())
-            max_word_score = 0.0
-            
-            # Check if any query word exactly matches a candidate word (100% score)
-            if query_words.intersection(cand_words):
-                max_word_score = 1.0
-            else:
-                # Otherwise, compute highest difflib similarity between any word pair
-                for qw in query_words:
-                    for cw in cand_words:
-                        score = difflib.SequenceMatcher(None, qw, cw).ratio()
-                        if score > max_word_score:
-                            max_word_score = score
-            
-            if max_word_score > highest_score:
-                highest_score = max_word_score
-                best_candidate = c
+            for c in candidates:
+                cand_words = set(re.sub(r"[^\w\s]", "", c["name"].lower()).split())
+                max_word_score = 0.0
+                
+                if query_words.intersection(cand_words):
+                    max_word_score = 1.0
+                else:
+                    for qw in query_words:
+                        for cw in cand_words:
+                            score = difflib.SequenceMatcher(None, qw, cw).ratio()
+                            if score > max_word_score:
+                                max_word_score = score
+                
+                if max_word_score > highest_score:
+                    highest_score = max_word_score
+                    best_candidate = c
 
-        # If we have a very confident match (> 90%), skip disambiguation and auto-select
-        if highest_score > 0.90 and best_candidate:
+        # We also need to check if there are exact media matches so we don't inappropriately auto-select a character
+        exact_media_matches = [m for m in media_candidates if m["name"].lower() == name_query.lower()]
+
+        if highest_score > 0.90 and best_candidate and not exact_media_matches:
             character = best_candidate
         else:
-            # No clear winner — return disambiguation options
+            def format_media_type(t: str):
+                if t == "tv_series": return "TV Series"
+                return t.title()
+
+            media_options = [f"{format_media_type(m['entity_type'])}: {m['name']}" for m in media_candidates]
+            char_options = [f"Character: {c['name']}" for c in candidates]
+            
             return {
                 "answer": (
-                    f"I found multiple characters matching '{name_query}'. "
+                    f"I found multiple matches for '{name_query}'. "
                     "Which one did you mean?"
                 ),
-                "disambiguation": [c["name"] for c in candidates],
+                "disambiguation": char_options + media_options,
                 "name_query": name_query,
                 "original_message": message,
             }
     else:
-        character = candidates[0]
+        # total_candidates == 1
+        if candidates:
+            character = candidates[0]
+        else:
+            # We found exactly 1 media candidate, fake a fast-path routing
+            m = media_candidates[0]
+            m_type = m["entity_type"]
+            from app.services.content_profile_formatter import format_content_profile
+            if m_type == "anime":
+                from app.repositories.search_repository import search_anime
+                res = await search_anime(m["name"])
+                if res: return {"answer": format_content_profile(res[0], "anime")}
+            elif m_type == "movie":
+                from app.repositories.search_repository import search_movies
+                res = await search_movies(m["name"])
+                if res: return {"answer": format_content_profile(res[0], "movie")}
+            elif m_type == "tv_series":
+                from app.repositories.search_repository import search_tv_series
+                res = await search_tv_series(m["name"])
+                if res: return {"answer": format_content_profile(res[0], "tv_series")}
+            
+            return {"answer": f"I couldn't find media details for {m['name']}."}
 
     intent = detect_intent(message)
 

@@ -729,13 +729,16 @@ async def delete_existing_chapter(
 @router.get("/relationships/search-entities")
 async def get_relationship_entities(
     q: str,
+    types: Optional[str] = None,
     limit: int = 10,
     current_admin: dict = Depends(get_current_admin)
 ):
     from app.repositories.relationship_repository import search_relationship_entities
     if not q or len(q) < 2:
         return []
-    return await search_relationship_entities(q, limit)
+        
+    types_list = [t.strip() for t in types.split(",")] if types else None
+    return await search_relationship_entities(q, limit, types_list)
 
 @router.get("/relationships/check")
 async def check_relationship_duplicate(
@@ -789,21 +792,175 @@ async def get_relationship_types(current_admin: dict = Depends(get_current_admin
 
 @router.get("/relationships/common-words")
 async def get_relationship_common_words(current_admin: dict = Depends(get_current_admin)):
-    from app.services.relationship_inverse_map import SYMMETRIC_RELATIONS, DEFAULT_INVERSE
+    from app.backend.constants.anime_enums import RELATIONSHIP_WORDS
+    return RELATIONSHIP_WORDS
+
+# --- Characters Admin ---
+
+@router.get("/characters")
+async def list_characters(
+    search: str = None,
+    include_deleted: bool = False,
+    limit: int = 20,
+    skip: int = 0,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.repositories.character_admin_repository import list_characters_for_admin
+    items, total = await list_characters_for_admin(include_deleted, search, limit, skip)
+    return {"items": items, "total": total}
+
+@router.post("/characters")
+async def create_character_admin(
+    name: str = Form(...),
+    native_name: str = Form(None),
+    birth_day: int = Form(None),
+    birth_month: int = Form(None),
+    height: str = Form(None),
+    hair_color: str = Form(None),
+    has_hair: bool = Form(None),
+    description: str = Form(None),
+    anime_ids: str = Form("[]"),
+    manga_ids: str = Form("[]"),
+    affiliations: str = Form("[]"),
+    abilities: str = Form("[]"),
+    forms: str = Form("[]"),
+    status: str = Form("unknown"),
+    species: str = Form("unknown"),
+    gender: str = Form(None),
+    role: str = Form("unknown"),
+    tags: str = Form("[]"),
+    profile_image: UploadFile = File(None),
+    banner_image: UploadFile = File(None),
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.services import character_admin_service
     
-    words = set(SYMMETRIC_RELATIONS)
+    try:
+        a_ids = json.loads(anime_ids)
+        m_ids = json.loads(manga_ids)
+        affil = json.loads(affiliations)
+        abils = json.loads(abilities)
+        frms = json.loads(forms)
+        tgs = json.loads(tags)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON array format")
+
+    prof_bytes = await profile_image.read() if profile_image else None
+    ban_bytes = await banner_image.read() if banner_image else None
+
+    try:
+        content_id = await character_admin_service.create_character(
+            admin_id=current_admin["_id"],
+            name=name,
+            native_name=native_name,
+            birth_day=birth_day,
+            birth_month=birth_month,
+            height=height,
+            hair_color=hair_color,
+            has_hair=has_hair,
+            description=description,
+            anime_ids=a_ids,
+            manga_ids=m_ids,
+            affiliations=affil,
+            abilities=abils,
+            forms=frms,
+            status=status,
+            species=species,
+            gender=gender,
+            role=role,
+            tags=tgs,
+            profile_bytes=prof_bytes,
+            banner_bytes=ban_bytes
+        )
+        return {"status": "ok", "content_id": content_id}
+    except ValueError as e:
+        if "already exists" in str(e).lower():
+            raise HTTPException(status_code=409, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.patch("/characters/{content_id}")
+async def update_character_admin(
+    content_id: str,
+    name: str = Form(None),
+    native_name: str = Form(None),
+    birth_day: int = Form(None),
+    birth_month: int = Form(None),
+    height: str = Form(None),
+    hair_color: str = Form(None),
+    has_hair: bool = Form(None),
+    description: str = Form(None),
+    anime_ids: str = Form(None),
+    manga_ids: str = Form(None),
+    affiliations: str = Form(None),
+    abilities: str = Form(None),
+    forms: str = Form(None),
+    status: str = Form(None),
+    species: str = Form(None),
+    gender: str = Form(None),
+    role: str = Form(None),
+    tags: str = Form(None),
+    profile_image: UploadFile = File(None),
+    banner_image: UploadFile = File(None),
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.services import character_admin_service
     
-    exclusions = {
-        "nephew_or_niece", 
-        "uncle_or_aunt", 
-        "nephew_or_niece_in_law", 
-        "uncle_or_aunt_in_law"
-    }
-    
-    for k, v in DEFAULT_INVERSE.items():
-        if k not in exclusions:
-            words.add(k)
-        if v not in exclusions:
-            words.add(v)
-            
-    return sorted(list(words))
+    try:
+        a_ids = json.loads(anime_ids) if anime_ids else None
+        m_ids = json.loads(manga_ids) if manga_ids else None
+        affil = json.loads(affiliations) if affiliations else None
+        abils = json.loads(abilities) if abilities else None
+        frms = json.loads(forms) if forms else None
+        tgs = json.loads(tags) if tags else None
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON array format")
+
+    prof_bytes = await profile_image.read() if profile_image else None
+    ban_bytes = await banner_image.read() if banner_image else None
+
+    try:
+        await character_admin_service.update_character(
+            admin_id=current_admin["_id"],
+            content_id=content_id,
+            name=name,
+            native_name=native_name,
+            birth_day=birth_day,
+            birth_month=birth_month,
+            height=height,
+            hair_color=hair_color,
+            has_hair=has_hair,
+            description=description,
+            anime_ids=a_ids,
+            manga_ids=m_ids,
+            affiliations=affil,
+            abilities=abils,
+            forms=frms,
+            status=status,
+            species=species,
+            gender=gender,
+            role=role,
+            tags=tgs,
+            profile_bytes=prof_bytes,
+            banner_bytes=ban_bytes
+        )
+        return {"status": "ok"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/characters/{content_id}")
+async def delete_character_admin(
+    content_id: str,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.services import character_admin_service
+    try:
+        await character_admin_service.delete_character(content_id)
+        return {"status": "ok"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

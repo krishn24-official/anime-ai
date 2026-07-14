@@ -48,10 +48,10 @@ async def _validate_rows(rows: list[dict], known_ids: set[str]) -> list[str]:
             continue
 
         if source_id not in known_ids:
-            warnings.append(f"Row {i}: source_id '{source_id}' not found in characters collection")
+            warnings.append(f"Row {i}: source_id '{source_id}' not found in any entity collection")
 
         if target_id not in known_ids:
-            warnings.append(f"Row {i}: target_id '{target_id}' not found in characters collection")
+            warnings.append(f"Row {i}: target_id '{target_id}' not found in any entity collection")
 
         if source_id == target_id:
             warnings.append(f"Row {i}: source_id and target_id are the same ('{source_id}') — skipped")
@@ -109,11 +109,12 @@ async def main():
     await connect_db()
     db = get_db()
 
-    # Validate source/target ids exist
-    known_ids = set(
-        doc["_id"] for doc in
-        await db["characters"].find({}, {"_id": 1}).to_list(None)
-    )
+    # Validate source/target ids exist across all relevant collections
+    collections_to_check = ["characters", "organizations", "anime", "manga", "movies", "tv_series"]
+    known_ids = set()
+    for coll_name in collections_to_check:
+        docs = await db[coll_name].find({}, {"_id": 1}).to_list(None)
+        known_ids.update(d["_id"] for d in docs)
 
     warnings = await _validate_rows(rows, known_ids)
 
@@ -148,14 +149,14 @@ async def main():
             skipped += 1
             continue
 
-        docs = build_relationship_pair(
+        docs = [d for d in build_relationship_pair(
             source_id=row.get("source_id", ""),
             target_id=row.get("target_id", ""),
             relationship=row.get("relationship", ""),
             rel_type=row.get("type", ""),
             context=row.get("context", ""),
             explicit_inverse=row.get("inverse_relationship", "")
-        )
+        ) if d is not None]
 
         for doc in docs:
             await col.replace_one(
@@ -165,8 +166,11 @@ async def main():
             )
             created += 1
 
-        print(f"  ✅ {docs[0]['source_id']} --{docs[0]['relationship']}--> {docs[0]['target_id']}  "
-              f"(+ inverse: --{docs[1]['relationship']}-->)")
+        if len(docs) > 1:
+            print(f"  ✅ {docs[0]['source_id']} --{docs[0]['relationship']}--> {docs[0]['target_id']}  "
+                  f"(+ inverse: --{docs[1]['relationship']}-->)")
+        elif len(docs) == 1:
+            print(f"  ✅ {docs[0]['source_id']} --{docs[0]['relationship']}--> {docs[0]['target_id']}")
 
     await close_db()
 

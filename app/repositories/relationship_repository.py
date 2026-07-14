@@ -102,23 +102,38 @@ async def find_exact_relationship(source_id: str, target_id: str, relationship: 
     })
 
 
-async def search_relationship_entities(query: str, limit: int = 10):
+async def search_relationship_entities(query: str, limit: int = 10, types_list: list[str] = None):
     from app.repositories.search_repository import (
         search_characters, search_organizations, search_anime, 
         search_manga, search_movies, search_tv_series
     )
     import asyncio
     
-    t_chars = asyncio.create_task(search_characters(query))
-    t_orgs = asyncio.create_task(search_organizations(query))
-    t_anime = asyncio.create_task(search_anime(query))
-    t_manga = asyncio.create_task(search_manga(query))
-    t_movies = asyncio.create_task(search_movies(query))
-    t_tv = asyncio.create_task(search_tv_series(query))
+    tasks = []
     
-    chars, orgs, anime, manga, movies, tv = await asyncio.gather(
-        t_chars, t_orgs, t_anime, t_manga, t_movies, t_tv
+    # helper to conditionally create tasks
+    def should_search(t: str):
+        return types_list is None or t in types_list
+        
+    t_chars = asyncio.create_task(search_characters(query)) if should_search("character") else None
+    t_orgs = asyncio.create_task(search_organizations(query)) if should_search("organization") else None
+    t_anime = asyncio.create_task(search_anime(query)) if should_search("anime") else None
+    t_manga = asyncio.create_task(search_manga(query)) if should_search("manga") else None
+    t_movies = asyncio.create_task(search_movies(query)) if should_search("movie") else None
+    t_tv = asyncio.create_task(search_tv_series(query)) if should_search("tv_series") else None
+    
+    results_gather = await asyncio.gather(
+        *(t for t in [t_chars, t_orgs, t_anime, t_manga, t_movies, t_tv] if t is not None)
     )
+    
+    # Reconstruct the results in order
+    idx = 0
+    chars = results_gather[idx] if t_chars else []; idx += 1 if t_chars else 0
+    orgs = results_gather[idx] if t_orgs else []; idx += 1 if t_orgs else 0
+    anime = results_gather[idx] if t_anime else []; idx += 1 if t_anime else 0
+    manga = results_gather[idx] if t_manga else []; idx += 1 if t_manga else 0
+    movies = results_gather[idx] if t_movies else []; idx += 1 if t_movies else 0
+    tv = results_gather[idx] if t_tv else []; idx += 1 if t_tv else 0
     
     results = []
     
