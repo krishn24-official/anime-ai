@@ -179,3 +179,16 @@ async def delete_comment(
         return {"status": "ok"}
     except ContentError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+
+# --- Detail Page ---
+
+@router.get("/content/{content_type}/{content_id}")
+async def get_content_details(
+    content_type: str,
+    content_id: str
+):
+    try:
+        return await content_service.fetch_content_details(content_type, content_id)
+    except ContentError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)

@@ -235,4 +235,86 @@ async def remove_comment(user_id: ObjectId, comment_id: str):
         raise ContentError(403, "You can only delete your own comments")
 
     await delete_comment(comment_oid)
-
+
+
+# --- Content Details ---
+async def fetch_content_details(content_type: str, content_id: str) -> dict:
+    if not is_valid_content_type(content_type):
+        raise ContentError(400, "Invalid content type")
+
+    db = get_db()
+    collection = CONTENT_COLLECTION_MAP[content_type]
+    
+    doc = await db[collection].find_one({"_id": content_id})
+    if not doc:
+        raise ContentError(404, f"{content_type} not found")
+        
+    # Extract trailer URL based on various schema formats
+    trailer_url = doc.get("trailer_url")
+    if not trailer_url:
+        trailer = doc.get("trailer")
+        if isinstance(trailer, dict):
+            youtube_id = trailer.get("youtube_id")
+            if youtube_id:
+                trailer_url = f"https://www.youtube.com/watch?v={youtube_id}"
+            else:
+                trailer_url = trailer.get("url", "")
+        elif isinstance(trailer, str):
+            trailer_url = trailer
+            
+    if not trailer_url:
+        trailer_url = doc.get("youtube", "")
+
+    # We want to format the response to include cast and crew consistently
+    response = {
+        "id": str(doc.get("_id")),
+        "title": doc.get("title", doc.get("name")),
+        "description": doc.get("plot", doc.get("description", "")),
+        "year": doc.get("year", doc.get("start_date", "")),
+        "trailer_url": trailer_url,
+        "genres": doc.get("genres", []),
+        "images": doc.get("images", {}),
+        "cast": [],
+        "crew": [],
+        "production_house": [],
+    }
+    
+    # Handle different title formats (e.g. dict for anime)
+    if isinstance(response["title"], dict):
+        response["title"] = response["title"].get("english") or response["title"].get("romaji") or response["title"].get("japanese")
+        
+    # Extract cast and crew
+    if content_type in ["movie", "tv_series"]:
+        # Cast
+        cast_list = doc.get("cast", [])
+        if isinstance(cast_list, list):
+            for c in cast_list:
+                if isinstance(c, str):
+                    response["cast"].append({"name": c, "role": "Actor", "image": None})
+                elif isinstance(c, dict):
+                    response["cast"].append(c)
+                    
+        # Directors/Writers -> Crew
+        directors = doc.get("director", [])
+        if isinstance(directors, list):
+            for d in directors:
+                response["crew"].append({"name": d, "role": "Director", "image": None})
+        elif isinstance(directors, str):
+            response["crew"].append({"name": directors, "role": "Director", "image": None})
+            
+        writers = doc.get("writers", [])
+        if isinstance(writers, list):
+            for w in writers:
+                response["crew"].append({"name": w, "role": "Writer", "image": None})
+    
+    elif content_type == "anime":
+        # Voice Actors
+        voice_actors = doc.get("voice_actors", [])
+        if isinstance(voice_actors, list):
+            for va in voice_actors:
+                if isinstance(va, str):
+                    response["cast"].append({"name": va, "role": "Voice Actor", "image": None})
+                elif isinstance(va, dict):
+                    response["cast"].append(va)
+                    
+    return response

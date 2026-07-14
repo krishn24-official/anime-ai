@@ -322,31 +322,7 @@ async def process_chat_message(
             "answer": f"Yes! Here is the latest news for today's birthday characters ({', '.join(bday_names)}):\n\n{news_text}"
         }
 
-    # 2. Birthdays
-    if "birthday" in msg_lower:
-        birthdays = await get_today_birthdays()
-        if not birthdays:
-            return {"answer": "There are no character birthdays today."}
-        names = [b.get("name") for b in birthdays if b.get("name")]
-        return {"answer": f"The following characters are celebrating their birthday today: **{', '.join(names)}**!"}
-
-    # 3. Latest News
-    if "news" in msg_lower:
-        articles = await get_latest_news(limit=3)
-        if not articles:
-            return {"answer": "I couldn't find any recent anime news."}
-        news_text = "\n\n".join([f"**{a.get('title')}**\n{a.get('summary', '')[:150]}..." for a in articles])
-        return {"answer": f"Here is the latest anime news:\n\n{news_text}"}
-
-    # 4. Recommendations
-    if "recommend" in msg_lower or "must-watch" in msg_lower:
-        top = await get_top_rated("anime", limit=3)
-        if not top:
-            return {"answer": "I don't have any anime recommendations right now."}
-        recs = "\n".join([f"• **{a.get('title', {}).get('english') or a.get('title', {}).get('romaji')}**" for a in top])
-        return {"answer": f"Here are some highly-rated anime I recommend watching:\n\n{recs}"}
-
-    # 4.5. Attribute QA Engine
+    # 1.5. Attribute QA Engine
     from app.services.attribute_query_service import detect_attribute_intent
     attr_intent = detect_attribute_intent(message)
     if attr_intent and not image_base64:
@@ -401,6 +377,30 @@ async def process_chat_message(
                 "name_query": ent_name,
                 "original_message": message,
             }
+
+    # 2. Birthdays
+    if "birthday" in msg_lower:
+        birthdays = await get_today_birthdays()
+        if not birthdays:
+            return {"answer": "There are no character birthdays today."}
+        names = [b.get("name") for b in birthdays if b.get("name")]
+        return {"answer": f"The following characters are celebrating their birthday today: **{', '.join(names)}**!"}
+
+    # 3. Latest News
+    if "news" in msg_lower:
+        articles = await get_latest_news(limit=3)
+        if not articles:
+            return {"answer": "I couldn't find any recent anime news."}
+        news_text = "\n\n".join([f"**{a.get('title')}**\n{a.get('summary', '')[:150]}..." for a in articles])
+        return {"answer": f"Here is the latest anime news:\n\n{news_text}"}
+
+    # 4. Recommendations
+    if "recommend" in msg_lower or "must-watch" in msg_lower:
+        top = await get_top_rated("anime", limit=3)
+        if not top:
+            return {"answer": "I don't have any anime recommendations right now."}
+        recs = "\n".join([f"• **{a.get('title', {}).get('english') or a.get('title', {}).get('romaji')}**" for a in top])
+        return {"answer": f"Here are some highly-rated anime I recommend watching:\n\n{recs}"}
 
     # 5. Anime specific queries
     if "anime" in msg_lower and not image_base64:

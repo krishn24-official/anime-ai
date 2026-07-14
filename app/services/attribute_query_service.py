@@ -18,6 +18,8 @@ ATTRIBUTE_MAP = {
     "height": "height",
     "birthday": "birthday",
     "birth day": "birthday",
+    "birthdate": "birthday",
+    "birth date": "birthday",
     "age": "age",
     "affiliation": "affiliations",
     "affiliations": "affiliations",
