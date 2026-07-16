@@ -27,7 +27,7 @@ async def create_tv_series(
     language: list[str],
     country: list[str],
     tagline: str | None,
-    trailer_url: str | None,
+    trailers: list[dict],
     poster_bytes: bytes | None,
     backdrop_bytes: bytes | None
 ):
@@ -128,7 +128,7 @@ async def create_tv_series(
             "poster": poster_url,
             "backdrop": backdrop_url
         },
-        "trailer_url": trailer_url,
+        "trailers": trailers,
         "status": status,
         "tagline": tagline,
         "content_type": "tv_series",
@@ -169,7 +169,7 @@ async def update_tv_series(
     language: list[str] | None = None,
     country: list[str] | None = None,
     tagline: str | None = None,
-    trailer_url: str | None = None,
+    trailers: list[dict] | None = None,
     poster_bytes: bytes | None = None,
     backdrop_bytes: bytes | None = None
 ):
@@ -197,8 +197,8 @@ async def update_tv_series(
         updates["country"] = country
     if tagline is not None:
         updates["tagline"] = tagline
-    if trailer_url is not None:
-        updates["trailer_url"] = trailer_url
+    if trailers is not None:
+        updates["trailers"] = trailers
         
     if released is not None and status_value is not None:
         if released and status_value not in ["Returning Series", "Ended", "Canceled"]:

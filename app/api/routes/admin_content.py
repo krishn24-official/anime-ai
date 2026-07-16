@@ -264,7 +264,7 @@ async def create_new_movie(
     language: str = Form("[]"),
     country: str = Form("[]"),
     tagline: Optional[str] = Form(None),
-    trailer_url: Optional[str] = Form(None),
+    trailers: str = Form("[]"),
     poster: Optional[UploadFile] = File(None),
     backdrop: Optional[UploadFile] = File(None),
     current_admin: dict = Depends(get_current_admin)
@@ -298,7 +298,7 @@ async def create_new_movie(
             language=language_list,
             country=country_list,
             tagline=tagline,
-            trailer_url=trailer_url,
+            trailers=json.loads(trailers),
             poster_bytes=poster_bytes,
             backdrop_bytes=backdrop_bytes
         )
@@ -329,7 +329,7 @@ async def update_existing_movie(
     language: Optional[str] = Form(None),
     country: Optional[str] = Form(None),
     tagline: Optional[str] = Form(None),
-    trailer_url: Optional[str] = Form(None),
+    trailers: Optional[str] = Form(None),
     poster: Optional[UploadFile] = File(None),
     backdrop: Optional[UploadFile] = File(None),
     current_admin: dict = Depends(get_current_admin)
@@ -364,7 +364,7 @@ async def update_existing_movie(
             language=language_list,
             country=country_list,
             tagline=tagline,
-            trailer_url=trailer_url,
+            trailers=json.loads(trailers) if trailers is not None else None,
             poster_bytes=poster_bytes,
             backdrop_bytes=backdrop_bytes
         )
@@ -420,7 +420,7 @@ async def create_new_tv_series(
     language: str = Form("[]"),
     country: str = Form("[]"),
     tagline: Optional[str] = Form(None),
-    trailer_url: Optional[str] = Form(None),
+    trailers: str = Form("[]"),
     poster: Optional[UploadFile] = File(None),
     backdrop: Optional[UploadFile] = File(None),
     current_admin: dict = Depends(get_current_admin)
@@ -458,7 +458,7 @@ async def create_new_tv_series(
             language=language_list,
             country=country_list,
             tagline=tagline,
-            trailer_url=trailer_url,
+            trailers=json.loads(trailers),
             poster_bytes=poster_bytes,
             backdrop_bytes=backdrop_bytes
         )
@@ -495,7 +495,7 @@ async def update_existing_tv_series(
     language: Optional[str] = Form(None),
     country: Optional[str] = Form(None),
     tagline: Optional[str] = Form(None),
-    trailer_url: Optional[str] = Form(None),
+    trailers: Optional[str] = Form(None),
     poster: Optional[UploadFile] = File(None),
     backdrop: Optional[UploadFile] = File(None),
     current_admin: dict = Depends(get_current_admin)
@@ -535,7 +535,7 @@ async def update_existing_tv_series(
             language=language_list,
             country=country_list,
             tagline=tagline,
-            trailer_url=trailer_url,
+            trailers=json.loads(trailers) if trailers is not None else None,
             poster_bytes=poster_bytes,
             backdrop_bytes=backdrop_bytes
         )

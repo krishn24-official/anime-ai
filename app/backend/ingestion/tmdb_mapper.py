@@ -2,22 +2,22 @@ from app.backend.ingestion.tmdb_client import image_url
 from app.backend.utils.slug import create_slug
 
 
-def _extract_trailer(videos: dict | None) -> str | None:
+def _extract_trailers(videos: dict | None) -> list[dict]:
     if not videos:
-        return None
+        return []
 
     results = videos.get("results", [])
+    trailers = []
 
-    for video in results:
-        if video.get("site") == "YouTube" and video.get("type") == "Trailer":
-            return f"https://www.youtube.com/watch?v={video['key']}"
-
-    # fallback: any YouTube video
     for video in results:
         if video.get("site") == "YouTube":
-            return f"https://www.youtube.com/watch?v={video['key']}"
+            label = video.get("type") or "Trailer"
+            trailers.append({
+                "url": f"https://www.youtube.com/watch?v={video['key']}",
+                "label": label
+            })
 
-    return None
+    return trailers
 
 
 def _extract_cast(credits: dict | None, limit: int = 10) -> list[dict]:
@@ -102,7 +102,7 @@ def map_movie(details: dict) -> dict:
             "backdrop": image_url(details.get("backdrop_path"), "w1280"),
         },
 
-        "trailer_url": _extract_trailer(details.get("videos")),
+        "trailers": _extract_trailers(details.get("videos")),
         "status": details.get("status"),
         "tagline": details.get("tagline"),
         "budget": details.get("budget"),
@@ -166,7 +166,7 @@ def map_tv_series(details: dict) -> dict:
             "backdrop": image_url(details.get("backdrop_path"), "w1280"),
         },
 
-        "trailer_url": _extract_trailer(details.get("videos")),
+        "trailers": _extract_trailers(details.get("videos")),
         "status": details.get("status"),
         "tagline": details.get("tagline"),
 

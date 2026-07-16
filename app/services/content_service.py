@@ -249,21 +249,26 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
     if not doc:
         raise ContentError(404, f"{content_type} not found")
         
-    # Extract trailer URL based on various schema formats
-    trailer_url = doc.get("trailer_url")
-    if not trailer_url:
-        trailer = doc.get("trailer")
-        if isinstance(trailer, dict):
-            youtube_id = trailer.get("youtube_id")
-            if youtube_id:
-                trailer_url = f"https://www.youtube.com/watch?v={youtube_id}"
-            else:
-                trailer_url = trailer.get("url", "")
-        elif isinstance(trailer, str):
-            trailer_url = trailer
+    # Extract trailers or fallback to legacy trailer formats
+    trailers = doc.get("trailers", [])
+    if not trailers:
+        trailer_url = doc.get("trailer_url")
+        if not trailer_url:
+            trailer = doc.get("trailer")
+            if isinstance(trailer, dict):
+                youtube_id = trailer.get("youtube_id")
+                if youtube_id:
+                    trailer_url = f"https://www.youtube.com/watch?v={youtube_id}"
+                else:
+                    trailer_url = trailer.get("url", "")
+            elif isinstance(trailer, str):
+                trailer_url = trailer
+                
+        if not trailer_url:
+            trailer_url = doc.get("youtube", "")
             
-    if not trailer_url:
-        trailer_url = doc.get("youtube", "")
+        if trailer_url:
+            trailers.append({"url": trailer_url, "label": "Trailer"})
 
     # We want to format the response to include cast and crew consistently
     response = {
@@ -271,7 +276,7 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
         "title": doc.get("title", doc.get("name")),
         "description": doc.get("plot", doc.get("description", "")),
         "year": doc.get("year", doc.get("start_date", "")),
-        "trailer_url": trailer_url,
+        "trailers": trailers,
         "genres": doc.get("genres", []),
         "images": doc.get("images", {}),
         "cast": [],

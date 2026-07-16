@@ -24,7 +24,7 @@ async def test_create_movie_released_needs_day():
             language=[],
             country=[],
             tagline=None,
-            trailer_url=None,
+            trailers=[],
             poster_bytes=None,
             backdrop_bytes=None
         )
@@ -50,7 +50,7 @@ async def test_create_movie_not_released_month():
         language=[],
         country=[],
         tagline=None,
-        trailer_url=None,
+        trailers=[],
         poster_bytes=None,
         backdrop_bytes=None
     )
@@ -85,7 +85,7 @@ async def test_create_movie_duplicate_slug():
             language=[],
             country=[],
             tagline=None,
-            trailer_url=None,
+            trailers=[],
             poster_bytes=None,
             backdrop_bytes=None
         )

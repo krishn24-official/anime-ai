@@ -30,7 +30,7 @@ async def test_create_tv_series_released_requires_day():
             language=[],
             country=[],
             tagline="",
-            trailer_url="",
+            trailers=[],
             poster_bytes=None,
             backdrop_bytes=None
         )
@@ -63,7 +63,7 @@ async def test_create_tv_series_not_released_month_precision():
         language=[],
         country=[],
         tagline="",
-        trailer_url="",
+        trailers=[],
         poster_bytes=None,
         backdrop_bytes=None
     )
@@ -102,7 +102,7 @@ async def test_create_tv_series_invalid_end_date():
             language=[],
             country=[],
             tagline="",
-            trailer_url="",
+            trailers=[],
             poster_bytes=None,
             backdrop_bytes=None
         )
@@ -135,7 +135,7 @@ async def test_duplicate_slug_protection():
         language=[],
         country=[],
         tagline="",
-        trailer_url="",
+        trailers=[],
         poster_bytes=None,
         backdrop_bytes=None
     )
@@ -165,7 +165,7 @@ async def test_duplicate_slug_protection():
             language=[],
             country=[],
             tagline="",
-            trailer_url="",
+            trailers=[],
             poster_bytes=None,
             backdrop_bytes=None
         )
@@ -197,7 +197,7 @@ async def test_duplicate_slug_protection():
             language=[],
             country=[],
             tagline="",
-            trailer_url="",
+            trailers=[],
             poster_bytes=None,
             backdrop_bytes=None
         )
@@ -230,7 +230,7 @@ async def test_update_tv_series_clear_end_date():
         language=[],
         country=[],
         tagline="",
-        trailer_url="",
+        trailers=[],
         poster_bytes=None,
         backdrop_bytes=None
     )
