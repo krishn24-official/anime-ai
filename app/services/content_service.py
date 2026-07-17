@@ -282,6 +282,10 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
         "cast": [],
         "crew": [],
         "production_house": [],
+        "language": doc.get("language", []),
+        "country": doc.get("country", []),
+        "age_rating": doc.get("age_rating", ""),
+        "runtime_minutes": doc.get("runtime_minutes", doc.get("duration_minutes", doc.get("episode_runtime_minutes", 0))),
     }
     
     # Handle different title formats (e.g. dict for anime)
