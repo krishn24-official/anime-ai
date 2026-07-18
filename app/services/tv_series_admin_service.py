@@ -23,6 +23,9 @@ async def create_tv_series(
     episode_runtime_minutes: int | None,
     genres: list[str],
     creators: list[str],
+    producers: list[str],
+    production_house: list[str],
+    actors: list[str],
     plot: str | None,
     language: list[str],
     country: list[str],
@@ -119,6 +122,9 @@ async def create_tv_series(
         "episode_runtime_minutes": episode_runtime_minutes,
         "genres": genres,
         "creators": creators,
+        "producers": producers,
+        "production_house": production_house,
+        "actors": actors,
         "cast": [],
         "plot": plot,
         "language": language,
@@ -165,6 +171,9 @@ async def update_tv_series(
     episode_runtime_minutes: int | None = None,
     genres: list[str] | None = None,
     creators: list[str] | None = None,
+    producers: list[str] | None = None,
+    production_house: list[str] | None = None,
+    actors: list[str] | None = None,
     plot: str | None = None,
     language: list[str] | None = None,
     country: list[str] | None = None,
@@ -189,6 +198,12 @@ async def update_tv_series(
         updates["genres"] = genres
     if creators is not None:
         updates["creators"] = creators
+    if producers is not None:
+        updates["producers"] = producers
+    if production_house is not None:
+        updates["production_house"] = production_house
+    if actors is not None:
+        updates["actors"] = actors
     if plot is not None:
         updates["plot"] = plot
     if language is not None:

@@ -151,4 +151,7 @@ async def create_indexes():
         expireAfterSeconds=10800  # 3 hours
     )
 
+    # actors
+    await create_index_safely(db.actors, "name")
+
     print("Indexes created")

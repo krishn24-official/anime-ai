@@ -19,8 +19,8 @@ COLLECTIONS = [
     "tier_lists",
     "organizations",
     "trending",
-    "trending_mentions",
     "search_logs",
+    "actors",
 ]
 
 async def create_collections():

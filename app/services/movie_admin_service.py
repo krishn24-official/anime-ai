@@ -18,6 +18,9 @@ async def create_movie(
     genres: list[str],
     director: list[str],
     writers: list[str],
+    producers: list[str],
+    production_house: list[str],
+    actors: list[str],
     plot: str | None,
     language: list[str],
     country: list[str],
@@ -77,6 +80,9 @@ async def create_movie(
         "genres": genres,
         "director": director,
         "writers": writers,
+        "producers": producers,
+        "production_house": production_house,
+        "actors": actors,
         "cast": [],
         "plot": plot,
         "language": language,
@@ -119,6 +125,9 @@ async def update_movie(
     genres: list[str] | None = None,
     director: list[str] | None = None,
     writers: list[str] | None = None,
+    producers: list[str] | None = None,
+    production_house: list[str] | None = None,
+    actors: list[str] | None = None,
     plot: str | None = None,
     language: list[str] | None = None,
     country: list[str] | None = None,
@@ -141,6 +150,12 @@ async def update_movie(
         updates["director"] = director
     if writers is not None:
         updates["writers"] = writers
+    if producers is not None:
+        updates["producers"] = producers
+    if production_house is not None:
+        updates["production_house"] = production_house
+    if actors is not None:
+        updates["actors"] = actors
     if plot is not None:
         updates["plot"] = plot
     if language is not None:

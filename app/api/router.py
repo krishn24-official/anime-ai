@@ -80,6 +80,14 @@ from app.api.routes.admin_content import (
     router as admin_content_router
 )
 
+from app.api.routes.actors import (
+    router as actors_router
+)
+
+from app.api.routes.admin_actors import (
+    router as admin_actors_router
+)
+
 api_router = APIRouter()
 
 api_router.include_router(
@@ -160,4 +168,12 @@ api_router.include_router(
 
 api_router.include_router(
     admin_content_router
+)
+
+api_router.include_router(
+    actors_router
+)
+
+api_router.include_router(
+    admin_actors_router
 )

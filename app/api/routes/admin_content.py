@@ -260,6 +260,9 @@ async def create_new_movie(
     genres: str = Form("[]"),
     director: str = Form("[]"),
     writers: str = Form("[]"),
+    producers: str = Form("[]"),
+    production_house: str = Form("[]"),
+    actors: str = Form("[]"),
     plot: Optional[str] = Form(None),
     language: str = Form("[]"),
     country: str = Form("[]"),
@@ -274,6 +277,9 @@ async def create_new_movie(
         genres_list = json.loads(genres)
         director_list = json.loads(director)
         writers_list = json.loads(writers)
+        producers_list = json.loads(producers)
+        production_house_list = json.loads(production_house)
+        actors_list = json.loads(actors)
         language_list = json.loads(language)
         country_list = json.loads(country)
         
@@ -294,6 +300,9 @@ async def create_new_movie(
             genres=genres_list,
             director=director_list,
             writers=writers_list,
+            producers=producers_list,
+            production_house=production_house_list,
+            actors=actors_list,
             plot=plot,
             language=language_list,
             country=country_list,
@@ -325,6 +334,9 @@ async def update_existing_movie(
     genres: Optional[str] = Form(None),
     director: Optional[str] = Form(None),
     writers: Optional[str] = Form(None),
+    producers: Optional[str] = Form(None),
+    production_house: Optional[str] = Form(None),
+    actors: Optional[str] = Form(None),
     plot: Optional[str] = Form(None),
     language: Optional[str] = Form(None),
     country: Optional[str] = Form(None),
@@ -339,6 +351,9 @@ async def update_existing_movie(
         genres_list = json.loads(genres) if genres else None
         director_list = json.loads(director) if director else None
         writers_list = json.loads(writers) if writers else None
+        producers_list = json.loads(producers) if producers else None
+        production_house_list = json.loads(production_house) if production_house else None
+        actors_list = json.loads(actors) if actors else None
         language_list = json.loads(language) if language else None
         country_list = json.loads(country) if country else None
         
@@ -360,6 +375,9 @@ async def update_existing_movie(
             genres=genres_list,
             director=director_list,
             writers=writers_list,
+            producers=producers_list,
+            production_house=production_house_list,
+            actors=actors_list,
             plot=plot,
             language=language_list,
             country=country_list,
@@ -416,6 +434,9 @@ async def create_new_tv_series(
     episode_runtime_minutes: Optional[int] = Form(None),
     genres: str = Form("[]"),
     creators: str = Form("[]"),
+    producers: str = Form("[]"),
+    production_house: str = Form("[]"),
+    actors: str = Form("[]"),
     plot: Optional[str] = Form(None),
     language: str = Form("[]"),
     country: str = Form("[]"),
@@ -429,6 +450,9 @@ async def create_new_tv_series(
         from app.services.tv_series_admin_service import create_tv_series
         genres_list = json.loads(genres)
         creators_list = json.loads(creators)
+        producers_list = json.loads(producers)
+        production_house_list = json.loads(production_house)
+        actors_list = json.loads(actors)
         language_list = json.loads(language)
         country_list = json.loads(country)
         
@@ -454,6 +478,9 @@ async def create_new_tv_series(
             episode_runtime_minutes=episode_runtime_minutes,
             genres=genres_list,
             creators=creators_list,
+            producers=producers_list,
+            production_house=production_house_list,
+            actors=actors_list,
             plot=plot,
             language=language_list,
             country=country_list,
@@ -491,6 +518,9 @@ async def update_existing_tv_series(
     episode_runtime_minutes: Optional[int] = Form(None),
     genres: Optional[str] = Form(None),
     creators: Optional[str] = Form(None),
+    producers: Optional[str] = Form(None),
+    production_house: Optional[str] = Form(None),
+    actors: Optional[str] = Form(None),
     plot: Optional[str] = Form(None),
     language: Optional[str] = Form(None),
     country: Optional[str] = Form(None),
@@ -504,6 +534,9 @@ async def update_existing_tv_series(
         from app.services.tv_series_admin_service import update_tv_series
         genres_list = json.loads(genres) if genres else None
         creators_list = json.loads(creators) if creators else None
+        producers_list = json.loads(producers) if producers else None
+        production_house_list = json.loads(production_house) if production_house else None
+        actors_list = json.loads(actors) if actors else None
         language_list = json.loads(language) if language else None
         country_list = json.loads(country) if country else None
         
@@ -531,6 +564,9 @@ async def update_existing_tv_series(
             episode_runtime_minutes=episode_runtime_minutes,
             genres=genres_list,
             creators=creators_list,
+            producers=producers_list,
+            production_house=production_house_list,
+            actors=actors_list,
             plot=plot,
             language=language_list,
             country=country_list,
