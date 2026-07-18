@@ -154,3 +154,16 @@ async def list_anime_for_admin(include_deleted: bool = False, search: str = None
         "items": items,
         "total": total
     }
+
+async def find_anime_by_ids(anime_ids: list):
+    db = get_db()
+    return await (
+        db["anime"]
+        .find(
+            {
+                "_id": {"$in": anime_ids},
+                "is_deleted": False
+            }
+        )
+        .to_list(None)
+    )

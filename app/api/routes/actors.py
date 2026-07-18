@@ -28,8 +28,17 @@ async def get_actor(actor_id: str):
     # Let's query content where this actor's name is in the 'actors' array
     from app.db.mongo import get_db
     db = get_db()
-    movies = await db["movies"].find({"actors": actor["name"], "is_deleted": False}).to_list(None)
-    tv = await db["tv_series"].find({"actors": actor["name"], "is_deleted": False}).to_list(None)
+    search_query = {
+        "$or": [
+            {"actors": actor["name"]},
+            {"director": actor["name"]},
+            {"crew": actor["name"]},
+            {"producers": actor["name"]}
+        ],
+        "is_deleted": False
+    }
+    movies = await db["movies"].find(search_query).to_list(None)
+    tv = await db["tv_series"].find(search_query).to_list(None)
     
     # For now, let's just return the actor and let the frontend do what it wants or format it here.
     # To match screenshot, maybe we return filmography as a list of content

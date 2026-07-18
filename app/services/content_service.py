@@ -331,4 +331,42 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
                 elif isinstance(va, dict):
                     response["cast"].append(va)
                     
+    # Batch fetch images for all cast, crew, actors, directors, producers
+    all_names = set()
+    for category in ["cast", "crew"]:
+        for item in response[category]:
+            if isinstance(item, dict) and item.get("name"):
+                all_names.add(item["name"])
+    for category in ["actors", "director", "producers"]:
+        for item in response[category]:
+            if isinstance(item, str):
+                all_names.add(item)
+            elif isinstance(item, dict) and item.get("name"):
+                all_names.add(item["name"])
+                
+    if all_names:
+        actors_docs = await db["actors"].find({"name": {"$in": list(all_names)}}).to_list(None)
+        actor_image_map = {}
+        for a in actors_docs:
+            profile = a.get("images", {}).get("profile")
+            if profile:
+                actor_image_map[a["name"]] = profile
+                
+        # Enrich the response
+        for category in ["cast", "crew"]:
+            for item in response[category]:
+                if isinstance(item, dict) and item.get("name") in actor_image_map:
+                    item["image"] = actor_image_map[item["name"]]
+                    
+        for category in ["actors", "director", "producers"]:
+            enriched = []
+            for item in response[category]:
+                name = item if isinstance(item, str) else item.get("name")
+                if name:
+                    enriched.append({
+                        "name": name,
+                        "image": actor_image_map.get(name)
+                    })
+            response[category] = enriched
+
     return response

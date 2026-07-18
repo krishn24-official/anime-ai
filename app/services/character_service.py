@@ -14,6 +14,8 @@ from app.repositories.organization_repository import (
     find_organizations_by_names
 )
 
+from app.repositories.anime_repository import find_anime_by_ids
+
 
 async def fetch_all_characters():
 
@@ -27,11 +29,25 @@ async def fetch_birthdays_by_date_range(start_date: str, end_date: str):
 async def fetch_character(
     character_id: str
 ):
-
-    return await get_character_by_id(
-        character_id
-    )
-
+    character = await get_character_by_id(character_id)
+    if not character:
+        return None
+        
+    anime_ids = character.get("anime_ids", [])
+    anime_details = []
+    if anime_ids:
+        animes = await find_anime_by_ids(anime_ids)
+        for a in animes:
+            title = a.get("title", {})
+            title_str = title.get("english") or title.get("romaji", "")
+            anime_details.append({
+                "id": a["_id"],
+                "title": title_str,
+                "poster": a.get("images", {}).get("poster", ""),
+                "year": a.get("year", "")
+            })
+    character["anime_details"] = anime_details
+    return character
 
 async def search_character(
     query: str
