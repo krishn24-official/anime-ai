@@ -1,6 +1,7 @@
 from fastapi import (
     APIRouter,
-    HTTPException
+    HTTPException,
+    Query
 )
 
 from app.services.anime_service import (
@@ -18,10 +19,13 @@ router = APIRouter(
 )
 
 @router.get("")
-async def get_anime():
+async def get_anime(
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=1000)
+):
 
     return await (
-        fetch_all_anime()
+        fetch_all_anime(page=page, limit=limit)
     )
 
 @router.get(

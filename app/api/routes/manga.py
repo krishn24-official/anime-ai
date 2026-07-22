@@ -1,6 +1,7 @@
 from fastapi import (
     APIRouter,
-    HTTPException
+    HTTPException,
+    Query
 )
 
 from app.services.manga_service import (
@@ -17,10 +18,13 @@ router = APIRouter(
 )
 
 @router.get("")
-async def get_manga():
+async def get_manga(
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=1000)
+):
 
     return await (
-        fetch_all_manga()
+        fetch_all_manga(page=page, limit=limit)
     )
 
 @router.get(

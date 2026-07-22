@@ -1,19 +1,27 @@
 from app.db.mongo import get_db
 
 
-async def get_all_anime():
+async def get_all_anime(page: int = 1, limit: int = 50):
 
     db = get_db()
+    skip = (page - 1) * limit
 
-    return await (
+    items = await (
         db["anime"]
         .find(
             {
                 "is_deleted": False
             }
         )
+        .sort([("title.english", 1)])
+        .skip(skip)
+        .limit(limit)
         .to_list(None)
     )
+
+    total = await db["anime"].count_documents({"is_deleted": False})
+
+    return items, total
 
 
 async def get_anime_by_id(

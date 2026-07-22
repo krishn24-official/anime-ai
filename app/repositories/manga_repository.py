@@ -1,19 +1,27 @@
 from app.db.mongo import get_db
 
 
-async def get_all_manga():
+async def get_all_manga(page: int = 1, limit: int = 50):
 
     db = get_db()
+    skip = (page - 1) * limit
 
-    return await (
+    items = await (
         db["manga"]
         .find(
             {
                 "is_deleted": False
             }
         )
+        .sort([("name", 1)])
+        .skip(skip)
+        .limit(limit)
         .to_list(None)
     )
+
+    total = await db["manga"].count_documents({"is_deleted": False})
+
+    return items, total
 
 
 async def get_manga_by_id(

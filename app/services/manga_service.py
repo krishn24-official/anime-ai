@@ -5,9 +5,21 @@ from app.repositories.manga_repository import (
 )
 
 
-async def fetch_all_manga():
+def _serialize(item: dict) -> dict:
+    item = dict(item)
+    item["id"] = str(item.pop("_id"))
+    return item
 
-    return await get_all_manga()
+
+async def fetch_all_manga(page: int = 1, limit: int = 50):
+    items, total = await get_all_manga(page, limit)
+    
+    return {
+        "items": [_serialize(m) for m in items],
+        "total": total,
+        "page": page,
+        "limit": limit
+    }
 
 
 async def fetch_manga(
