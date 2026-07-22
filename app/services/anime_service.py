@@ -12,8 +12,8 @@ def _serialize(item: dict) -> dict:
     item["id"] = str(item.pop("_id"))
     return item
 
-async def fetch_all_anime(page: int = 1, limit: int = 50):
-    items, total = await get_all_anime(page, limit)
+async def fetch_all_anime(page: int = 1, limit: int = 50, search: str = None):
+    items, total = await get_all_anime(page, limit, search)
     
     return {
         "items": [_serialize(m) for m in items],

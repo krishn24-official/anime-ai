@@ -20,11 +20,12 @@ router = APIRouter(
 @router.get("")
 async def get_manga(
     page: int = Query(1, ge=1),
-    limit: int = Query(50, ge=1, le=1000)
+    limit: int = Query(50, ge=1, le=1000),
+    search: str | None = Query(None),
 ):
 
     return await (
-        fetch_all_manga(page=page, limit=limit)
+        fetch_all_manga(page=page, limit=limit, search=search)
     )
 
 @router.get(

@@ -1,25 +1,28 @@
 from app.db.mongo import get_db
 
 
-async def get_all_manga(page: int = 1, limit: int = 50):
+async def get_all_manga(page: int = 1, limit: int = 50, search: str = None):
 
     db = get_db()
     skip = (page - 1) * limit
+    
+    query = {"is_deleted": False}
+    if search:
+        query["$or"] = [
+            {"name": {"$regex": search, "$options": "i"}},
+            {"native_name": {"$regex": search, "$options": "i"}}
+        ]
 
     items = await (
         db["manga"]
-        .find(
-            {
-                "is_deleted": False
-            }
-        )
+        .find(query)
         .sort([("name", 1)])
         .skip(skip)
         .limit(limit)
         .to_list(None)
     )
 
-    total = await db["manga"].count_documents({"is_deleted": False})
+    total = await db["manga"].count_documents(query)
 
     return items, total
 

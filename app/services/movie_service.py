@@ -7,8 +7,8 @@ def _serialize(movie: dict) -> dict:
     return movie
 
 
-async def fetch_all_movies(page: int = 1, limit: int = 20):
-    movies, total = await get_all_movies(page=page, limit=limit)
+async def fetch_all_movies(page: int = 1, limit: int = 20, search: str = None):
+    movies, total = await get_all_movies(page=page, limit=limit, search=search)
 
     return {
         "items": [_serialize(m) for m in movies],

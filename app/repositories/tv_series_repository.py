@@ -1,20 +1,24 @@
 from app.db.mongo import get_db
 
 
-async def get_all_tv_series(page: int = 1, limit: int = 20):
+async def get_all_tv_series(page: int = 1, limit: int = 20, search: str = None):
     db = get_db()
     skip = (page - 1) * limit
 
+    query = {"is_deleted": {"$ne": True}}
+    if search:
+        query["title"] = {"$regex": search, "$options": "i"}
+
     items = await (
         db["tv_series"]
-        .find({"is_deleted": {"$ne": True}})
+        .find(query)
         .sort([("year", -1), ("title", 1)])
         .skip(skip)
         .limit(limit)
         .to_list(None)
     )
 
-    total = await db["tv_series"].count_documents({"is_deleted": {"$ne": True}})
+    total = await db["tv_series"].count_documents(query)
 
     return items, total
 

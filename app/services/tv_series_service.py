@@ -7,8 +7,8 @@ def _serialize(series: dict) -> dict:
     return series
 
 
-async def fetch_all_tv_series(page: int = 1, limit: int = 20):
-    series_list, total = await get_all_tv_series(page=page, limit=limit)
+async def fetch_all_tv_series(page: int = 1, limit: int = 20, search: str = None):
+    series_list, total = await get_all_tv_series(page=page, limit=limit, search=search)
 
     return {
         "items": [_serialize(s) for s in series_list],
