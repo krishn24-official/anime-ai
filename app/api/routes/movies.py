@@ -11,7 +11,7 @@ router = APIRouter(
 @router.get("")
 async def get_movies(
     page: int = Query(1, ge=1),
-    limit: int = Query(100, ge=1, le=1000),
+    limit: int = Query(100, ge=1, le=5000),
 ):
     return await fetch_all_movies(page=page, limit=limit)
 
