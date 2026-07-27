@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from app.backend.utils.slug import create_slug
-from app.repositories import tv_series_repository
+from app.repositories import tv_series_repository, actors_repository
 from app.services.cloudinary_service import upload_image_from_bytes
 from app.services.release_date_utils import parse_release_date
 
@@ -31,6 +31,7 @@ async def create_tv_series(
     country: list[str],
     tagline: str | None,
     trailers: list[dict],
+    cast: list[dict] | None,
     poster_bytes: bytes | None,
     backdrop_bytes: bytes | None
 ):
@@ -108,6 +109,23 @@ async def create_tv_series(
     if backdrop_bytes:
         backdrop_url = await upload_image_from_bytes(backdrop_bytes, folder="tv_series", public_id=f"{content_id}_backdrop")
         
+    processed_cast = []
+    if cast:
+        for idx, entry in enumerate(cast):
+            actor_id = entry.get("actor_id")
+            if not actor_id:
+                raise ValueError(f"Missing actor_id in cast entry {idx}")
+            
+            actor = await actors_repository.get_actor_by_id(actor_id)
+            if not actor:
+                raise ValueError(f"Actor ID '{actor_id}' not found in database for cast entry {idx}")
+                
+            processed_cast.append({
+                "actor_id": actor_id,
+                "character_name": entry.get("character_name", ""),
+                "order": idx
+            })
+        
     doc = {
         "_id": content_id,
         "title": title,
@@ -125,7 +143,7 @@ async def create_tv_series(
         "producers": producers,
         "production_house": production_house,
         "actors": actors,
-        "cast": [],
+        "cast": processed_cast,
         "plot": plot,
         "language": language,
         "country": country,
@@ -179,6 +197,7 @@ async def update_tv_series(
     country: list[str] | None = None,
     tagline: str | None = None,
     trailers: list[dict] | None = None,
+    cast: list[dict] | None = None,
     poster_bytes: bytes | None = None,
     backdrop_bytes: bytes | None = None
 ):
@@ -214,6 +233,24 @@ async def update_tv_series(
         updates["tagline"] = tagline
     if trailers is not None:
         updates["trailers"] = trailers
+        
+    if cast is not None:
+        processed_cast = []
+        for idx, entry in enumerate(cast):
+            actor_id = entry.get("actor_id")
+            if not actor_id:
+                raise ValueError(f"Missing actor_id in cast entry {idx}")
+            
+            actor = await actors_repository.get_actor_by_id(actor_id)
+            if not actor:
+                raise ValueError(f"Actor ID '{actor_id}' not found in database for cast entry {idx}")
+                
+            processed_cast.append({
+                "actor_id": actor_id,
+                "character_name": entry.get("character_name", ""),
+                "order": idx
+            })
+        updates["cast"] = processed_cast
         
     if released is not None and status_value is not None:
         if released and status_value not in ["Returning Series", "Ended", "Canceled"]:

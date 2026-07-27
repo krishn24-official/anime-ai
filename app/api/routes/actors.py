@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
-from app.services.actors_service import fetch_all_actors, fetch_actor, search_actor
+from app.services.actors_service import fetch_all_actors, fetch_actor, search_actor, fetch_birthdays_by_date_range
 
 router = APIRouter(
     prefix="/actors",
@@ -13,6 +13,13 @@ async def get_actors(
 ):
     skip = (page - 1) * limit
     return await fetch_all_actors(limit=limit, skip=skip)
+
+@router.get("/birthdays/range")
+async def get_birthdays_range(
+    start_date: str = Query(..., description="Start date in YYYY-MM-DD format"),
+    end_date: str = Query(..., description="End date in YYYY-MM-DD format")
+):
+    return await fetch_birthdays_by_date_range(start_date, end_date)
 
 @router.get("/search/{query}")
 async def search(query: str):
@@ -30,6 +37,7 @@ async def get_actor(actor_id: str):
     db = get_db()
     search_query = {
         "$or": [
+            {"cast.actor_id": actor_id},
             {"actors": actor["name"]},
             {"director": actor["name"]},
             {"crew": actor["name"]},
@@ -62,7 +70,17 @@ async def get_actor(actor_id: str):
             "poster": t.get("images", {}).get("poster")
         })
     
+    # Safely convert year to int for sorting, defaulting to 0
+    def safe_year(x):
+        y = x.get("year")
+        if not y:
+            return 0
+        try:
+            return int(y)
+        except (ValueError, TypeError):
+            return 0
+
     # Sort filmography by year descending
-    actor["filmography"].sort(key=lambda x: x.get("year") or 0, reverse=True)
+    actor["filmography"].sort(key=safe_year, reverse=True)
     
     return actor

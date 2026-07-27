@@ -60,6 +60,32 @@ async def get_today_birthdays():
     )
 
 
+async def get_today_actor_birthdays():
+    db = get_db()
+    today = datetime.utcnow()
+    
+    # Actors birthdate is "YYYY-MM-DD"
+    # We use a regex to match the month and day part at the end
+    regex_pattern = f"-{today.month:02d}-{today.day:02d}$"
+
+    return await (
+        db["actors"]
+        .find(
+            {
+                "birthdate": {"$regex": regex_pattern},
+                "is_deleted": False
+            },
+            {
+                "_id": 1,
+                "name": 1,
+                "images.profile": 1,
+                "role": 1
+            }
+        )
+        .to_list(None)
+    )
+
+
 async def get_today_anime_anniversaries():
 
     db = get_db()

@@ -26,7 +26,7 @@ async def get_birthdays_by_date_range(start_date: str, end_date: str):
     if not date_criteria:
         return []
         
-    return await (
+    characters = await (
         db["characters"]
         .find(
             {
@@ -45,6 +45,11 @@ async def get_birthdays_by_date_range(start_date: str, end_date: str):
         )
         .to_list(None)
     )
+    
+    for character in characters:
+        character["entity_type"] = "character"
+        
+    return characters
 
 
 async def get_all_characters():

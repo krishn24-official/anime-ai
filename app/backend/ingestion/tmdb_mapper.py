@@ -28,6 +28,7 @@ def _extract_cast(credits: dict | None, limit: int = 10) -> list[dict]:
 
     return [
         {
+            "tmdb_person_id": person.get("id"),
             "name": person.get("name"),
             "character": person.get("character"),
             "profile_image": image_url(person.get("profile_path"), "w185"),

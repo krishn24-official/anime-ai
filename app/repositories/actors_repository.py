@@ -60,3 +60,53 @@ async def soft_delete_actor(actor_id: str):
         }
     )
     return result.modified_count > 0
+
+async def get_birthdays_by_date_range(start_date: str, end_date: str):
+    from datetime import timedelta
+    db = get_db()
+    
+    try:
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+    except ValueError:
+        return []
+        
+    if end_dt < start_dt:
+        return []
+        
+    days = (end_dt - start_dt).days
+    if days > 366:
+        days = 366
+        
+    date_criteria = []
+    for i in range(days + 1):
+        dt = start_dt + timedelta(days=i)
+        # Actor birthdate is stored as YYYY-MM-DD
+        date_criteria.append({"birthdate": {"$regex": f"-{dt.month:02d}-{dt.day:02d}$"}})
+        
+    if not date_criteria:
+        return []
+        
+    actors = await db["actors"].find(
+        {
+            "$or": date_criteria,
+            "is_deleted": False
+        },
+        {
+            "_id": 1,
+            "name": 1,
+            "images.profile": 1,
+            "birthdate": 1
+        }
+    ).to_list(None)
+
+    # Format like characters (birth_month, birth_day) for compatibility with frontend schedule
+    for actor in actors:
+        actor["entity_type"] = "actor"
+        if actor.get("birthdate"):
+            parts = actor["birthdate"].split("-")
+            if len(parts) == 3:
+                actor["birth_month"] = int(parts[1])
+                actor["birth_day"] = int(parts[2])
+
+    return actors

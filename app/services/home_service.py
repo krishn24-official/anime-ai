@@ -1,5 +1,6 @@
 from app.repositories.home_repository import (
     get_today_birthdays,
+    get_today_actor_birthdays,
     get_today_anime_anniversaries,
     get_today_manga_anniversaries
 )
@@ -12,6 +13,18 @@ async def fetch_home_today():
     birthdays = await (
         get_today_birthdays()
     )
+    
+    actor_birthdays = await (
+        get_today_actor_birthdays()
+    )
+    
+    for ab in actor_birthdays:
+        ab["entity_type"] = "actor"
+        
+    for b in birthdays:
+        b["entity_type"] = "character"
+        
+    all_birthdays = birthdays + actor_birthdays
 
     anime_anniversaries = await (
         get_today_anime_anniversaries()
@@ -28,7 +41,7 @@ async def fetch_home_today():
     return {
 
         "birthdays":
-            birthdays,
+            all_birthdays,
 
         "anime_anniversaries":
             anime_anniversaries,

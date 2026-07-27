@@ -6,10 +6,12 @@ import httpx
 from app.config import TMDB_API_KEY, TMDB_BASE_URL, TMDB_IMAGE_BASE_URL
 from app.db.mongo import connect_db, close_db, get_db
 from app.backend.utils.slug import create_slug
+from app.backend.ingestion.tmdb_mapper import map_movie
+from app.services.cast_reconciliation_service import reconcile_cast
 
 async def fetch_tmdb_movie(client: httpx.AsyncClient, movie_id: int):
     url = f"{TMDB_BASE_URL}/movie/{movie_id}"
-    params = {"api_key": TMDB_API_KEY}
+    params = {"api_key": TMDB_API_KEY, "append_to_response": "credits,videos"}
     response = await client.get(url, params=params)
     if response.status_code == 200:
         return response.json()
@@ -49,61 +51,23 @@ async def process_movie(client: httpx.AsyncClient, movie_id: int, db):
 
     print(f"Ingesting: {title} (ID {movie_id})...")
 
-    # 4. Extract data
-    release_date = movie_data.get("release_date")
-    year = release_date.split("-")[0] if release_date else None
+    # 4. Extract data using map_movie
+    doc = map_movie(movie_data)
     
-    runtime = movie_data.get("runtime")
-    
-    genres = [genre.get("name") for genre in movie_data.get("genres", [])]
-    
-    poster_path = movie_data.get("poster_path")
-    image_url = None
-    if poster_path:
-        image_url = f"{TMDB_IMAGE_BASE_URL}/original{poster_path}"
-
-    slug = create_slug(title)
-    base_movie_id = f"movie_{slug}"
-    movie_db_id = base_movie_id
+    movie_db_id = doc["_id"]
+    base_movie_id = movie_db_id
     counter = 1
     while await movies_collection.find_one({"_id": movie_db_id}):
         movie_db_id = f"{base_movie_id}_{counter}"
         counter += 1
+        
+    doc["_id"] = movie_db_id
+    doc["source_metadata"]["source"] = "tmdb"
+    doc["source_metadata"]["created_by"] = "ingestion_script"
+    doc["source_metadata"]["created_at"] = datetime.now(timezone.utc)
 
-    # 5. Save to DB
-    doc = {
-        "_id": movie_db_id,
-        "title": title,
-        "year": year,
-        "release_date": release_date,
-        "runtime_minutes": runtime,
-        "genres": genres,
-        "director": [],
-        "writers": [],
-        "cast": [],
-        "plot": movie_data.get("overview"),
-        "language": [movie_data.get("original_language")] if movie_data.get("original_language") else [],
-        "country": [country.get("name") for country in movie_data.get("production_countries", [])],
-        "box_office": str(movie_data.get("revenue")) if movie_data.get("revenue") else None,
-        "rating": {
-            "imdb": None,
-            "imdb_votes": None,
-            "tmdb": movie_data.get("vote_average"),
-            "tmdb_votes": movie_data.get("vote_count")
-        },
-        "images": {
-            "poster": image_url
-        },
-        "content_type": "movie",
-        "source_metadata": {
-            "source": "tmdb",
-            "tmdb_id": movie_id,
-            "created_by": "ingestion_script",
-            "created_at": datetime.now(timezone.utc)
-        },
-        "is_deleted": False,
-        "deleted_at": None,
-    }
+    # 5. Reconcile Cast
+    doc["cast"] = await reconcile_cast(doc.get("cast", []))
 
     await movies_collection.insert_one(doc)
     print(f"Successfully ingested {title}.")

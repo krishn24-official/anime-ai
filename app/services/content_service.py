@@ -302,11 +302,15 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
         # Cast
         cast_list = doc.get("cast", [])
         if isinstance(cast_list, list):
-            for c in cast_list:
-                if isinstance(c, str):
-                    response["cast"].append({"name": c, "role": "Actor", "image": None})
-                elif isinstance(c, dict):
-                    response["cast"].append(c)
+            if cast_list and isinstance(cast_list[0], dict) and "actor_id" in cast_list[0]:
+                from app.services.cast_enrichment_service import enrich_cast
+                response["cast"] = await enrich_cast(cast_list)
+            else:
+                for c in cast_list:
+                    if isinstance(c, str):
+                        response["cast"].append({"name": c, "role": "Actor", "image": None})
+                    elif isinstance(c, dict):
+                        response["cast"].append(c)
                     
         # Directors/Writers -> Crew
         directors = doc.get("director", [])

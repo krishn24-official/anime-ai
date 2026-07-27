@@ -20,11 +20,15 @@ async def test_create_movie_released_needs_day():
             genres=[],
             director=[],
             writers=[],
+            producers=[],
+            production_house=[],
+            actors=[],
             plot=None,
             language=[],
             country=[],
             tagline=None,
             trailers=[],
+            cast=[],
             poster_bytes=None,
             backdrop_bytes=None
         )
@@ -46,11 +50,15 @@ async def test_create_movie_not_released_month():
         genres=[],
         director=[],
         writers=[],
+        producers=[],
+        production_house=[],
+        actors=[],
         plot=None,
         language=[],
         country=[],
         tagline=None,
         trailers=[],
+        cast=[],
         poster_bytes=None,
         backdrop_bytes=None
     )
@@ -81,11 +89,15 @@ async def test_create_movie_duplicate_slug():
             genres=[],
             director=[],
             writers=[],
+            producers=[],
+            production_house=[],
+            actors=[],
             plot=None,
             language=[],
             country=[],
             tagline=None,
             trailers=[],
+            cast=[],
             poster_bytes=None,
             backdrop_bytes=None
         )

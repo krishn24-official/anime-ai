@@ -11,6 +11,7 @@ from app.backend.ingestion.tmdb_client import (
 from app.backend.ingestion.tmdb_mapper import map_movie, map_tv_series
 from app.repositories.movie_repository import upsert_movie
 from app.repositories.tv_series_repository import upsert_tv_series
+from app.services.cast_reconciliation_service import reconcile_cast
 
 
 async def sync_discover_movies(pages: int = 5, sort_by: str = "popularity.desc", **filters) -> dict:
@@ -31,6 +32,7 @@ async def sync_discover_movies(pages: int = 5, sort_by: str = "popularity.desc",
                 continue
 
             doc = map_movie(details)
+            doc["cast"] = await reconcile_cast(doc.get("cast", []))
             await upsert_movie(doc)
             saved += 1
             print(f"    [OK] {doc['_id']} - {doc['title']} ({doc.get('year', '?')})")
@@ -56,6 +58,7 @@ async def sync_discover_tv(pages: int = 5, sort_by: str = "popularity.desc", **f
                 continue
 
             doc = map_tv_series(details)
+            doc["cast"] = await reconcile_cast(doc.get("cast", []))
             await upsert_tv_series(doc)
             saved += 1
             print(f"    [OK] {doc['_id']} - {doc['title']} ({doc.get('year', '?')})")
@@ -80,6 +83,7 @@ async def sync_trending_movies(pages: int = 1) -> dict:
                 continue
 
             doc = map_movie(details)
+            doc["cast"] = await reconcile_cast(doc.get("cast", []))
             await upsert_movie(doc)
             saved += 1
             print(f"    [OK] {doc['_id']} - {doc['title']} ({doc.get('year', '?')})")
@@ -104,6 +108,7 @@ async def sync_trending_tv(pages: int = 1) -> dict:
                 continue
 
             doc = map_tv_series(details)
+            doc["cast"] = await reconcile_cast(doc.get("cast", []))
             await upsert_tv_series(doc)
             saved += 1
             print(f"    [OK] {doc['_id']} - {doc['title']} ({doc.get('year', '?')})")
@@ -124,6 +129,7 @@ async def add_movie_by_title(title: str) -> dict | None:
         return None
 
     doc = map_movie(details)
+    doc["cast"] = await reconcile_cast(doc.get("cast", []))
     await upsert_movie(doc)
 
     return doc
@@ -142,6 +148,7 @@ async def add_tv_series_by_title(title: str) -> dict | None:
         return None
 
     doc = map_tv_series(details)
+    doc["cast"] = await reconcile_cast(doc.get("cast", []))
     await upsert_tv_series(doc)
 
     return doc

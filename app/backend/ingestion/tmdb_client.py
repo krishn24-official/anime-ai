@@ -139,3 +139,7 @@ async def get_tv_details(tmdb_id: int) -> dict | None:
         f"/tv/{tmdb_id}",
         {"append_to_response": "credits,videos"}
     )
+
+
+async def get_person_details(tmdb_id: int) -> dict | None:
+    return await _get(f"/person/{tmdb_id}")

@@ -268,6 +268,7 @@ async def create_new_movie(
     country: str = Form("[]"),
     tagline: Optional[str] = Form(None),
     trailers: str = Form("[]"),
+    cast: str = Form("[]"),
     poster: Optional[UploadFile] = File(None),
     backdrop: Optional[UploadFile] = File(None),
     current_admin: dict = Depends(get_current_admin)
@@ -282,6 +283,7 @@ async def create_new_movie(
         actors_list = json.loads(actors)
         language_list = json.loads(language)
         country_list = json.loads(country)
+        cast_list = json.loads(cast)
         
         poster_bytes = await poster.read() if poster else None
         backdrop_bytes = await backdrop.read() if backdrop else None
@@ -308,6 +310,7 @@ async def create_new_movie(
             country=country_list,
             tagline=tagline,
             trailers=json.loads(trailers),
+            cast=cast_list,
             poster_bytes=poster_bytes,
             backdrop_bytes=backdrop_bytes
         )
@@ -342,6 +345,7 @@ async def update_existing_movie(
     country: Optional[str] = Form(None),
     tagline: Optional[str] = Form(None),
     trailers: Optional[str] = Form(None),
+    cast: Optional[str] = Form(None),
     poster: Optional[UploadFile] = File(None),
     backdrop: Optional[UploadFile] = File(None),
     current_admin: dict = Depends(get_current_admin)
@@ -356,6 +360,7 @@ async def update_existing_movie(
         actors_list = json.loads(actors) if actors else None
         language_list = json.loads(language) if language else None
         country_list = json.loads(country) if country else None
+        cast_list = json.loads(cast) if cast is not None else None
         
         poster_bytes = await poster.read() if poster else None
         backdrop_bytes = await backdrop.read() if backdrop else None
@@ -383,6 +388,7 @@ async def update_existing_movie(
             country=country_list,
             tagline=tagline,
             trailers=json.loads(trailers) if trailers is not None else None,
+            cast=cast_list,
             poster_bytes=poster_bytes,
             backdrop_bytes=backdrop_bytes
         )
@@ -442,6 +448,7 @@ async def create_new_tv_series(
     country: str = Form("[]"),
     tagline: Optional[str] = Form(None),
     trailers: str = Form("[]"),
+    cast: str = Form("[]"),
     poster: Optional[UploadFile] = File(None),
     backdrop: Optional[UploadFile] = File(None),
     current_admin: dict = Depends(get_current_admin)
@@ -455,6 +462,7 @@ async def create_new_tv_series(
         actors_list = json.loads(actors)
         language_list = json.loads(language)
         country_list = json.loads(country)
+        cast_list = json.loads(cast)
         
         poster_bytes = await poster.read() if poster else None
         backdrop_bytes = await backdrop.read() if backdrop else None
@@ -486,6 +494,7 @@ async def create_new_tv_series(
             country=country_list,
             tagline=tagline,
             trailers=json.loads(trailers),
+            cast=cast_list,
             poster_bytes=poster_bytes,
             backdrop_bytes=backdrop_bytes
         )
@@ -526,6 +535,7 @@ async def update_existing_tv_series(
     country: Optional[str] = Form(None),
     tagline: Optional[str] = Form(None),
     trailers: Optional[str] = Form(None),
+    cast: Optional[str] = Form(None),
     poster: Optional[UploadFile] = File(None),
     backdrop: Optional[UploadFile] = File(None),
     current_admin: dict = Depends(get_current_admin)
@@ -539,6 +549,7 @@ async def update_existing_tv_series(
         actors_list = json.loads(actors) if actors else None
         language_list = json.loads(language) if language else None
         country_list = json.loads(country) if country else None
+        cast_list = json.loads(cast) if cast is not None else None
         
         poster_bytes = await poster.read() if poster else None
         backdrop_bytes = await backdrop.read() if backdrop else None
@@ -572,6 +583,7 @@ async def update_existing_tv_series(
             country=country_list,
             tagline=tagline,
             trailers=json.loads(trailers) if trailers is not None else None,
+            cast=cast_list,
             poster_bytes=poster_bytes,
             backdrop_bytes=backdrop_bytes
         )
