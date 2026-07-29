@@ -37,7 +37,7 @@ async def get_actor(actor_id: str):
     db = get_db()
     search_query = {
         "$or": [
-            {"cast.actor_id": actor_id},
+            {"cast.actor_id": actor["_id"]},
             {"actors": actor["name"]},
             {"director": actor["name"]},
             {"crew": actor["name"]},
