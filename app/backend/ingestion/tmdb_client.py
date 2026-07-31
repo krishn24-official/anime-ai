@@ -130,7 +130,7 @@ async def discover_tv(page: int = 1, sort_by: str = "popularity.desc", **filters
 async def get_movie_details(tmdb_id: int) -> dict | None:
     return await _get(
         f"/movie/{tmdb_id}",
-        {"append_to_response": "credits,videos"}
+        {"append_to_response": "credits,videos,release_dates"}
     )
 
 

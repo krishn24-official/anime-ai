@@ -43,6 +43,58 @@ async def get_announced_range(start_date: str = Query(...), end_date: str = Quer
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# --- Public Episode/Chapter Detail ---
+
+from app.services.content_lookup import resolve_content_title
+from app.db.mongo import get_db
+
+@router.get("/episodes/{content_id}")
+async def get_episode_detail(content_id: str):
+    db = get_db()
+    doc = await db["episodes"].find_one({"_id": content_id})
+    if not doc or doc.get("is_deleted"):
+        raise HTTPException(status_code=404, detail="Episode not found")
+
+    parent_type = "anime" if doc.get("anime_id") else "tv_series"
+    parent_id = doc.get("anime_id") or doc.get("tv_series_id")
+
+    parent_info = await resolve_content_title(parent_type, parent_id) if parent_id else None
+
+    return {
+        "episode_number": doc.get("episode_number"),
+        "title": doc.get("title"),
+        "release_date": doc.get("release_date"),
+        "director": doc.get("director"),
+        "arc": doc.get("arc"),
+        "is_filler": doc.get("is_filler", False),
+        "canon_type": doc.get("canon_type"),
+        "summary": doc.get("summary"),
+        "parent_type": parent_type,
+        "parent_id": parent_id,
+        "parent_title": parent_info["title"] if parent_info else None,
+        "parent_poster": parent_info["poster_image"] if parent_info else None,
+    }
+
+@router.get("/chapters/{content_id}")
+async def get_chapter_detail(content_id: str):
+    db = get_db()
+    doc = await db["chapters"].find_one({"_id": content_id})
+    if not doc or doc.get("is_deleted"):
+        raise HTTPException(status_code=404, detail="Chapter not found")
+
+    manga_id = doc.get("manga_id")
+    parent_info = await resolve_content_title("manga", manga_id) if manga_id else None
+
+    return {
+        "chapter_number": doc.get("chapter_number"),
+        "release_date": doc.get("release_date"),
+        "summary": doc.get("summary"),
+        "parent_id": manga_id,
+        "parent_title": parent_info["title"] if parent_info else None,
+        "parent_poster": parent_info["poster_image"] if parent_info else None,
+    }
+
+
 # --- Trending ---
 
 from app.services.trending_service import get_trending_content

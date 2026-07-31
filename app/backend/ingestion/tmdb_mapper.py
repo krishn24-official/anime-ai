@@ -76,10 +76,27 @@ def _extract_writers(credits: dict | None) -> list[str]:
     ]
 
 
+def _extract_us_theatrical_release_date(details: dict) -> str | None:
+    """Pull the actual US theatrical release date if available, fallback to top-level."""
+    release_dates = details.get("release_dates", {}).get("results", [])
+    
+    us_data = next((r for r in release_dates if r.get("iso_3166_1") == "US"), None)
+    if us_data:
+        # Prefer Type 3 (Theatrical), then Type 2 (Theatrical Limited), then Type 1 (Premiere)
+        types_to_check = [3, 2, 1]
+        for t in types_to_check:
+            for rd in us_data.get("release_dates", []):
+                if rd.get("type") == t and rd.get("release_date"):
+                    return rd.get("release_date")[:10]
+                    
+    return details.get("release_date")
+
+
 def map_movie(details: dict, max_cast: int = 10) -> dict:
     tmdb_id = details["id"]
     title = details.get("title") or details.get("original_title") or str(tmdb_id)
     slug = create_slug(title)
+    actual_release_date = _extract_us_theatrical_release_date(details)
 
     return {
         "_id": f"movie_{slug}",
@@ -87,8 +104,8 @@ def map_movie(details: dict, max_cast: int = 10) -> dict:
         "title": title,
         "original_title": details.get("original_title"),
 
-        "year": (details.get("release_date") or "")[:4] or None,
-        "release_date": details.get("release_date"),
+        "year": (actual_release_date or "")[:4] or None,
+        "release_date": actual_release_date,
 
         "runtime_minutes": details.get("runtime"),
 
