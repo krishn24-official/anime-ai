@@ -16,7 +16,7 @@ async def create_movie(
     precision: str,
     runtime_minutes: int | None,
     genres: list[str],
-    director: list[str],
+    director: list[dict],
     writers: list[str],
     producers: list[str],
     production_house: list[str],
@@ -87,6 +87,22 @@ async def create_movie(
                 "order": idx
             })
         
+    processed_director = []
+    if director:
+        for idx, entry in enumerate(director):
+            actor_id = entry.get("actor_id")
+            if not actor_id:
+                raise ValueError(f"Missing actor_id in director entry {idx}")
+            
+            actor = await actors_repository.get_actor_by_id(actor_id)
+            if not actor:
+                raise ValueError(f"Actor ID '{actor_id}' not found in database for director entry {idx}")
+                
+            processed_director.append({
+                "actor_id": actor_id,
+                "order": idx
+            })
+
     doc = {
         "_id": content_id,
         "title": title,
@@ -96,7 +112,7 @@ async def create_movie(
         "release_precision": release_precision,
         "runtime_minutes": runtime_minutes,
         "genres": genres,
-        "director": director,
+        "director": processed_director,
         "writers": writers,
         "producers": producers,
         "production_house": production_house,
@@ -141,7 +157,7 @@ async def update_movie(
     precision: str | None = None,
     runtime_minutes: int | None = None,
     genres: list[str] | None = None,
-    director: list[str] | None = None,
+    director: list[dict] | None = None,
     writers: list[str] | None = None,
     producers: list[str] | None = None,
     production_house: list[str] | None = None,
@@ -165,8 +181,6 @@ async def update_movie(
         updates["runtime_minutes"] = runtime_minutes
     if genres is not None:
         updates["genres"] = genres
-    if director is not None:
-        updates["director"] = director
     if writers is not None:
         updates["writers"] = writers
     if producers is not None:
@@ -185,6 +199,23 @@ async def update_movie(
         updates["tagline"] = tagline
     if trailers is not None:
         updates["trailers"] = trailers
+        
+    if director is not None:
+        processed_director = []
+        for idx, entry in enumerate(director):
+            actor_id = entry.get("actor_id")
+            if not actor_id:
+                raise ValueError(f"Missing actor_id in director entry {idx}")
+            
+            actor = await actors_repository.get_actor_by_id(actor_id)
+            if not actor:
+                raise ValueError(f"Actor ID '{actor_id}' not found in database for director entry {idx}")
+                
+            processed_director.append({
+                "actor_id": actor_id,
+                "order": idx
+            })
+        updates["director"] = processed_director
         
     if cast is not None:
         processed_cast = []

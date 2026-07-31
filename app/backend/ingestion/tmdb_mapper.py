@@ -37,14 +37,31 @@ def _extract_cast(credits: dict | None, limit: int = 10) -> list[dict]:
     ]
 
 
-def _extract_directors(credits: dict | None) -> list[str]:
-    """Pull director names from the crew list."""
+def _extract_directors(credits: dict | None) -> list[dict]:
+    """Pull director names and info from the crew list."""
     if not credits:
         return []
+    
     return [
-        person["name"]
+        {
+            "tmdb_person_id": person.get("id"),
+            "name": person.get("name"),
+            "profile_image": image_url(person.get("profile_path"), "w185"),
+        }
         for person in credits.get("crew", [])
         if person.get("job") == "Director"
+    ]
+
+
+def _extract_creators(details: dict) -> list[dict]:
+    """Pull creator names and info from the created_by list."""
+    return [
+        {
+            "tmdb_person_id": person.get("id"),
+            "name": person.get("name"),
+            "profile_image": image_url(person.get("profile_path"), "w185"),
+        }
+        for person in details.get("created_by", [])
     ]
 
 
@@ -59,7 +76,7 @@ def _extract_writers(credits: dict | None) -> list[str]:
     ]
 
 
-def map_movie(details: dict) -> dict:
+def map_movie(details: dict, max_cast: int = 10) -> dict:
     tmdb_id = details["id"]
     title = details.get("title") or details.get("original_title") or str(tmdb_id)
     slug = create_slug(title)
@@ -79,7 +96,7 @@ def map_movie(details: dict) -> dict:
 
         "director": _extract_directors(details.get("credits")),
         "writers": _extract_writers(details.get("credits")),
-        "cast": _extract_cast(details.get("credits")),
+        "cast": _extract_cast(details.get("credits"), limit=max_cast),
 
         "plot": details.get("overview"),
 
@@ -121,7 +138,7 @@ def map_movie(details: dict) -> dict:
     }
 
 
-def map_tv_series(details: dict) -> dict:
+def map_tv_series(details: dict, max_cast: int = 10) -> dict:
     tmdb_id = details["id"]
     title = details.get("name") or details.get("original_name") or str(tmdb_id)
     slug = create_slug(title)
@@ -142,8 +159,8 @@ def map_tv_series(details: dict) -> dict:
 
         "genres": [g["name"] for g in details.get("genres", [])],
 
-        "creators": [c["name"] for c in details.get("created_by", [])],
-        "cast": _extract_cast(details.get("credits")),
+        "creators": _extract_creators(details),
+        "cast": _extract_cast(details.get("credits"), limit=max_cast),
 
         "plot": details.get("overview"),
 

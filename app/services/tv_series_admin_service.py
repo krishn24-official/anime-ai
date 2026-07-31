@@ -22,7 +22,7 @@ async def create_tv_series(
     total_episodes: int | None,
     episode_runtime_minutes: int | None,
     genres: list[str],
-    creators: list[str],
+    creators: list[dict],
     producers: list[str],
     production_house: list[str],
     actors: list[str],
@@ -126,6 +126,22 @@ async def create_tv_series(
                 "order": idx
             })
         
+    processed_creators = []
+    if creators:
+        for idx, entry in enumerate(creators):
+            actor_id = entry.get("actor_id")
+            if not actor_id:
+                raise ValueError(f"Missing actor_id in creators entry {idx}")
+            
+            actor = await actors_repository.get_actor_by_id(actor_id)
+            if not actor:
+                raise ValueError(f"Actor ID '{actor_id}' not found in database for creators entry {idx}")
+                
+            processed_creators.append({
+                "actor_id": actor_id,
+                "order": idx
+            })
+
     doc = {
         "_id": content_id,
         "title": title,
@@ -139,7 +155,7 @@ async def create_tv_series(
         "total_episodes": total_episodes,
         "episode_runtime_minutes": episode_runtime_minutes,
         "genres": genres,
-        "creators": creators,
+        "creators": processed_creators,
         "producers": producers,
         "production_house": production_house,
         "actors": actors,
@@ -188,7 +204,7 @@ async def update_tv_series(
     total_episodes: int | None = None,
     episode_runtime_minutes: int | None = None,
     genres: list[str] | None = None,
-    creators: list[str] | None = None,
+    creators: list[dict] | None = None,
     producers: list[str] | None = None,
     production_house: list[str] | None = None,
     actors: list[str] | None = None,
@@ -215,8 +231,6 @@ async def update_tv_series(
         updates["episode_runtime_minutes"] = episode_runtime_minutes
     if genres is not None:
         updates["genres"] = genres
-    if creators is not None:
-        updates["creators"] = creators
     if producers is not None:
         updates["producers"] = producers
     if production_house is not None:
@@ -233,6 +247,23 @@ async def update_tv_series(
         updates["tagline"] = tagline
     if trailers is not None:
         updates["trailers"] = trailers
+        
+    if creators is not None:
+        processed_creators = []
+        for idx, entry in enumerate(creators):
+            actor_id = entry.get("actor_id")
+            if not actor_id:
+                raise ValueError(f"Missing actor_id in creators entry {idx}")
+            
+            actor = await actors_repository.get_actor_by_id(actor_id)
+            if not actor:
+                raise ValueError(f"Actor ID '{actor_id}' not found in database for creators entry {idx}")
+                
+            processed_creators.append({
+                "actor_id": actor_id,
+                "order": idx
+            })
+        updates["creators"] = processed_creators
         
     if cast is not None:
         processed_cast = []

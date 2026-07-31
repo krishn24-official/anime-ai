@@ -11,10 +11,10 @@ from app.backend.ingestion.tmdb_client import (
 from app.backend.ingestion.tmdb_mapper import map_movie, map_tv_series
 from app.repositories.movie_repository import upsert_movie
 from app.repositories.tv_series_repository import upsert_tv_series
-from app.services.cast_reconciliation_service import reconcile_cast
+from app.services.cast_reconciliation_service import reconcile_cast, reconcile_directors, reconcile_creators
 
 
-async def sync_discover_movies(pages: int = 5, sort_by: str = "popularity.desc", **filters) -> dict:
+async def sync_discover_movies(pages: int = 5, max_cast: int = 10, sort_by: str = "popularity.desc", **filters) -> dict:
     saved = 0
     failed = 0
 
@@ -31,7 +31,8 @@ async def sync_discover_movies(pages: int = 5, sort_by: str = "popularity.desc",
                 print(f"    [FAIL] Could not fetch details for tmdb_id={item['id']}")
                 continue
 
-            doc = map_movie(details)
+            doc = map_movie(details, max_cast=max_cast)
+            doc["director"] = await reconcile_directors(doc.get("director", []))
             doc["cast"] = await reconcile_cast(doc.get("cast", []))
             await upsert_movie(doc)
             saved += 1
@@ -40,7 +41,7 @@ async def sync_discover_movies(pages: int = 5, sort_by: str = "popularity.desc",
     return {"saved": saved, "failed": failed}
 
 
-async def sync_discover_tv(pages: int = 5, sort_by: str = "popularity.desc", **filters) -> dict:
+async def sync_discover_tv(pages: int = 5, max_cast: int = 10, sort_by: str = "popularity.desc", **filters) -> dict:
     saved = 0
     failed = 0
 
@@ -57,7 +58,8 @@ async def sync_discover_tv(pages: int = 5, sort_by: str = "popularity.desc", **f
                 print(f"    [FAIL] Could not fetch details for tmdb_id={item['id']}")
                 continue
 
-            doc = map_tv_series(details)
+            doc = map_tv_series(details, max_cast=max_cast)
+            doc["creators"] = await reconcile_creators(doc.get("creators", []))
             doc["cast"] = await reconcile_cast(doc.get("cast", []))
             await upsert_tv_series(doc)
             saved += 1
@@ -83,6 +85,7 @@ async def sync_trending_movies(pages: int = 1) -> dict:
                 continue
 
             doc = map_movie(details)
+            doc["director"] = await reconcile_directors(doc.get("director", []))
             doc["cast"] = await reconcile_cast(doc.get("cast", []))
             await upsert_movie(doc)
             saved += 1
@@ -108,6 +111,7 @@ async def sync_trending_tv(pages: int = 1) -> dict:
                 continue
 
             doc = map_tv_series(details)
+            doc["creators"] = await reconcile_creators(doc.get("creators", []))
             doc["cast"] = await reconcile_cast(doc.get("cast", []))
             await upsert_tv_series(doc)
             saved += 1
@@ -129,6 +133,7 @@ async def add_movie_by_title(title: str) -> dict | None:
         return None
 
     doc = map_movie(details)
+    doc["director"] = await reconcile_directors(doc.get("director", []))
     doc["cast"] = await reconcile_cast(doc.get("cast", []))
     await upsert_movie(doc)
 
@@ -148,6 +153,7 @@ async def add_tv_series_by_title(title: str) -> dict | None:
         return None
 
     doc = map_tv_series(details)
+    doc["creators"] = await reconcile_creators(doc.get("creators", []))
     doc["cast"] = await reconcile_cast(doc.get("cast", []))
     await upsert_tv_series(doc)
 

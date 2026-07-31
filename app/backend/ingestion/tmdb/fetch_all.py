@@ -9,6 +9,8 @@ Usage:
     python -m app.backend.ingestion.tmdb.fetch_all --movie-pages 5 --tv-pages 5
     python -m app.backend.ingestion.tmdb.fetch_all --only movies
     python -m app.backend.ingestion.tmdb.fetch_all --only tv
+    python -m app.backend.ingestion.tmdb.fetch_all --country IN
+    python -m app.backend.ingestion.tmdb.fetch_all --language hi --country IN
 """
 
 import argparse
@@ -37,7 +39,16 @@ async def main():
         default="all",
         help="Fetch only a specific type",
     )
+    parser.add_argument("--country", type=str, help="Filter by origin country (e.g., IN, JP, US, KR)")
+    parser.add_argument("--language", type=str, help="Filter by original language (e.g., hi, ja, en, ko)")
+    parser.add_argument("--max-cast", type=int, default=10, help="Maximum number of cast members to fetch per title")
     args = parser.parse_args()
+
+    filters = {}
+    if args.country:
+        filters["with_origin_country"] = args.country
+    if args.language:
+        filters["with_original_language"] = args.language
 
     print("Connecting to MongoDB...")
     await connect_db()
@@ -48,12 +59,12 @@ async def main():
     try:
         if args.only in ("all", "movies"):
             print(f"=== Discovering Popular Movies ({args.movie_pages} pages) ===")
-            results["movies"] = await sync_discover_movies(pages=args.movie_pages, sort_by="popularity.desc")
+            results["movies"] = await sync_discover_movies(pages=args.movie_pages, max_cast=args.max_cast, sort_by="popularity.desc", **filters)
             print(f"Movies result: saved={results['movies']['saved']}, failed={results['movies']['failed']}\n")
 
         if args.only in ("all", "tv"):
             print(f"=== Discovering Popular TV Series ({args.tv_pages} pages) ===")
-            results["tv"] = await sync_discover_tv(pages=args.tv_pages, sort_by="popularity.desc")
+            results["tv"] = await sync_discover_tv(pages=args.tv_pages, max_cast=args.max_cast, sort_by="popularity.desc", **filters)
             print(f"TV Series result: saved={results['tv']['saved']}, failed={results['tv']['failed']}\n")
             
     finally:

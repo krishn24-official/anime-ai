@@ -31,9 +31,9 @@ async def get_movie_by_id(movie_id: str):
 async def upsert_movie(doc: dict):
     """Insert or update a movie document by _id."""
     db = get_db()
-    await db["movies"].replace_one(
+    await db["movies"].update_one(
         {"_id": doc["_id"]},
-        doc,
+        {"$setOnInsert": doc},
         upsert=True,
     )
     return doc

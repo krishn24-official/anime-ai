@@ -303,7 +303,7 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
         cast_list = doc.get("cast", [])
         if isinstance(cast_list, list):
             if cast_list and isinstance(cast_list[0], dict) and "actor_id" in cast_list[0]:
-                from app.services.cast_enrichment_service import enrich_cast
+                from app.services.cast_enrichment_service import enrich_cast, enrich_crew
                 response["cast"] = await enrich_cast(cast_list)
             else:
                 for c in cast_list:
@@ -314,11 +314,28 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
                     
         # Directors/Writers -> Crew
         directors = doc.get("director", [])
-        if isinstance(directors, list):
+        if isinstance(directors, list) and directors and isinstance(directors[0], dict) and "actor_id" in directors[0]:
+            from app.services.cast_enrichment_service import enrich_crew
+            enriched_directors = await enrich_crew(directors, default_role="Director")
+            response["crew"].extend(enriched_directors)
+            response["director"] = enriched_directors
+        elif isinstance(directors, list):
             for d in directors:
                 response["crew"].append({"name": d, "role": "Director", "image": None})
         elif isinstance(directors, str):
             response["crew"].append({"name": directors, "role": "Director", "image": None})
+            
+        creators = doc.get("creators", [])
+        if isinstance(creators, list) and creators and isinstance(creators[0], dict) and "actor_id" in creators[0]:
+            from app.services.cast_enrichment_service import enrich_crew
+            enriched_creators = await enrich_crew(creators, default_role="Creator")
+            response["crew"].extend(enriched_creators)
+            response["creators"] = enriched_creators
+        elif isinstance(creators, list):
+            for c in creators:
+                response["crew"].append({"name": c, "role": "Creator", "image": None})
+        elif isinstance(creators, str):
+            response["crew"].append({"name": creators, "role": "Creator", "image": None})
             
         writers = doc.get("writers", [])
         if isinstance(writers, list):

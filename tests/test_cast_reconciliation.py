@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
-from app.services.cast_reconciliation_service import resolve_or_create_actor, reconcile_cast
+from app.services.cast_reconciliation_service import resolve_or_create_actor, reconcile_cast, reconcile_directors, reconcile_creators
 
 @pytest.mark.asyncio
 async def test_resolve_or_create_actor_existing():
@@ -47,7 +47,7 @@ async def test_resolve_or_create_actor_new():
         actor_id = await resolve_or_create_actor(54321, "Jane", None)
         print(f"Finished resolve_or_create_actor for Jane: {actor_id}")
         
-        assert actor_id == "actor_jane-doe"
+        assert actor_id == "actor_jane_doe"
         mock_create.assert_called_once()
         doc = mock_create.call_args[0][0]
         assert doc["tmdb_id"] == 54321
@@ -77,7 +77,7 @@ async def test_resolve_or_create_actor_fallback():
         # Uses provided name and image from fallback
         actor_id = await resolve_or_create_actor(9999, "Fallback Actor", "fallback.jpg")
         
-        assert actor_id == "actor_fallback-actor"
+        assert actor_id == "actor_fallback_actor"
         mock_create.assert_called_once()
         doc = mock_create.call_args[0][0]
         assert doc["name"] == "Fallback Actor"
@@ -113,4 +113,72 @@ async def test_reconcile_cast():
         
         assert reconciled[1]["actor_id"] == "actor_2"
         assert reconciled[1]["character_name"] == "Char B"
+        assert reconciled[1]["order"] == 1
+
+@pytest.mark.asyncio
+async def test_resolve_or_create_actor_legacy_existing():
+    mock_db = MagicMock()
+    mock_collection = MagicMock()
+    mock_db.__getitem__.return_value = mock_collection
+    
+    mock_collection.find_one = AsyncMock(return_value={"_id": "actor_legacy_match"})
+    
+    with patch("app.services.cast_reconciliation_service.get_db", return_value=mock_db):
+        actor_id = await resolve_or_create_actor(None, "Legacy Director", None)
+        
+        assert actor_id == "actor_legacy_match"
+        mock_collection.find_one.assert_called_once_with({"name": "Legacy Director", "is_deleted": False})
+
+@pytest.mark.asyncio
+async def test_resolve_or_create_actor_legacy_new():
+    mock_db = MagicMock()
+    mock_collection = MagicMock()
+    mock_db.__getitem__.return_value = mock_collection
+    
+    # First find_one is for the exact name match (returns None)
+    # Second find_one is the while loop uniqueness check (returns None)
+    mock_collection.find_one = AsyncMock(side_effect=[None, None])
+    
+    async def mock_create_actor(doc):
+        return doc["_id"]
+        
+    with patch("app.services.cast_reconciliation_service.get_db", return_value=mock_db), \
+         patch("app.repositories.actors_repository.create_actor", side_effect=mock_create_actor) as mock_create:
+        
+        actor_id = await resolve_or_create_actor(None, "Legacy Director", None)
+        
+        assert actor_id == "actor_legacy_director"
+        mock_create.assert_called_once()
+        doc = mock_create.call_args[0][0]
+        assert doc["name"] == "Legacy Director"
+        assert doc["tmdb_id"] is None
+        assert doc["images"]["profile"] is None
+        assert doc["source_metadata"]["source"] == "legacy_backfill"
+
+@pytest.mark.asyncio
+async def test_reconcile_directors():
+    raw_directors = [
+        {"tmdb_person_id": 1, "name": "Director A", "profile_image": "img1.jpg"},
+        # Legacy plain-string director
+        {"tmdb_person_id": None, "name": "Legacy Director", "profile_image": None},
+    ]
+    
+    async def mock_resolve(tmdb_id, name, img):
+        if tmdb_id == 1:
+            return "actor_1"
+        if tmdb_id is None and name == "Legacy Director":
+            return "actor_legacy"
+        return None
+        
+    with patch("app.services.cast_reconciliation_service.resolve_or_create_actor", new_callable=AsyncMock) as mock_resolve_actor:
+        mock_resolve_actor.side_effect = mock_resolve
+        reconciled = await reconcile_directors(raw_directors)
+        
+        assert len(reconciled) == 2
+        
+        assert reconciled[0]["actor_id"] == "actor_1"
+        assert reconciled[0]["order"] == 0
+        assert "character_name" not in reconciled[0]
+        
+        assert reconciled[1]["actor_id"] == "actor_legacy"
         assert reconciled[1]["order"] == 1

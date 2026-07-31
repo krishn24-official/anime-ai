@@ -7,7 +7,7 @@ from app.config import TMDB_API_KEY, TMDB_BASE_URL, TMDB_IMAGE_BASE_URL
 from app.db.mongo import connect_db, close_db, get_db
 from app.backend.utils.slug import create_slug
 from app.backend.ingestion.tmdb_mapper import map_movie
-from app.services.cast_reconciliation_service import reconcile_cast
+from app.services.cast_reconciliation_service import reconcile_cast, reconcile_directors
 
 async def fetch_tmdb_movie(client: httpx.AsyncClient, movie_id: int):
     url = f"{TMDB_BASE_URL}/movie/{movie_id}"
@@ -66,7 +66,8 @@ async def process_movie(client: httpx.AsyncClient, movie_id: int, db):
     doc["source_metadata"]["created_by"] = "ingestion_script"
     doc["source_metadata"]["created_at"] = datetime.now(timezone.utc)
 
-    # 5. Reconcile Cast
+    # 5. Reconcile Cast & Director
+    doc["director"] = await reconcile_directors(doc.get("director", []))
     doc["cast"] = await reconcile_cast(doc.get("cast", []))
 
     await movies_collection.insert_one(doc)

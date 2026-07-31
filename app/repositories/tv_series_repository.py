@@ -31,9 +31,9 @@ async def get_tv_series_by_id(series_id: str):
 async def upsert_tv_series(doc: dict):
     """Insert or update a TV series document by _id."""
     db = get_db()
-    await db["tv_series"].replace_one(
+    await db["tv_series"].update_one(
         {"_id": doc["_id"]},
-        doc,
+        {"$setOnInsert": doc},
         upsert=True,
     )
     return doc
