@@ -68,4 +68,13 @@ def format_character_profile(character: dict, details: dict) -> str:
     if desc:
         parts.append(f"**Biography**\n{desc}")
         
+    # Block 4: Profile Image tag
+    images = character.get("images", {})
+    profile_url = images.get("profile")
+    character_id = character.get("_id")
+    if profile_url and character_id:
+        detail_url = f"/characters/{character_id}"
+        poster_tag = f"<POSTER:{profile_url}|{detail_url}>\n*Visit profile page for more details*"
+        parts.append(poster_tag)
+        
     return "\n\n".join(parts)

@@ -38,4 +38,13 @@ def format_actor_profile(actor: dict, known_for: list[dict]) -> str:
         if kf_list:
             parts.append(f"**Known For**\n{', '.join(kf_list)}")
             
+    # 4. Profile Image tag
+    images = actor.get("images", {})
+    profile_url = images.get("profile")
+    actor_id = actor.get("_id")
+    if profile_url and actor_id:
+        detail_url = f"/actors/{actor_id}"
+        poster_tag = f"<POSTER:{profile_url}|{detail_url}>\n*Visit profile page for more details*"
+        parts.append(poster_tag)
+            
     return "\n\n".join(parts)
