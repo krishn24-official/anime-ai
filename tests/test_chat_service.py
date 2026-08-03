@@ -36,12 +36,12 @@ def test_format_character_profile_omits_empty_family_section():
     assert "Family" not in result
 
 def test_format_character_profile_omits_missing_stats():
-    character = {"name": "Naruto Uzumaki", "birthday": "October 10"}
+    character = {"name": "Naruto Uzumaki", "birth_month": 10, "birth_day": 10}
     details = {}
-    
+
     result = format_character_profile(character, details)
-    
-    assert "Born October 10" in result
+
+    assert "Born 10/10" in result
     assert " • " not in result # No separators since there's only one stat
 
     character2 = {"name": "Naruto", "gender": "Male", "height": "166 cm"}
@@ -151,3 +151,75 @@ async def test_chat_tv_series_intent(mock_search_tv):
     assert "answer" in result
     assert "**The Wire**" in result["answer"]
     assert "Baltimore." in result["answer"]
+
+from app.services.actor_profile_formatter import format_actor_profile
+
+def test_format_actor_profile_full():
+    actor = {
+        "name": "Junko Takeuchi",
+        "birthdate": "1972-04-05",
+        "biography": "Japanese voice actress."
+    }
+    known_for = [
+        {"title": "Naruto", "year": "2002"},
+        {"title": "Hunter x Hunter"}
+    ]
+    result = format_actor_profile(actor, known_for)
+    assert "**Junko Takeuchi**" in result
+    assert "Born 4/5" in result
+    assert "**Biography**\nJapanese voice actress." in result
+    assert "**Known For**\nNaruto (2002), Hunter x Hunter" in result
+
+def test_format_actor_profile_missing_sections():
+    actor = {"name": "Unknown Actor"}
+    result = format_actor_profile(actor, [])
+    assert "**Unknown Actor**" in result
+    assert "Born" not in result
+    assert "Biography" not in result
+    assert "Known For" not in result
+
+@pytest.mark.asyncio
+@patch("app.repositories.actors_repository.find_actor_candidates")
+@patch("app.services.chat_service.find_character_candidates")
+@patch("app.repositories.relationship_repository.search_relationship_entities")
+@patch("app.services.actors_service.fetch_actor_filmography")
+async def test_chat_actor_intent(mock_fetch_actor_filmography, mock_search_rel, mock_find_char, mock_find_actor):
+    mock_find_char.return_value = []
+    mock_search_rel.return_value = []
+    mock_find_actor.return_value = [{"_id": "a1", "name": "Junko Takeuchi"}]
+    mock_fetch_actor_filmography.return_value = []
+    
+    result = await process_chat_message("tell me about Junko Takeuchi")
+    assert "answer" in result
+    assert "**Junko Takeuchi**" in result["answer"]
+
+@pytest.mark.asyncio
+@patch("app.repositories.actors_repository.find_actor_candidates")
+@patch("app.services.chat_service.find_character_candidates")
+@patch("app.repositories.relationship_repository.search_relationship_entities")
+async def test_chat_actor_disambiguation(mock_search_rel, mock_find_char, mock_find_actor):
+    mock_find_char.return_value = []
+    mock_search_rel.return_value = []
+    mock_find_actor.return_value = [
+        {"_id": "a1", "name": "Chris Smith"},
+        {"_id": "a2", "name": "Chris Smith Jr"}
+    ]
+    
+    result = await process_chat_message("tell me about chris smith")
+    assert "disambiguation" in result
+    assert any("Actor: Chris Smith" in d for d in result["disambiguation"])
+    assert any("Actor: Chris Smith Jr" in d for d in result["disambiguation"])
+
+@pytest.mark.asyncio
+@patch("app.repositories.actors_repository.find_actor_candidates")
+@patch("app.services.chat_service.find_character_candidates")
+@patch("app.repositories.relationship_repository.search_relationship_entities")
+@patch("app.services.chat_service.ask_gemini_with_context")
+async def test_chat_gemini_fallback(mock_ask_gemini, mock_search_rel, mock_find_char, mock_find_actor):
+    mock_find_char.return_value = []
+    mock_search_rel.return_value = []
+    mock_find_actor.return_value = []
+    mock_ask_gemini.return_value = "Gemini answer"
+    
+    result = await process_chat_message("tell me about some random thing")
+    assert result["answer"] == "Gemini answer"

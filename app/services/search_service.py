@@ -6,6 +6,7 @@ from app.repositories.search_repository import (
     search_tv_series,
     search_organizations,
 )
+from app.repositories.actors_repository import search_actors
 
 
 async def global_search(
@@ -18,6 +19,7 @@ async def global_search(
     movies = await search_movies(query)
     tv_series = await search_tv_series(query)
     organizations = await search_organizations(query)
+    actors = await search_actors(query, limit=5)
 
     return {
         "characters": characters,
@@ -26,4 +28,5 @@ async def global_search(
         "movies": movies,
         "tv_series": tv_series,
         "organizations": organizations,
+        "actors": actors,
     }

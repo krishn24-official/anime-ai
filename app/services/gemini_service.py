@@ -3,24 +3,19 @@ import os
 import threading
 from datetime import date
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
-from app.config import GEMINI_API_KEY
+from app.config import GEMINI_API_KEY, GEMINI_MODEL_NAME
 
 
-genai.configure(api_key=GEMINI_API_KEY)
+_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
-MODEL_NAME = "gemini-2.0-flash"
-
-# Hard cap on Gemini calls per day for the chat bot (gemini-2.0-flash
-# free tier = 200 RPD). Tune via GEMINI_DAILY_LIMIT if you upgrade.
+# Hard cap on Gemini calls per day for the chat bot.
+# Tune via GEMINI_DAILY_LIMIT if you upgrade.
 DAILY_LIMIT = int(os.getenv("GEMINI_DAILY_LIMIT", "180"))
 
-# Separate model + limit for the news pipeline. gemini-2.0-flash has a
-# much higher free-tier daily limit (200 RPD) than gemini-2.5-flash-lite
-# (20 RPD), and using a separate model avoids competing with the chat
-# bot's quota.
-NEWS_MODEL_NAME = "gemini-2.0-flash"
+# Separate limit for the news pipeline to avoid competing with the chat bot's quota.
 NEWS_DAILY_LIMIT = int(os.getenv("GEMINI_NEWS_DAILY_LIMIT", "180"))
 
 
@@ -111,10 +106,8 @@ async def ask_gemini_with_context(question: str, character_context: dict):
     if not _can_call_gemini():
         return None
 
-    model = genai.GenerativeModel(
-        model_name=MODEL_NAME,
-        system_instruction=SYSTEM_PROMPT
-    )
+    if not _client:
+        return None
 
     context_json = json.dumps(character_context, default=str, indent=2)
 
@@ -124,7 +117,13 @@ async def ask_gemini_with_context(question: str, character_context: dict):
     )
 
     try:
-        response = await model.generate_content_async(prompt)
+        response = await _client.aio.models.generate_content(
+            model=GEMINI_MODEL_NAME,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+            )
+        )
         return response.text.strip()
     except Exception as e:
         print(f"[gemini_service] error: {e}")
@@ -148,20 +147,25 @@ async def identify_image(message: str, image_base64: str, image_media_type: str 
     if not _can_call_gemini():
         return None
 
+    if not _client:
+        return None
+
     import base64
     try:
         image_bytes = base64.b64decode(image_base64)
-        image_part = {
-            "mime_type": image_media_type or "image/jpeg",
-            "data": image_bytes
-        }
-
-        model = genai.GenerativeModel(
-            model_name=MODEL_NAME,
-            system_instruction=IMAGE_SYSTEM_PROMPT
+        image_part = types.Part.from_bytes(
+            data=image_bytes,
+            mime_type=image_media_type or "image/jpeg"
         )
+
         prompt = message or "Identify this anime character and describe them."
-        response = await model.generate_content_async([prompt, image_part])
+        response = await _client.aio.models.generate_content(
+            model=GEMINI_MODEL_NAME,
+            contents=[prompt, image_part],
+            config=types.GenerateContentConfig(
+                system_instruction=IMAGE_SYSTEM_PROMPT,
+            )
+        )
         return response.text.strip()
     except Exception as e:
         print(f"[gemini_service] image identify error: {e}")
@@ -195,10 +199,8 @@ async def categorize_and_summarize_news(title: str, description: str = ""):
     if not _can_call_gemini_news():
         return None
 
-    model = genai.GenerativeModel(
-        model_name=NEWS_MODEL_NAME,
-        system_instruction=NEWS_SYSTEM_PROMPT
-    )
+    if not _client:
+        return None
 
     prompt = (
         f"TITLE: {title}\n"
@@ -206,7 +208,13 @@ async def categorize_and_summarize_news(title: str, description: str = ""):
     )
 
     try:
-        response = await model.generate_content_async(prompt)
+        response = await _client.aio.models.generate_content(
+            model=GEMINI_MODEL_NAME,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=NEWS_SYSTEM_PROMPT,
+            )
+        )
         text = response.text.strip()
 
         # Strip accidental markdown code fences

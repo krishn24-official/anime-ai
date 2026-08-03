@@ -139,7 +139,7 @@ async def search_relationship_entities(query: str, limit: int = 10, types_list: 
     
     for c in chars:
         results.append({
-            "id": str(c["_id"]),
+            "id": str(c.get("_id", "")),
             "name": c.get("name", ""),
             "entity_type": "character",
             "image": c.get("images", {}).get("profile", "")
@@ -157,7 +157,7 @@ async def search_relationship_entities(query: str, limit: int = 10, types_list: 
     for a in anime:
         title = a.get("title", {})
         results.append({
-            "id": str(a["_id"]),
+            "id": str(a.get("_id", "")),
             "name": title.get("english") or title.get("romaji", ""),
             "entity_type": "anime",
             "image": a.get("images", {}).get("poster", "")
@@ -165,7 +165,7 @@ async def search_relationship_entities(query: str, limit: int = 10, types_list: 
         
     for m in manga:
         results.append({
-            "id": str(m["_id"]),
+            "id": str(m.get("_id", "")),
             "name": m.get("name", ""),
             "entity_type": "manga",
             "image": m.get("cover_image", "")
@@ -173,7 +173,7 @@ async def search_relationship_entities(query: str, limit: int = 10, types_list: 
         
     for mv in movies:
         results.append({
-            "id": str(mv["_id"]),
+            "id": str(mv.get("_id", "")),
             "name": mv.get("title", ""),
             "entity_type": "movie",
             "image": mv.get("images", {}).get("poster", "")
@@ -181,7 +181,7 @@ async def search_relationship_entities(query: str, limit: int = 10, types_list: 
         
     for t in tv:
         results.append({
-            "id": str(t["_id"]),
+            "id": str(t.get("_id", "")),
             "name": t.get("title", ""),
             "entity_type": "tv_series",
             "image": t.get("images", {}).get("poster", "")

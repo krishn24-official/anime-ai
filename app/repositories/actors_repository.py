@@ -25,13 +25,33 @@ async def get_actor_by_id(actor_identifier: str):
 
 async def search_actors(query: str, limit: int = 20):
     db = get_db()
-    return await db["actors"].find(
+    cursor = await db["actors"].aggregate([
         {
-            "name": {"$regex": query, "$options": "i"},
-            "is_deleted": False
+            "$match": {
+                "name": {"$regex": query, "$options": "i"},
+                "is_deleted": False
+            }
         },
-        {"_id": 1, "name": 1, "images.profile": 1}
-    ).limit(limit).to_list(None)
+        {
+            "$addFields": {
+                "name_length": {"$strLenCP": {"$ifNull": ["$name", ""]}}
+            }
+        },
+        {
+            "$sort": {"name_length": 1}
+        },
+        {
+            "$limit": limit
+        },
+        {
+            "$project": {
+                "_id": 1,
+                "name": 1,
+                "images.profile": 1
+            }
+        }
+    ])
+    return await cursor.to_list(None)
 
 async def create_actor(doc: dict):
     db = get_db()
@@ -110,3 +130,121 @@ async def get_birthdays_by_date_range(start_date: str, end_date: str):
                 actor["birth_day"] = int(parts[2])
 
     return actors
+
+import difflib
+import re
+import time
+from app.db.mongo import get_db
+
+_actor_cache: dict = {}
+CACHE_TTL = 300
+
+_actor_name_list: list[str] = []
+_actor_word_map: dict[str, list[str]] = {}
+_actor_name_cache_loaded: bool = False
+
+async def _load_actor_name_cache() -> None:
+    global _actor_name_list, _actor_word_map, _actor_name_cache_loaded
+    if _actor_name_cache_loaded:
+        return
+
+    db = get_db()
+    docs = await db["actors"].find({"is_deleted": False}, {"name": 1}).to_list(None)
+    names = [d["name"] for d in docs if d.get("name")]
+
+    word_map: dict[str, list[str]] = {}
+    for name in names:
+        for word in name.lower().split():
+            if len(word) >= 3:
+                word_map.setdefault(word, []).append(name)
+
+    _actor_name_list = names
+    _actor_word_map = word_map
+    _actor_name_cache_loaded = True
+
+async def find_actor(name: str):
+    name_clean = name.strip()
+    cache_key = name_clean.lower()
+
+    cached = _actor_cache.get(cache_key)
+    if cached:
+        doc, ts = cached
+        if time.time() - ts < CACHE_TTL:
+            return doc
+
+    db = get_db()
+
+    result = await db["actors"].find_one(
+        {"name": {"$regex": f"^{re.escape(name_clean)}$", "$options": "i"}, "is_deleted": False}
+    )
+    if result:
+        _actor_cache[cache_key] = (result, time.time())
+        return result
+
+    result = await db["actors"].find_one(
+        {"name": {"$regex": f"^{re.escape(name_clean)}", "$options": "i"}, "is_deleted": False}
+    )
+    if result:
+        _actor_cache[cache_key] = (result, time.time())
+        return result
+
+    result = await db["actors"].find_one(
+        {"name": {"$regex": re.escape(name_clean), "$options": "i"}, "is_deleted": False}
+    )
+    if result:
+        _actor_cache[cache_key] = (result, time.time())
+    return result
+
+async def find_actor_candidates(name: str, limit: int = 5) -> list:
+    name_clean = name.strip()
+    db = get_db()
+
+    exact = await db["actors"].find(
+        {"name": {"$regex": f"^{re.escape(name_clean)}$", "$options": "i"}, "is_deleted": False}
+    ).to_list(None)
+    if exact:
+        return exact[:limit]
+
+    starts = await db["actors"].find(
+        {"name": {"$regex": f"^{re.escape(name_clean)}", "$options": "i"}, "is_deleted": False}
+    ).limit(limit).to_list(None)
+    if starts:
+        return starts
+
+    contains = await db["actors"].find(
+        {"name": {"$regex": re.escape(name_clean), "$options": "i"}, "is_deleted": False}
+    ).limit(limit).to_list(None)
+    if contains:
+        return contains
+
+    await _load_actor_name_cache()
+    if not _actor_word_map:
+        return []
+
+    matched_full_names: set[str] = set()
+    all_index_words = list(_actor_word_map.keys())
+
+    clean_for_fuzzy = re.sub(r"['’]s\b", "", name_clean.lower())
+    clean_for_fuzzy = re.sub(r"[^\w\s]", "", clean_for_fuzzy)
+
+    stop_words = {"the", "and", "for", "with", "about", "actor", "who", "what", "is", "tell", "me", "show"}
+
+    for query_word in clean_for_fuzzy.split():
+        if len(query_word) < 3 or query_word in stop_words:
+            continue
+        close_words = difflib.get_close_matches(
+            query_word, all_index_words, n=3, cutoff=0.70
+        )
+        for cw in close_words:
+            for full_name in _actor_word_map.get(cw, []):
+                matched_full_names.add(full_name)
+
+    if not matched_full_names:
+        return []
+
+    results = []
+    for full_name in list(matched_full_names)[:limit]:
+        char = await db["actors"].find_one({"name": full_name, "is_deleted": False})
+        if char:
+            results.append(char)
+    return results

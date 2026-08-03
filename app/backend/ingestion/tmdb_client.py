@@ -143,3 +143,13 @@ async def get_tv_details(tmdb_id: int) -> dict | None:
 
 async def get_person_details(tmdb_id: int) -> dict | None:
     return await _get(f"/person/{tmdb_id}")
+
+
+async def search_person(query: str) -> list[dict]:
+    data = await _get("/search/person", {"query": query})
+    return (data or {}).get("results", [])
+
+
+async def get_person_movie_credits(tmdb_id: int) -> list[dict]:
+    data = await _get(f"/person/{tmdb_id}/movie_credits")
+    return (data or {}).get("cast", [])

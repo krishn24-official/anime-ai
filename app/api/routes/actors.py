@@ -31,58 +31,7 @@ async def get_actor(actor_id: str):
     if not actor:
         raise HTTPException(status_code=404, detail="Actor not found")
     
-    # We also need to fetch their filmography!
-    # Let's query content where this actor's name is in the 'actors' array
-    from app.db.mongo import get_db
-    db = get_db()
-    search_query = {
-        "$or": [
-            {"cast.actor_id": actor["_id"]},
-            {"director.actor_id": actor["_id"]},
-            {"creators.actor_id": actor["_id"]},
-            {"actors": actor["name"]},
-            {"director": actor["name"]},
-            {"crew": actor["name"]},
-            {"producers": actor["name"]}
-        ],
-        "is_deleted": False
-    }
-    movies = await db["movies"].find(search_query).to_list(None)
-    tv = await db["tv_series"].find(search_query).to_list(None)
-    
-    # For now, let's just return the actor and let the frontend do what it wants or format it here.
-    # To match screenshot, maybe we return filmography as a list of content
-    actor["filmography"] = []
-    
-    for m in movies:
-        actor["filmography"].append({
-            "id": m["_id"],
-            "title": m.get("title"),
-            "year": m.get("year"),
-            "content_type": "movie",
-            "poster": m.get("images", {}).get("poster")
-        })
-        
-    for t in tv:
-        actor["filmography"].append({
-            "id": t["_id"],
-            "title": t.get("title"),
-            "year": t.get("year"),
-            "content_type": "tv_series",
-            "poster": t.get("images", {}).get("poster")
-        })
-    
-    # Safely convert year to int for sorting, defaulting to 0
-    def safe_year(x):
-        y = x.get("year")
-        if not y:
-            return 0
-        try:
-            return int(y)
-        except (ValueError, TypeError):
-            return 0
-
-    # Sort filmography by year descending
-    actor["filmography"].sort(key=safe_year, reverse=True)
+    from app.services.actors_service import fetch_actor_filmography
+    actor["filmography"] = await fetch_actor_filmography(actor)
     
     return actor

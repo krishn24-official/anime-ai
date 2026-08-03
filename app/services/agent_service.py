@@ -9,9 +9,10 @@ The loop:
   5. Repeat until Gemini produces a final text response (no more tool calls)
 """
 import re
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
-from app.config import GEMINI_API_KEY
+from app.config import GEMINI_API_KEY, GEMINI_MODEL_NAME
 from app.services.agent_tool_definitions import AGENT_TOOLS, AGENT_SYSTEM_PROMPT
 from app.services.agent_tools import execute_tool
 
@@ -53,25 +54,12 @@ def _detect_intent(message: str):
 
 def _build_gemini_tools():
     """Convert our tool definitions dict into Gemini SDK tool objects."""
-    return [genai.protos.Tool(
+    return [types.Tool(
         function_declarations=[
-            genai.protos.FunctionDeclaration(
+            types.FunctionDeclaration(
                 name=fn["name"],
                 description=fn["description"],
-                parameters=genai.protos.Schema(
-                    type=genai.protos.Type.OBJECT,
-                    properties={
-                        k: genai.protos.Schema(
-                            type=genai.protos.Type.STRING
-                            if v.get("type") == "string"
-                            else genai.protos.Type.INTEGER,
-                            description=v.get("description", ""),
-                            enum=v.get("enum", []) or [],
-                        )
-                        for k, v in fn["parameters"].get("properties", {}).items()
-                    },
-                    required=fn["parameters"].get("required", []),
-                ),
+                parameters=fn["parameters"]
             )
             for fn in tool_group["function_declarations"]
         ]
@@ -91,7 +79,7 @@ async def run_agent(user_message: str) -> dict:
             "iterations": 0,
         }
 
-    genai.configure(api_key=GEMINI_API_KEY)
+    _client = genai.Client(api_key=GEMINI_API_KEY)
 
     # --- Fast path: intent detection ---
     intent = _detect_intent(user_message)
@@ -101,17 +89,6 @@ async def run_agent(user_message: str) -> dict:
 
         tool_result = await execute_tool(tool_name, tool_args)
 
-        # Use Gemini only for synthesis (no tools, just summarize the data)
-        synthesis_model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash",
-            system_instruction=(
-                "You are a helpful entertainment assistant. "
-                "The user asked a question and we fetched relevant data from our database. "
-                "Synthesize the data into a clear, friendly, conversational response. "
-                "If the data is empty or says 'No data available', say so honestly."
-            ),
-        )
-
         synthesis_prompt = (
             f"User question: {user_message}\n\n"
             f"Data from database ({tool_name}):\n{tool_result}\n\n"
@@ -119,7 +96,18 @@ async def run_agent(user_message: str) -> dict:
         )
 
         try:
-            response = await synthesis_model.generate_content_async(synthesis_prompt)
+            response = await _client.aio.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=synthesis_prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=(
+                        "You are a helpful entertainment assistant. "
+                        "The user asked a question and we fetched relevant data from our database. "
+                        "Synthesize the data into a clear, friendly, conversational response. "
+                        "If the data is empty or says 'No data available', say so honestly."
+                    )
+                )
+            )
             answer = response.text.strip()
         except Exception as e:
             # Quota hit or error — return raw data directly, still useful
@@ -132,14 +120,10 @@ async def run_agent(user_message: str) -> dict:
         }
 
     # --- Slow path: full Gemini tool-calling loop ---
-    model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash",
-        system_instruction=AGENT_SYSTEM_PROMPT,
-        tools=_build_gemini_tools(),
-    )
+    tools = _build_gemini_tools()
 
     # Conversation history for multi-turn tool calling
-    messages = [{"role": "user", "parts": [user_message]}]
+    messages = [types.Content(role="user", parts=[types.Part.from_text(text=user_message)])]
 
     tools_used = []
     iterations = 0
@@ -148,7 +132,15 @@ async def run_agent(user_message: str) -> dict:
         iterations += 1
 
         try:
-            response = await model.generate_content_async(messages)
+            response = await _client.aio.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=messages,
+                config=types.GenerateContentConfig(
+                    system_instruction=AGENT_SYSTEM_PROMPT,
+                    tools=tools,
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
+                )
+            )
         except Exception as e:
             return {
                 "answer": f"Agent error: {e}",
@@ -157,15 +149,15 @@ async def run_agent(user_message: str) -> dict:
             }
 
         candidate = response.candidates[0]
-        parts = candidate.content.parts
+        parts = candidate.content.parts if candidate.content else []
 
         # Check if Gemini wants to call tools
-        tool_call_parts = [p for p in parts if hasattr(p, "function_call") and p.function_call.name]
+        tool_call_parts = [p for p in parts if p.function_call]
 
         if not tool_call_parts:
             # No tool calls — this is the final answer
             final_text = "".join(
-                p.text for p in parts if hasattr(p, "text") and p.text
+                p.text for p in parts if p.text
             ).strip()
 
             # Deduplicate tools_used while preserving order
@@ -196,17 +188,15 @@ async def run_agent(user_message: str) -> dict:
             result_str = await execute_tool(tool_name, tool_args)
 
             tool_results.append(
-                genai.protos.Part(
-                    function_response=genai.protos.FunctionResponse(
-                        name=tool_name,
-                        response={"result": result_str},
-                    )
+                types.Part.from_function_response(
+                    name=tool_name,
+                    response={"result": result_str}
                 )
             )
 
         # Add Gemini's tool-call message + our results to the conversation
-        messages.append({"role": "model", "parts": parts})
-        messages.append({"role": "user", "parts": tool_results})
+        messages.append(types.Content(role="model", parts=parts))
+        messages.append(types.Content(role="user", parts=tool_results))
 
     # Safety cap reached
     seen = set()

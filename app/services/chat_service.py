@@ -107,8 +107,12 @@ def extract_character_query(message: str) -> str:
         text
     )
 
-    text = re.sub(r"^character:\s*", "", text)
-    text = text.strip("? ").strip()
+    text = re.sub(r"^(character|actor|movie|anime|tv series):\s*", "", text)
+    
+    # Strip media keywords to leave just the title
+    text = re.sub(r"\b(the |a |an )?(anime|movie|tv show|tv series|series)s?\b", "", text)
+    
+    text = text.strip("? :").strip()
 
     # Pattern 1: [relationship] of [character] or [relationship] members of [character]
     rel_words_pattern = (
@@ -381,10 +385,25 @@ async def process_chat_message(
     # 2. Birthdays
     if "birthday" in msg_lower:
         birthdays = await get_today_birthdays()
-        if not birthdays:
-            return {"answer": "There are no character birthdays today."}
+        
+        from app.repositories.actors_repository import get_birthdays_by_date_range
+        from datetime import datetime
+        today_str = datetime.utcnow().strftime("%Y-%m-%d")
+        actor_birthdays = await get_birthdays_by_date_range(today_str, today_str)
+
+        if not birthdays and not actor_birthdays:
+            return {"answer": "There are no character or actor birthdays today."}
+        
         names = [b.get("name") for b in birthdays if b.get("name")]
-        return {"answer": f"The following characters are celebrating their birthday today: **{', '.join(names)}**!"}
+        actor_names = [a.get("name") for a in actor_birthdays if a.get("name")]
+        
+        answer_parts = []
+        if names:
+            answer_parts.append(f"The following characters are celebrating their birthday today: **{', '.join(names)}**!")
+        if actor_names:
+            answer_parts.append(f"The following actors are celebrating their birthday today: **{', '.join(actor_names)}**!")
+            
+        return {"answer": "\n\n".join(answer_parts)}
 
     # 3. Latest News
     if "news" in msg_lower:
@@ -402,41 +421,6 @@ async def process_chat_message(
         recs = "\n".join([f"• **{a.get('title', {}).get('english') or a.get('title', {}).get('romaji')}**" for a in top])
         return {"answer": f"Here are some highly-rated anime I recommend watching:\n\n{recs}"}
 
-    # 5. Anime specific queries
-    if "anime" in msg_lower and not image_base64:
-        anime_query = re.sub(r"^(who is|who's|whos|what is|whats|tell me about|show me|get)\s+", "", msg_lower)
-        anime_query = re.sub(r"\b(the |an )?animes?\b", "", anime_query).strip("? :")
-        if len(anime_query) > 2:
-            from app.repositories.search_repository import search_anime
-            from app.services.content_profile_formatter import format_content_profile
-            anime_results = await search_anime(anime_query)
-            if anime_results:
-                return {"answer": format_content_profile(anime_results[0], "anime")}
-            return {"answer": f"I couldn't find an anime matching '{anime_query}'."}
-
-    # 6. Movie specific queries
-    if "movie" in msg_lower and not image_base64:
-        movie_query = re.sub(r"^(who is|who's|whos|what is|whats|tell me about|show me|get)\s+", "", msg_lower)
-        movie_query = re.sub(r"\b(the |a )?movies?\b", "", movie_query).strip("? :")
-        if len(movie_query) > 2:
-            from app.repositories.search_repository import search_movies
-            from app.services.content_profile_formatter import format_content_profile
-            movie_results = await search_movies(movie_query)
-            if movie_results:
-                return {"answer": format_content_profile(movie_results[0], "movie")}
-            return {"answer": f"I couldn't find a movie matching '{movie_query}'."}
-
-    # 7. TV Series specific queries
-    if any(kw in msg_lower for kw in ["tv show", "tv series", " series"]) and not image_base64:
-        tv_query = re.sub(r"^(who is|who's|whos|what is|whats|tell me about|show me|get)\s+", "", msg_lower)
-        tv_query = re.sub(r"\b(the |a )?(tv shows?|tv series|series)\b", "", tv_query).strip("? :")
-        if len(tv_query) > 2:
-            from app.repositories.search_repository import search_tv_series
-            from app.services.content_profile_formatter import format_content_profile
-            tv_results = await search_tv_series(tv_query)
-            if tv_results:
-                return {"answer": format_content_profile(tv_results[0], "tv_series")}
-            return {"answer": f"I couldn't find a TV series matching '{tv_query}'."}
 
     # --- Image recognition mode ---
     # --- Image recognition mode ---
@@ -471,9 +455,30 @@ async def process_chat_message(
         if char_a and char_b:
             return await describe_relationship_between(char_a, char_b)
 
+    # Detect if user clicked a disambiguation chip (e.g. "Actor: Hrithik Roshan")
+    temp_text = re.sub(
+        r"^(who is|who's|whos|what is|whats|tell me about|show me|get)\s+",
+        "",
+        message.lower().strip()
+    )
+    
+    forced_scope = None
+    if temp_text.startswith("character:"): forced_scope = "character"
+    elif temp_text.startswith("actor:"): forced_scope = "actor"
+    elif temp_text.startswith("movie:"): forced_scope = "movie"
+    elif temp_text.startswith("tv series:"): forced_scope = "tv_series"
+    elif temp_text.startswith("anime:"): forced_scope = "anime"
+    else:
+        # Detect scope from natural language
+        if re.search(r"\b(movie|film)s?\b", temp_text): forced_scope = "movie"
+        elif re.search(r"\b(anime)s?\b", temp_text): forced_scope = "anime"
+        elif re.search(r"\b(tv show|tv series|series)\b", temp_text): forced_scope = "tv_series"
+        elif re.search(r"\b(actor|actress|director|producer|writer)\b", temp_text): forced_scope = "actor"
+
+
     name_query = extract_character_query(message)
 
-    print(f"[chat] message={message!r} name_query={name_query!r}")
+    print(f"[chat] message={message!r} name_query={name_query!r} scope={forced_scope!r}")
 
     if not name_query:
         return {
@@ -481,12 +486,22 @@ async def process_chat_message(
             "I couldn't understand which character you're asking about."
         }
 
-    candidates = await find_character_candidates(name_query)
+    candidates = []
+    if forced_scope in (None, "character"):
+        candidates = await find_character_candidates(name_query)
 
-    from app.repositories.relationship_repository import search_relationship_entities
-    media_candidates = await search_relationship_entities(name_query, limit=5, types_list=["anime", "movie", "tv_series"])
+    media_candidates = []
+    if forced_scope in (None, "anime", "movie", "tv_series"):
+        from app.repositories.relationship_repository import search_relationship_entities
+        types_list = [forced_scope] if forced_scope else ["anime", "movie", "tv_series"]
+        media_candidates = await search_relationship_entities(name_query, limit=15, types_list=types_list)
 
-    total_candidates = len(candidates) + len(media_candidates)
+    actor_candidates = []
+    if forced_scope in (None, "actor"):
+        from app.repositories.actors_repository import find_actor_candidates
+        actor_candidates = await find_actor_candidates(name_query)
+
+    total_candidates = len(candidates) + len(media_candidates) + len(actor_candidates)
 
     if total_candidates == 0:
         # Try a general query before giving up
@@ -498,6 +513,28 @@ async def process_chat_message(
             f"I couldn't find anything matching '{name_query}'."
         }
 
+    if total_candidates > 1:
+        exact_character_matches = [c for c in candidates if c["name"].lower() == name_query.lower()]
+        exact_media_matches = [m for m in media_candidates if m["name"].lower() == name_query.lower()]
+        exact_actor_matches = [a for a in actor_candidates if a["name"].lower() == name_query.lower()]
+
+        # If the user explicitly forced a scope (like from clicking a disambiguation chip) 
+        # and there is an exact match for that scope, bypass disambiguation and select it immediately.
+        if forced_scope == "character" and len(exact_character_matches) >= 1:
+            candidates = [exact_character_matches[0]]
+            media_candidates, actor_candidates = [], []
+            total_candidates = 1
+        elif forced_scope in ("anime", "movie", "tv_series") and len(exact_media_matches) >= 1:
+            type_matches = [m for m in exact_media_matches if m["entity_type"] == forced_scope]
+            if type_matches:
+                media_candidates = [type_matches[0]]
+                candidates, actor_candidates = [], []
+                total_candidates = 1
+        elif forced_scope == "actor" and len(exact_actor_matches) >= 1:
+            actor_candidates = [exact_actor_matches[0]]
+            candidates, media_candidates = [], []
+            total_candidates = 1
+            
     if total_candidates > 1:
         # Score character candidates
         best_candidate = None
@@ -523,10 +560,12 @@ async def process_chat_message(
                     highest_score = max_word_score
                     best_candidate = c
 
-        # We also need to check if there are exact media matches so we don't inappropriately auto-select a character
-        exact_media_matches = [m for m in media_candidates if m["name"].lower() == name_query.lower()]
+        if not exact_character_matches and not exact_media_matches and not exact_actor_matches and len(name_query.split()) >= 3:
+            gemini_answer = await ask_gemini_with_context(message, {})
+            if gemini_answer:
+                return {"answer": gemini_answer}
 
-        if highest_score > 0.90 and best_candidate and not exact_media_matches:
+        if highest_score > 0.90 and best_candidate and not exact_media_matches and not exact_actor_matches and not (actor_candidates and highest_score < 1.0):
             character = best_candidate
         else:
             def format_media_type(t: str):
@@ -535,13 +574,14 @@ async def process_chat_message(
 
             media_options = [f"{format_media_type(m['entity_type'])}: {m['name']}" for m in media_candidates]
             char_options = [f"Character: {c['name']}" for c in candidates]
+            actor_options = [f"Actor: {a['name']}" for a in actor_candidates]
             
             return {
                 "answer": (
                     f"I found multiple matches for '{name_query}'. "
                     "Which one did you mean?"
                 ),
-                "disambiguation": char_options + media_options,
+                "disambiguation": char_options + actor_options + media_options,
                 "name_query": name_query,
                 "original_message": message,
             }
@@ -549,6 +589,12 @@ async def process_chat_message(
         # total_candidates == 1
         if candidates:
             character = candidates[0]
+        elif actor_candidates:
+            from app.services.actors_service import fetch_actor_filmography
+            from app.services.actor_profile_formatter import format_actor_profile
+            actor = actor_candidates[0]
+            kf = await fetch_actor_filmography(actor)
+            return {"answer": format_actor_profile(actor, kf)}
         else:
             # We found exactly 1 media candidate, fake a fast-path routing
             m = media_candidates[0]
@@ -557,15 +603,16 @@ async def process_chat_message(
             if m_type == "anime":
                 from app.repositories.search_repository import search_anime
                 res = await search_anime(m["name"])
-                if res: return {"answer": format_content_profile(res[0], "anime")}
+                if res: return {"answer": await format_content_profile(res[0], "anime")}
             elif m_type == "movie":
-                from app.repositories.search_repository import search_movies
-                res = await search_movies(m["name"])
-                if res: return {"answer": format_content_profile(res[0], "movie")}
+                from app.db.mongo import get_db
+                db = get_db()
+                doc = await db["movies"].find_one({"_id": m["id"]})
+                if doc: return {"answer": await format_content_profile(doc, "movie")}
             elif m_type == "tv_series":
                 from app.repositories.search_repository import search_tv_series
                 res = await search_tv_series(m["name"])
-                if res: return {"answer": format_content_profile(res[0], "tv_series")}
+                if res: return {"answer": await format_content_profile(res[0], "tv_series")}
             
             return {"answer": f"I couldn't find media details for {m['name']}."}
 

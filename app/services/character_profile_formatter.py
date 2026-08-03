@@ -26,8 +26,10 @@ def format_character_profile(character: dict, details: dict) -> str:
     stats = []
     if character.get("gender", "").strip():
         stats.append(character.get("gender").strip())
-    if character.get("birthday", "").strip():
-        stats.append(f"Born {character.get('birthday').strip()}")
+    birth_month = character.get("birth_month")
+    birth_day = character.get("birth_day")
+    if birth_month and birth_day:
+        stats.append(f"Born {birth_month}/{birth_day}")
     if character.get("height", "").strip():
         stats.append(character.get("height").strip())
         

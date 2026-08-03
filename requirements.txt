@@ -17,7 +17,7 @@ et_xmlfile
 fastapi
 feedparser
 google-api-python-client
-google-generativeai
+google-genai>=1.0.0,<3.0.0
 h11
 httpcore
 httplib2

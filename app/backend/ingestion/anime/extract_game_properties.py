@@ -82,7 +82,7 @@ async def main():
 
         if was_processed:
             processed += 1
-            # gemini-2.0-flash: 15 RPM free tier
+            # gemini-2.5-flash-lite: 15 RPM free tier
             # 5s between calls = 12 RPM, safe margin
             await asyncio.sleep(5)
         else:

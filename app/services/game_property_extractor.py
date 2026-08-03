@@ -6,14 +6,11 @@ import asyncio
 import json
 import re
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
-from app.config import GEMINI_API_KEY
+from app.config import GEMINI_API_KEY, GEMINI_MODEL_NAME
 from app.services.game_properties import GAME_PROPERTIES
-
-# Use gemini-2.0-flash (200 RPD free tier) instead of gemini-2.5-flash-lite
-# (20 RPD) — game extraction is a batch job and needs higher quota.
-MODEL_NAME = "gemini-2.0-flash"
 
 
 def _build_extraction_prompt(
@@ -81,8 +78,7 @@ async def extract_game_properties(
     if not description and not character_name:
         return []
 
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel(model_name=MODEL_NAME)
+    client = genai.Client(api_key=GEMINI_API_KEY)
 
     prompt = _build_extraction_prompt(
         character_name=character_name,
@@ -93,7 +89,10 @@ async def extract_game_properties(
 
     for attempt in range(max_retries):
         try:
-            response = await model.generate_content_async(prompt)
+            response = await client.aio.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=prompt,
+            )
             text = response.text.strip()
 
             # Strip accidental markdown fences

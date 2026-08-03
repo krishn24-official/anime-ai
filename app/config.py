@@ -6,6 +6,7 @@ load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "anime_ai")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL_NAME = "gemini-2.5-flash-lite"
 
 # ── OMDb ──────────────────────────────────────────────
 OMDB_API_KEY = os.getenv("OMDB_API_KEY")

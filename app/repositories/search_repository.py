@@ -7,26 +7,37 @@ async def search_characters(
 
     db = get_db()
 
-    return await (
-        db["characters"]
-        .find(
-            {
+    cursor = await db["characters"].aggregate([
+        {
+            "$match": {
                 "name": {
                     "$regex": query,
                     "$options": "i"
                 },
                 "is_deleted": False
-            },
-            {
+            }
+        },
+        {
+            "$addFields": {
+                "name_length": {"$strLenCP": {"$ifNull": ["$name", ""]}}
+            }
+        },
+        {
+            "$sort": {"name_length": 1}
+        },
+        {
+            "$limit": 10
+        },
+        {
+            "$project": {
                 "_id": 1,
                 "name": 1,
                 "images.profile": 1,
                 "role": 1
             }
-        )
-        .limit(10)
-        .to_list(None)
-    )
+        }
+    ])
+    return await cursor.to_list(None)
 
 
 async def search_anime(
@@ -35,10 +46,9 @@ async def search_anime(
 
     db = get_db()
 
-    return await (
-        db["anime"]
-        .find(
-            {
+    cursor = await db["anime"].aggregate([
+        {
+            "$match": {
                 "$or": [
                     {
                         "title.english": {
@@ -54,17 +64,29 @@ async def search_anime(
                     }
                 ],
                 "is_deleted": False
-            },
-            {
+            }
+        },
+        {
+            "$addFields": {
+                "title_length": {"$strLenCP": {"$ifNull": ["$title.english", {"$ifNull": ["$title.romaji", ""]}]}}
+            }
+        },
+        {
+            "$sort": {"title_length": 1}
+        },
+        {
+            "$limit": 10
+        },
+        {
+            "$project": {
                 "_id": 1,
                 "title": 1,
                 "images": 1,
                 "year": 1
             }
-        )
-        .limit(10)
-        .to_list(None)
-    )
+        }
+    ])
+    return await cursor.to_list(None)
 
 
 async def search_manga(
@@ -73,26 +95,37 @@ async def search_manga(
 
     db = get_db()
 
-    return await (
-        db["manga"]
-        .find(
-            {
+    cursor = await db["manga"].aggregate([
+        {
+            "$match": {
                 "name": {
                     "$regex": query,
                     "$options": "i"
                 },
                 "is_deleted": False
-            },
-            {
+            }
+        },
+        {
+            "$addFields": {
+                "name_length": {"$strLenCP": {"$ifNull": ["$name", ""]}}
+            }
+        },
+        {
+            "$sort": {"name_length": 1}
+        },
+        {
+            "$limit": 10
+        },
+        {
+            "$project": {
                 "_id": 1,
                 "name": 1,
                 "cover_image": 1,
                 "status": 1
             }
-        )
-        .limit(10)
-        .to_list(None)
-    )
+        }
+    ])
+    return await cursor.to_list(None)
 
 
 async def search_movies(
@@ -101,27 +134,38 @@ async def search_movies(
 
     db = get_db()
 
-    return await (
-        db["movies"]
-        .find(
-            {
+    cursor = await db["movies"].aggregate([
+        {
+            "$match": {
                 "title": {
                     "$regex": query,
                     "$options": "i"
                 },
                 "is_deleted": {"$ne": True}
-            },
-            {
+            }
+        },
+        {
+            "$addFields": {
+                "title_length": {"$strLenCP": {"$ifNull": ["$title", ""]}}
+            }
+        },
+        {
+            "$sort": {"title_length": 1}
+        },
+        {
+            "$limit": 10
+        },
+        {
+            "$project": {
                 "_id": 1,
                 "title": 1,
                 "year": 1,
                 "images": 1,
                 "genres": 1,
             }
-        )
-        .limit(10)
-        .to_list(None)
-    )
+        }
+    ])
+    return await cursor.to_list(None)
 
 
 async def search_tv_series(
@@ -130,17 +174,29 @@ async def search_tv_series(
 
     db = get_db()
 
-    return await (
-        db["tv_series"]
-        .find(
-            {
+    cursor = await db["tv_series"].aggregate([
+        {
+            "$match": {
                 "title": {
                     "$regex": query,
                     "$options": "i"
                 },
                 "is_deleted": {"$ne": True}
-            },
-            {
+            }
+        },
+        {
+            "$addFields": {
+                "title_length": {"$strLenCP": {"$ifNull": ["$title", ""]}}
+            }
+        },
+        {
+            "$sort": {"title_length": 1}
+        },
+        {
+            "$limit": 10
+        },
+        {
+            "$project": {
                 "_id": 1,
                 "title": 1,
                 "year": 1,
@@ -148,27 +204,38 @@ async def search_tv_series(
                 "genres": 1,
                 "total_seasons": 1,
             }
-        )
-        .limit(10)
-        .to_list(None)
-    )
+        }
+    ])
+    return await cursor.to_list(None)
 
 
 async def search_organizations(
     query: str
 ):
     db = get_db()
-    results = await (
-        db["organizations"]
-        .find(
-            {
+    cursor = await db["organizations"].aggregate([
+        {
+            "$match": {
                 "name": {
                     "$regex": query,
                     "$options": "i"
                 },
                 "is_deleted": {"$ne": True}
-            },
-            {
+            }
+        },
+        {
+            "$addFields": {
+                "name_length": {"$strLenCP": {"$ifNull": ["$name", ""]}}
+            }
+        },
+        {
+            "$sort": {"name_length": 1}
+        },
+        {
+            "$limit": 10
+        },
+        {
+            "$project": {
                 "_id": 1,
                 "name": 1,
                 "type": 1,
@@ -176,10 +243,9 @@ async def search_organizations(
                 "anime_ids": 1,
                 "manga_id": 1
             }
-        )
-        .limit(10)
-        .to_list(None)
-    )
+        }
+    ])
+    results = await cursor.to_list(None)
     # Map _id to id in repo or service. Let's return mapped dictionaries
     return [
         {
