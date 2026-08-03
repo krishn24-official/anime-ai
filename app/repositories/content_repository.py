@@ -166,6 +166,79 @@ async def get_dated_releases_range(start_date: str, end_date: str):
     return results
 
 
+import random
+from datetime import timezone
+
+async def get_weekly_suggestions(picks_per_type: int = 2):
+    db = get_db()
+    from app.repositories.rating_repository import get_top_rated
+    
+    now = datetime.now(timezone.utc)
+    iso_year, iso_week, _ = now.isocalendar()
+    weekly_seed = f"{iso_year}-W{iso_week}"
+    
+    rng = random.Random(weekly_seed)
+    
+    content_types = ["anime", "manga", "movie", "tv_series"]
+    results = []
+    
+    for c_type in content_types:
+        # Get top rated items to build a qualified pool
+        top_rated = await get_top_rated(content_type=c_type, limit=50)
+        
+        # Filter for count >= 3
+        qualified_pool = [item for item in top_rated if item.get("count", 0) >= 3]
+        
+        reason = ""
+        
+        if len(qualified_pool) >= picks_per_type:
+            # We have enough rated items
+            reason = "Highly rated"
+            content_ids = [item["_id"]["content_id"] for item in qualified_pool]
+        else:
+            # Fallback to recent/all non-deleted items
+            reason = "Recently added"
+            fallback_cursor = db[c_type].find(
+                {"is_deleted": {"$ne": True}},
+                {"_id": 1}
+            ).sort("_id", -1).limit(50)
+            fallback_items = await fallback_cursor.to_list(None)
+            content_ids = [str(item["_id"]) for item in fallback_items]
+        
+        # Sample picks_per_type if pool is large enough, else take all
+        k = min(picks_per_type, len(content_ids))
+        if k == 0:
+            continue
+            
+        picked_ids = rng.sample(content_ids, k)
+        
+        # Fetch the details for picked_ids
+        docs = await db[c_type].find(
+            {"_id": {"$in": picked_ids}},
+            {"_id": 1, "title": 1, "images.poster": 1, "name": 1, "cover_image": 1, "poster": 1}
+        ).to_list(None)
+        
+        # Map documents back to maintain consistent format
+        for doc in docs:
+            title_obj = doc.get("title") or doc.get("name") or {}
+            if isinstance(title_obj, dict):
+                title_str = title_obj.get("english") or title_obj.get("romaji") or title_obj.get("japanese") or ""
+            else:
+                title_str = title_obj
+                
+            poster_image = doc.get("images", {}).get("poster") or doc.get("cover_image") or doc.get("poster")
+                
+            results.append({
+                "content_type": c_type,
+                "content_id": str(doc["_id"]),
+                "title": title_str,
+                "poster_image": poster_image,
+                "reason": reason
+            })
+            
+    return results
+
+
 async def get_announced_releases_range(start_date: str, end_date: str):
     db = get_db()
     results = []

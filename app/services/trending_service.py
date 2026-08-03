@@ -70,7 +70,8 @@ async def get_trending_content(limit: int = 10):
             "poster_image": poster,
             "reason": entry.get("reason"),
             "pinned": entry.get("pinned", False),
-            "set_at": entry.get("computed_at")
+            "set_at": entry.get("computed_at"),
+            "note": entry.get("note")
         })
         
     return enriched

@@ -38,6 +38,14 @@ async def get_announced_range(start_date: str = Query(...), end_date: str = Quer
     try:
         return await get_announced_releases_range(start_date, end_date)
     except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/content/weekly-suggestions")
+async def get_weekly_suggestions(picks_per_type: int = Query(2, description="Number of suggestions per content type")):
+    try:
+        return await content_service.get_weekly_watch_suggestions(picks_per_type)
+    except Exception as e:
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
