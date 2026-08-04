@@ -21,6 +21,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "https://localhost",       # Capacitor Android (androidScheme: 'https')
         "capacitor://localhost",   # Capacitor iOS default scheme
+        "https://tauri.localhost", # Tauri desktop on Windows (WebView2)
     ],
     allow_origin_regex="https://.*\\.vercel\\.app",  # Matches any Vercel staging or production subdomains
     allow_credentials=True,
