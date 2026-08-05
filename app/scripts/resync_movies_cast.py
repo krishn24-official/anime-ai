@@ -3,7 +3,7 @@ import logging
 from app.db.mongo import connect_db, close_db, get_db
 from app.backend.ingestion.tmdb_client import get_movie_details, get_tv_details
 from app.backend.ingestion.tmdb_mapper import map_movie, map_tv_series
-from app.services.cast_reconciliation_service import reconcile_cast, reconcile_directors, reconcile_creators
+from app.services.cast_reconciliation_service import reconcile_cast, reconcile_directors, reconcile_creators, reconcile_writers
 from app.repositories.movie_repository import upsert_movie
 from app.repositories.tv_series_repository import upsert_tv_series
 
@@ -45,6 +45,7 @@ async def resync_collection(collection_name: str, get_details_func, map_func, up
         mapped_doc = map_func(details)
         if collection_name == "movies":
             mapped_doc["director"] = await reconcile_directors(mapped_doc.get("director", []))
+            mapped_doc["writer"] = await reconcile_writers(mapped_doc.get("writers", []))
         else:
             mapped_doc["creators"] = await reconcile_creators(mapped_doc.get("creators", []))
             

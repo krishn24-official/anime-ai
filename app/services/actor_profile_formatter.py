@@ -1,4 +1,4 @@
-def format_actor_profile(actor: dict, known_for: list[dict]) -> str:
+def format_actor_profile(actor: dict, known_for: dict[str, list[dict]] | list[dict] | None) -> str:
     parts = []
     
     # 1. Name and Birthdate
@@ -25,18 +25,39 @@ def format_actor_profile(actor: dict, known_for: list[dict]) -> str:
         
     # 3. Known For
     if known_for:
-        kf_list = []
-        for item in known_for:
-            title = (item.get("title") or "").strip()
-            year = item.get("year")
-            if title:
-                if year:
-                    kf_list.append(f"{title} ({year})")
-                else:
-                    kf_list.append(title)
+        kf_parts = []
         
-        if kf_list:
-            parts.append(f"**Known For**\n{', '.join(kf_list)}")
+        # Handle the old flat list just in case
+        if isinstance(known_for, list):
+            kf_list = []
+            for item in known_for:
+                title = (item.get("title") or "").strip()
+                year = item.get("year")
+                if title:
+                    kf_list.append(f"{title} ({year})" if year else title)
+            if kf_list:
+                kf_parts.append(", ".join(kf_list))
+        else:
+            # Handle the grouped dictionary
+            group_labels = {
+                "as_actor": "As Actor",
+                "as_director": "As Director",
+                "as_writer": "As Writer"
+            }
+            for key, label in group_labels.items():
+                group_items = known_for.get(key, [])
+                if group_items:
+                    kf_list = []
+                    for item in group_items:
+                        title = (item.get("title") or "").strip()
+                        year = item.get("year")
+                        if title:
+                            kf_list.append(f"{title} ({year})" if year else title)
+                    if kf_list:
+                        kf_parts.append(f"{label}: {', '.join(kf_list)}")
+                        
+        if kf_parts:
+            parts.append(f"**Known For**\n" + "\n".join(kf_parts))
             
     # 4. Profile Image tag
     images = actor.get("images", {})

@@ -11,7 +11,7 @@ from app.backend.ingestion.tmdb_client import (
 from app.backend.ingestion.tmdb_mapper import map_movie, map_tv_series
 from app.repositories.movie_repository import upsert_movie
 from app.repositories.tv_series_repository import upsert_tv_series
-from app.services.cast_reconciliation_service import reconcile_cast, reconcile_directors, reconcile_creators
+from app.services.cast_reconciliation_service import reconcile_cast, reconcile_directors, reconcile_creators, reconcile_writers
 
 
 async def sync_discover_movies(pages: int = 5, max_cast: int = 10, sort_by: str = "popularity.desc", **filters) -> dict:
@@ -33,6 +33,7 @@ async def sync_discover_movies(pages: int = 5, max_cast: int = 10, sort_by: str 
 
             doc = map_movie(details, max_cast=max_cast)
             doc["director"] = await reconcile_directors(doc.get("director", []))
+            doc["writer"] = await reconcile_writers(doc.get("writers", []))
             doc["cast"] = await reconcile_cast(doc.get("cast", []))
             await upsert_movie(doc)
             saved += 1
@@ -86,6 +87,7 @@ async def sync_trending_movies(pages: int = 1) -> dict:
 
             doc = map_movie(details)
             doc["director"] = await reconcile_directors(doc.get("director", []))
+            doc["writer"] = await reconcile_writers(doc.get("writers", []))
             doc["cast"] = await reconcile_cast(doc.get("cast", []))
             await upsert_movie(doc)
             saved += 1
@@ -134,6 +136,7 @@ async def add_movie_by_title(title: str) -> dict | None:
 
     doc = map_movie(details)
     doc["director"] = await reconcile_directors(doc.get("director", []))
+    doc["writer"] = await reconcile_writers(doc.get("writers", []))
     doc["cast"] = await reconcile_cast(doc.get("cast", []))
     await upsert_movie(doc)
 

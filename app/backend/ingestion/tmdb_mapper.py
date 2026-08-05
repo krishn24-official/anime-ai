@@ -65,12 +65,17 @@ def _extract_creators(details: dict) -> list[dict]:
     ]
 
 
-def _extract_writers(credits: dict | None) -> list[str]:
-    """Pull writer names from the crew list."""
+def _extract_writers(credits: dict | None) -> list[dict]:
+    """Pull writer names and info from the crew list."""
     if not credits:
         return []
+    
     return [
-        person["name"]
+        {
+            "tmdb_person_id": person.get("id"),
+            "name": person.get("name"),
+            "profile_image": image_url(person.get("profile_path"), "w185"),
+        }
         for person in credits.get("crew", [])
         if person.get("department") == "Writing"
     ]

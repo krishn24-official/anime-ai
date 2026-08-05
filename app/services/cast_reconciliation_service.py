@@ -261,3 +261,33 @@ async def reconcile_creators(raw_creators: list[dict]) -> list[dict]:
             })
 
     return reconciled
+
+
+async def reconcile_writers(raw_writers: list[dict]) -> list[dict]:
+    """
+    Converts raw writers shape into the unified shape matching manual edits:
+    Input: {tmdb_person_id, name, profile_image}
+    Output: {actor_id, order}
+    """
+    if not raw_writers:
+        return []
+
+    # Run resolution concurrently
+    tasks = []
+    for entry in raw_writers:
+        tmdb_person_id = entry.get("tmdb_person_id")
+        name = entry.get("name")
+        profile_image = entry.get("profile_image")
+        tasks.append(resolve_or_create_actor(tmdb_person_id, name, profile_image))
+
+    actor_ids = await asyncio.gather(*tasks)
+
+    reconciled = []
+    for i, actor_id in enumerate(actor_ids):
+        if actor_id:
+            reconciled.append({
+                "actor_id": actor_id,
+                "order": i
+            })
+
+    return reconciled

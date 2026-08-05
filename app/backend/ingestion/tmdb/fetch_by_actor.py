@@ -16,7 +16,7 @@ from app.backend.ingestion.tmdb_client import (
 )
 from app.backend.ingestion.tmdb_mapper import map_movie
 from app.repositories.movie_repository import upsert_movie
-from app.services.cast_reconciliation_service import reconcile_cast, reconcile_directors
+from app.services.cast_reconciliation_service import reconcile_cast, reconcile_directors, reconcile_writers
 
 
 async def main():
@@ -84,6 +84,7 @@ async def main():
             
             # Map returns base doc. Let's resolve actors for cast & crew
             doc["director"] = await reconcile_directors(doc.get("director", []))
+            doc["writer"] = await reconcile_writers(doc.get("writers", []))
             doc["cast"] = await reconcile_cast(doc.get("cast", []))
             
             # Save the movie
