@@ -178,3 +178,37 @@ async def find_anime_by_ids(anime_ids: list):
         )
         .to_list(None)
     )
+
+async def get_anime_voice_actors(anime_id: str, limit: int = 10):
+    db = get_db()
+    
+    characters = await db["characters"].find(
+        {"anime_ids": anime_id, "is_deleted": False}
+    ).to_list(None)
+    
+    va_map = {}
+    va_ids = []
+    
+    for char in characters:
+        for va_id in char.get("voice_actor_ids", []):
+            if va_id not in va_map:
+                va_ids.append(va_id)
+                va_map[va_id] = {"character_name": char.get("name", "Unknown"), "character_id": char["_id"]}
+                
+    if not va_ids:
+        return []
+        
+    voice_actors = await db["voice_actors"].find(
+        {"_id": {"$in": va_ids[:limit]}, "is_deleted": False}
+    ).to_list(None)
+    
+    result = []
+    for va in voice_actors:
+        va_id = va["_id"]
+        # Convert _id to id
+        va["id"] = va_id
+        # We need to assign character as role
+        va["role"] = f"as {va_map[va_id]['character_name']}"
+        result.append(va)
+        
+    return result

@@ -251,4 +251,4 @@ async def get_content_details(
     try:
         return await content_service.fetch_content_details(content_type, content_id)
     except ContentError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+        raise HTTPException(status_code=e.status_code, detail=e.detail)

@@ -2,21 +2,7 @@ from app.backend.utils.slug import create_slug
 from app.backend.transformers.character_transformer import (
     clean_description
 )
-
-
-def format_date(date_data):
-
-    if (
-        not date_data
-        or not date_data.get("year")
-    ):
-        return None
-
-    return (
-        f"{date_data.get('year')}-"
-        f"{date_data.get('month')}-"
-        f"{date_data.get('day')}"
-    )
+from app.backend.utils.date import format_date
 
 
 def extract_author(manga):

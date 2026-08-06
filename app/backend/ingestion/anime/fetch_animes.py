@@ -57,6 +57,18 @@ query ($anime: String) {
 
     bannerImage
 
+    startDate {
+      year
+      month
+      day
+    }
+
+    endDate {
+      year
+      month
+      day
+    }
+
     studios {
       nodes {
         name

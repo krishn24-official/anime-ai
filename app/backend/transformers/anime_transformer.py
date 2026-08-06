@@ -4,6 +4,7 @@ from app.backend.constants.anime_enums import (
     TYPE_MAPPING,
     SOURCE_MAPPING
 )
+from app.backend.utils.date import format_date
 
 
 def transform_anime(anime):
@@ -43,6 +44,10 @@ def transform_anime(anime):
         "year": anime.get("seasonYear"),
 
         "source": SOURCE_MAPPING.get(anime.get("source", ""),"unknown"),
+
+        "start_date": format_date(anime.get("startDate")),
+
+        "end_date": format_date(anime.get("endDate")),
 
         "total_seasons": 1,
 

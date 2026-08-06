@@ -10,6 +10,9 @@ from app.db.mongo import (
 from app.backend.transformers.character_transformer import (
     transform_character
 )
+from app.backend.transformers.voice_actor_transformer import (
+    transform_voice_actor
+)
 from app.services.game_property_extractor import extract_game_properties
 
 
@@ -47,6 +50,23 @@ query ($id: Int, $name: String) {
         characterRole
       }
     }
+    voiceActors(language: JAPANESE, sort: [LANGUAGE]) {
+      id
+      name {
+        full
+        native
+      }
+      image {
+        large
+      }
+      dateOfBirth {
+        year
+        month
+        day
+      }
+      gender
+      description
+    }
   }
 }
 """
@@ -68,8 +88,9 @@ async def fetch_and_save(
 
     db = get_db()
     character_collection = db["characters"]
+    voice_actor_collection = db["voice_actors"]
 
-    print(f"\n👤 Fetching: {character_name}")
+    print(f"\n Fetching: {character_name}")
 
     variables = {}
     if isinstance(character_name, int) or (isinstance(character_name, str) and character_name.isdigit()):
@@ -164,6 +185,29 @@ async def fetch_and_save(
         formatted_character.get("anime_ids", []) + anime_ids
     ))
 
+    # Process and save Voice Actors
+    voice_actor_ids = []
+    voice_actors_data = character.get("voiceActors", [])
+    if voice_actors_data:
+        for va_data in voice_actors_data:
+            va_name = va_data.get("name", {}).get("full")
+            if not va_name:
+                continue
+            
+            formatted_va = transform_voice_actor(va_data)
+            voice_actor_ids.append(formatted_va["_id"])
+            
+            await voice_actor_collection.replace_one(
+                {"_id": formatted_va["_id"]},
+                formatted_va,
+                upsert=True
+            )
+            print(f"   Saved Voice Actor: {formatted_va['name']}")
+
+    formatted_character["voice_actor_ids"] = list(set(
+        formatted_character.get("voice_actor_ids", []) + voice_actor_ids
+    ))
+
     # CHECK EXISTING CHARACTER — merge anime_ids if already exists
     existing = await character_collection.find_one(
         {"_id": formatted_character["_id"]}
@@ -174,7 +218,12 @@ async def fetch_and_save(
         formatted_character["anime_ids"] = list(set(
             existing_anime_ids + formatted_character["anime_ids"]
         ))
-        print(f"  ↻ Updating existing: {formatted_character['name']}")
+        
+        existing_va_ids = existing.get("voice_actor_ids", [])
+        formatted_character["voice_actor_ids"] = list(set(
+            existing_va_ids + formatted_character["voice_actor_ids"]
+        ))
+        print(f"   Updating existing: {formatted_character['name']}")
 
     await character_collection.replace_one(
         {"_id": formatted_character["_id"]},

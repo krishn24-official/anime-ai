@@ -43,4 +43,4 @@ async def log_search_click(
         req.query,
         str(user["_id"])
     )
-    return Response(status_code=202)
+    return Response(status_code=202)

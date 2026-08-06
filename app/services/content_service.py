@@ -396,4 +396,4 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
 # --- Weekly Suggestions ---
 async def get_weekly_watch_suggestions(picks_per_type: int = 2):
     return await get_weekly_suggestions(picks_per_type)
-
+

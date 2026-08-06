@@ -12,4 +12,4 @@ async def fetch_today_events():
 
 
 async def fetch_events_by_date_range(start_date: str, end_date: str):
-    return await get_events_by_date_range(start_date, end_date)
+    return await get_events_by_date_range(start_date, end_date)

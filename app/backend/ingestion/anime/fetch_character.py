@@ -10,6 +10,9 @@ from app.db.mongo import (
 from app.backend.transformers.character_transformer import (
     transform_character
 )
+from app.backend.transformers.voice_actor_transformer import (
+    transform_voice_actor
+)
 
 from app.backend.utils.slug import create_slug
 
@@ -62,6 +65,23 @@ query ($anime: String, $page: Int) {
             month
           }
         }
+        voiceActors(language: JAPANESE, sort: [LANGUAGE]) {
+          id
+          name {
+            full
+            native
+          }
+          image {
+            large
+          }
+          dateOfBirth {
+            year
+            month
+            day
+          }
+          gender
+          description
+        }
       }
     }
   }
@@ -72,8 +92,8 @@ query ($anime: String, $page: Int) {
 async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
     db = get_db()
-
     character_collection = db["characters"]
+    voice_actor_collection = db["voice_actors"]
 
     page = 1
 
@@ -143,6 +163,29 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
                 role
             )
 
+            # Process and save Voice Actors
+            voice_actor_ids = []
+            voice_actors_data = character_edge.get("voiceActors", [])
+            if voice_actors_data:
+                for va_data in voice_actors_data:
+                    va_name = va_data.get("name", {}).get("full")
+                    if not va_name:
+                        continue
+                    
+                    formatted_va = transform_voice_actor(va_data)
+                    voice_actor_ids.append(formatted_va["_id"])
+                    
+                    await voice_actor_collection.replace_one(
+                        {"_id": formatted_va["_id"]},
+                        formatted_va,
+                        upsert=True
+                    )
+                    print(f"   Saved Voice Actor: {formatted_va['name']}")
+
+            formatted_character["voice_actor_ids"] = list(set(
+                formatted_character.get("voice_actor_ids", []) + voice_actor_ids
+            ))
+
             # CHECK EXISTING CHARACTER
             existing_character = await character_collection.find_one(
                 {"_id": formatted_character["_id"]}
@@ -162,8 +205,12 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
                         formatted_character["anime_ids"]
                     )
                 )
-
                 formatted_character["anime_ids"] = merged_anime_ids
+
+                existing_va_ids = existing_character.get("voice_actor_ids", [])
+                formatted_character["voice_actor_ids"] = list(set(
+                    existing_va_ids + formatted_character["voice_actor_ids"]
+                ))
 
             await character_collection.replace_one(
                 {"_id": formatted_character["_id"]},

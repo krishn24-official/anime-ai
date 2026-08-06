@@ -3,7 +3,8 @@ from app.repositories.anime_repository import (
     get_anime_by_id,
     search_anime,
     get_anime_characters,
-    get_character_count
+    get_character_count,
+    get_anime_voice_actors
 )
 
 
@@ -65,10 +66,12 @@ async def fetch_anime_details(
         )
     )
 
+    voice_actors = await get_anime_voice_actors(anime_id, limit=10)
 
     return {
         "anime": anime,
-        "character_count": character_count
+        "character_count": character_count,
+        "voice_actors": voice_actors
     }
 
 async def fetch_anime_summary(

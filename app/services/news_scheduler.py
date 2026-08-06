@@ -50,9 +50,9 @@ def start_news_scheduler():
     asyncio.create_task(_release_status_sync_job())
     
     scheduler.start()
-    print("🕒 News pipeline scheduler started (every 5 min)")
-    print("🕒 Search trending scheduler started (every 15 min)")
-    print("🕒 Release status sync scheduled (every 24 hours)")
+    print(" News pipeline scheduler started (every 5 min)")
+    print(" Search trending scheduler started (every 15 min)")
+    print(" Release status sync scheduled (every 24 hours)")
 
 
 def stop_news_scheduler():

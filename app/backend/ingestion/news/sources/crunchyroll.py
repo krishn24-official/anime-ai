@@ -30,6 +30,6 @@ async def fetch_crunchyroll_news():
     except Exception as e:
         print("Crunchyroll RSS error:", e)
 
-    print("🍥 Crunchyroll:", len(articles))
+    print(" Crunchyroll:", len(articles))
 
     return articles
