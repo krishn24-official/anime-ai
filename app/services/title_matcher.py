@@ -88,9 +88,10 @@ def find_matches(text: str, alias_index: list[tuple[str, str, str]]) -> list[tup
         if cid in seen_content_ids:
             continue
             
-        pattern = r'\b' + re.escape(alias) + r'\b'
-        if re.search(pattern, norm_text):
-            matches.append((alias, ctype, cid))
-            seen_content_ids.add(cid)
+        if alias in norm_text:
+            pattern = r'\b' + re.escape(alias) + r'\b'
+            if re.search(pattern, norm_text):
+                matches.append((alias, ctype, cid))
+                seen_content_ids.add(cid)
 
     return matches
