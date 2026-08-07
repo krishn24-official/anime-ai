@@ -52,14 +52,28 @@ async def get_birthdays_by_date_range(start_date: str, end_date: str):
     return characters
 
 
-async def get_all_characters():
-
+async def get_all_characters(skip: int = 0, limit: int = 50):
+    """Return a page of characters with only the fields needed for the card view."""
     db = get_db()
+
+    projection = {
+        "_id": 1,
+        "name": 1,
+        "images.profile": 1,
+        "gender": 1,
+        "anime_ids": 1,
+        "birth_month": 1,
+        "birth_day": 1,
+        "date_of_birth": 1,
+    }
 
     return await (
         db["characters"]
-        .find({"is_deleted": False})
-        .to_list(None)
+        .find({"is_deleted": False}, projection)
+        .sort("name", 1)
+        .skip(skip)
+        .limit(limit)
+        .to_list(limit)
     )
 
 

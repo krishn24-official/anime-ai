@@ -17,9 +17,8 @@ from app.repositories.organization_repository import (
 from app.repositories.anime_repository import find_anime_by_ids
 
 
-async def fetch_all_characters():
-
-    return await get_all_characters()
+async def fetch_all_characters(skip: int = 0, limit: int = 50):
+    return await get_all_characters(skip=skip, limit=limit)
 
 
 async def fetch_birthdays_by_date_range(start_date: str, end_date: str):

@@ -19,12 +19,17 @@ router = APIRouter(
 )
 
 @router.get("")
-
-async def get_characters():
-
-    return await (
-        fetch_all_characters()
-    )
+async def get_characters(
+    skip: int = Query(0, ge=0, description="Number of characters to skip"),
+    limit: int = Query(50, ge=1, le=200, description="Number of characters to return (max 200)"),
+):
+    items = await fetch_all_characters(skip=skip, limit=limit)
+    return {
+        "items": items,
+        "skip": skip,
+        "limit": limit,
+        "has_more": len(items) == limit,
+    }
 
 
 @router.get("/birthdays/range")
