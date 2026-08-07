@@ -1,12 +1,16 @@
 from datetime import datetime, timezone
+import re
 from app.db.mongo import get_db
+from app.utils.search_utils import build_fuzzy_search_regex
 
 async def get_all_actors(include_deleted: bool = False, search: str = None, limit: int = 50, skip: int = 0):
     db = get_db()
     query = {} if include_deleted else {"is_deleted": False}
     
     if search:
-        query["name"] = {"$regex": search, "$options": "i"}
+        fuzzy_pattern = build_fuzzy_search_regex(search)
+        search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
+        query["name"] = search_regex
         
     cursor = db["actors"].find(query).sort("name", 1).skip(skip).limit(limit)
     items = await cursor.to_list(None)

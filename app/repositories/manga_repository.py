@@ -1,4 +1,6 @@
 from app.db.mongo import get_db
+import re
+from app.utils.search_utils import build_fuzzy_search_regex
 
 
 async def get_all_manga(page: int = 1, limit: int = 50, search: str = None):
@@ -8,9 +10,11 @@ async def get_all_manga(page: int = 1, limit: int = 50, search: str = None):
     
     query = {"is_deleted": False}
     if search:
+        fuzzy_pattern = build_fuzzy_search_regex(search)
+        search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
         query["$or"] = [
-            {"name": {"$regex": search, "$options": "i"}},
-            {"native_name": {"$regex": search, "$options": "i"}}
+            {"name": search_regex},
+            {"native_name": search_regex}
         ]
 
     items = await (
@@ -50,22 +54,19 @@ async def search_manga(
 
     db = get_db()
 
+    fuzzy_pattern = build_fuzzy_search_regex(query)
+    search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
+
     return await (
         db["manga"]
         .find(
             {
                 "$or": [
                     {
-                        "name": {
-                            "$regex": query,
-                            "$options": "i"
-                        }
+                        "name": search_regex
                     },
                     {
-                        "native_name": {
-                            "$regex": query,
-                            "$options": "i"
-                        }
+                        "native_name": search_regex
                     }
                 ]
             }

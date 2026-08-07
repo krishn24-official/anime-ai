@@ -1,4 +1,6 @@
 from app.db.mongo import get_db
+import re
+from app.utils.search_utils import build_fuzzy_search_regex
 
 
 async def get_all_movies(page: int = 1, limit: int = 20, search: str = None):
@@ -7,7 +9,9 @@ async def get_all_movies(page: int = 1, limit: int = 20, search: str = None):
     
     query = {"is_deleted": {"$ne": True}}
     if search:
-        query["title"] = {"$regex": search, "$options": "i"}
+        fuzzy_pattern = build_fuzzy_search_regex(search)
+        search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
+        query["title"] = search_regex
 
     items = await (
         db["movies"]
@@ -31,6 +35,15 @@ async def get_movie_by_id(movie_id: str):
 async def upsert_movie(doc: dict):
     """Insert or update a movie document by _id."""
     db = get_db()
+    
+    # Check for cross-collection duplicates before insert
+    from app.services.duplicate_detection_service import check_for_duplicate, apply_reciprocal_duplicate_flag
+    dup = await check_for_duplicate(doc, "movie")
+    if dup:
+        doc["possible_duplicate_of"] = dup
+        await apply_reciprocal_duplicate_flag(doc["_id"], "movie", dup)
+        print(f"⚠️ Possible duplicate detected: '{doc.get('title')}' ({doc['_id']}) may duplicate {dup['content_type']}_{dup['content_id']} -- flagged, not skipped")
+        
     await db["movies"].update_one(
         {"_id": doc["_id"]},
         {"$setOnInsert": doc},
@@ -66,7 +79,7 @@ async def soft_delete_movie(content_id: str):
     )
     return result.modified_count > 0
 
-async def list_movies_for_admin(include_deleted: bool = False, search: str = None, limit: int = 50, skip: int = 0, needs_review: bool = False):
+async def list_movies_for_admin(include_deleted: bool = False, search: str = None, limit: int = 50, skip: int = 0, needs_review: bool = False, flagged_duplicates_only: bool = False):
     db = get_db()
     query = {}
     
@@ -76,10 +89,15 @@ async def list_movies_for_admin(include_deleted: bool = False, search: str = Non
     if needs_review:
         query["needs_release_review"] = True
         
+    if flagged_duplicates_only:
+        query["possible_duplicate_of"] = {"$exists": True, "$ne": None}
+        
     if search:
+        fuzzy_pattern = build_fuzzy_search_regex(search)
+        search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
         query["$or"] = [
-            {"title": {"$regex": search, "$options": "i"}},
-            {"original_title": {"$regex": search, "$options": "i"}}
+            {"title": search_regex},
+            {"original_title": search_regex}
         ]
         
     cursor = db["movies"].find(query).skip(skip).limit(limit).sort("_id", -1)

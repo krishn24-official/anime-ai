@@ -129,6 +129,14 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
         media
     )
 
+    # Check for cross-collection duplicates before insert
+    from app.services.duplicate_detection_service import check_for_duplicate, apply_reciprocal_duplicate_flag
+    dup = await check_for_duplicate(formatted_anime, "anime")
+    if dup:
+        formatted_anime["possible_duplicate_of"] = dup
+        await apply_reciprocal_duplicate_flag(formatted_anime["_id"], "anime", dup)
+        print(f"⚠️ Possible duplicate detected: '{formatted_anime.get('title', {}).get('english') or formatted_anime.get('title', {}).get('romaji')}' ({formatted_anime['_id']}) may duplicate {dup['content_type']}_{dup['content_id']} -- flagged, not skipped")
+
     await anime_collection.replace_one(
         {"_id": formatted_anime["_id"]},
         formatted_anime,

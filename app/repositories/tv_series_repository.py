@@ -1,4 +1,6 @@
 from app.db.mongo import get_db
+import re
+from app.utils.search_utils import build_fuzzy_search_regex
 
 
 async def get_all_tv_series(page: int = 1, limit: int = 20, search: str = None):
@@ -7,7 +9,9 @@ async def get_all_tv_series(page: int = 1, limit: int = 20, search: str = None):
 
     query = {"is_deleted": {"$ne": True}}
     if search:
-        query["title"] = {"$regex": search, "$options": "i"}
+        fuzzy_pattern = build_fuzzy_search_regex(search)
+        search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
+        query["title"] = search_regex
 
     items = await (
         db["tv_series"]
@@ -31,6 +35,15 @@ async def get_tv_series_by_id(series_id: str):
 async def upsert_tv_series(doc: dict):
     """Insert or update a TV series document by _id."""
     db = get_db()
+    
+    # Check for cross-collection duplicates before insert
+    from app.services.duplicate_detection_service import check_for_duplicate, apply_reciprocal_duplicate_flag
+    dup = await check_for_duplicate(doc, "tv_series")
+    if dup:
+        doc["possible_duplicate_of"] = dup
+        await apply_reciprocal_duplicate_flag(doc["_id"], "tv_series", dup)
+        print(f"⚠️ Possible duplicate detected: '{doc.get('title')}' ({doc['_id']}) may duplicate {dup['content_type']}_{dup['content_id']} -- flagged, not skipped")
+        
     await db["tv_series"].update_one(
         {"_id": doc["_id"]},
         {"$setOnInsert": doc},
@@ -71,7 +84,8 @@ async def list_tv_series_for_admin(
     search: str | None = None,
     limit: int = 50,
     skip: int = 0,
-    needs_review: bool = False
+    needs_review: bool = False,
+    flagged_duplicates_only: bool = False
 ):
     db = get_db()
     query = {}
@@ -82,10 +96,15 @@ async def list_tv_series_for_admin(
     if needs_review:
         query["needs_release_review"] = True
         
+    if flagged_duplicates_only:
+        query["possible_duplicate_of"] = {"$exists": True, "$ne": None}
+        
     if search:
+        fuzzy_pattern = build_fuzzy_search_regex(search)
+        search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
         query["$or"] = [
-            {"title": {"$regex": search, "$options": "i"}},
-            {"original_title": {"$regex": search, "$options": "i"}}
+            {"title": search_regex},
+            {"original_title": search_regex}
         ]
         
     cursor = db["tv_series"].find(query).skip(skip).limit(limit).sort("_id", -1)

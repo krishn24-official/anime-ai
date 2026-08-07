@@ -26,6 +26,7 @@ from app.repositories.comment_repository import (
     get_comments_for_content,
     get_comment_by_id,
     delete_comment,
+    toggle_like_comment as toggle_like_comment_repo,
 )
 from app.repositories.content_repository import (
     get_dated_releases_range,
@@ -140,7 +141,15 @@ async def fetch_user_watchlist(user_id: ObjectId):
 
 # --- Comments ---
 
-def _serialize_comment(comment: dict) -> dict:
+def _serialize_comment(comment: dict, current_user_id: ObjectId | None = None) -> dict:
+    likes = comment.get("likes", [])
+    if isinstance(likes, int):
+        likes = []
+    
+    is_liked = False
+    if current_user_id:
+        is_liked = any(str(uid) == str(current_user_id) for uid in likes)
+        
     return {
         "id": str(comment["_id"]),
         "user_id": str(comment["user_id"]),
@@ -151,13 +160,15 @@ def _serialize_comment(comment: dict) -> dict:
         "text": comment["text"],
         "parent_id": str(comment["parent_id"]) if comment.get("parent_id") else None,
         "is_public": comment.get("is_public", True),
-        "likes": comment.get("likes", 0),
+        "is_spoiler": comment.get("is_spoiler", False),
+        "like_count": comment.get("like_count", len(likes)), # Aggregation pipeline populates like_count, otherwise use len
+        "is_liked": is_liked,
         "created_at": comment["created_at"],
     }
 
 
-def _build_comment_tree(comments: list[dict]) -> list[dict]:
-    by_id = {str(c["_id"]): _serialize_comment(c) for c in comments}
+def _build_comment_tree(comments: list[dict], current_user_id: ObjectId | None = None) -> list[dict]:
+    by_id = {str(c["_id"]): _serialize_comment(c, current_user_id) for c in comments}
 
     for comment in by_id.values():
         comment["replies"] = []
@@ -175,7 +186,7 @@ def _build_comment_tree(comments: list[dict]) -> list[dict]:
     return roots
 
 
-async def add_comment(user_id: ObjectId, content_type: str, content_id: str, text: str, parent_id: str | None = None):
+async def add_comment(user_id: ObjectId, content_type: str, content_id: str, text: str, parent_id: str | None = None, is_spoiler: bool = False):
     if not text or not text.strip():
         raise ContentError(400, "Comment text cannot be empty")
 
@@ -192,12 +203,12 @@ async def add_comment(user_id: ObjectId, content_type: str, content_id: str, tex
         if not parent_comment:
             raise ContentError(404, "Parent comment not found")
 
-    comment = await create_comment(user_id, content_type, content_id, text.strip(), parent_oid)
+    comment = await create_comment(user_id, content_type, content_id, text.strip(), parent_oid, is_spoiler)
 
     return _serialize_comment(comment)
 
 
-async def fetch_comments(content_type: str, content_id: str):
+async def fetch_comments(content_type: str, content_id: str, current_user_id: ObjectId | None = None):
     content_id = _validate(content_type, content_id)
 
     comments = await get_comments_for_content(content_type, content_id)
@@ -220,7 +231,7 @@ async def fetch_comments(content_type: str, content_id: str):
         comment["display_name"] = user.get("display_name")
         comment["username"] = user.get("username")
 
-    return _build_comment_tree(comments)
+    return _build_comment_tree(comments, current_user_id)
 
 
 async def remove_comment(user_id: ObjectId, comment_id: str):
@@ -236,6 +247,22 @@ async def remove_comment(user_id: ObjectId, comment_id: str):
         raise ContentError(403, "You can only delete your own comments")
 
     await delete_comment(comment_oid)
+
+
+async def toggle_like_comment(user_id: ObjectId, content_type: str, content_id: str, comment_id: str):
+    content_id = _validate(content_type, content_id)
+    await _ensure_content_exists(content_type, content_id)
+    
+    comment_oid = to_object_id(comment_id)
+    if not comment_oid:
+        raise ContentError(400, f"Invalid comment_id: {comment_id}")
+        
+    result = await toggle_like_comment_repo(user_id, comment_oid)
+    if not result:
+        raise ContentError(404, "Comment not found")
+        
+    new_count, is_liked = result
+    return {"like_count": new_count, "is_liked": is_liked}
 
 
 # --- Content Details ---

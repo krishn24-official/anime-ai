@@ -4,8 +4,22 @@ from app.backend.constants.anime_enums import (
     TYPE_MAPPING,
     SOURCE_MAPPING
 )
-from app.backend.utils.date import format_date
+from app.services.release_date_utils import parse_release_date
 
+
+def _extract_date(date_data):
+    if not date_data or not date_data.get("year"):
+        return None
+    y = date_data.get("year")
+    m = date_data.get("month")
+    d = date_data.get("day")
+    if y and m and d:
+        return parse_release_date(day=d, month=m, year=y, precision="day")
+    elif y and m:
+        return parse_release_date(day=None, month=m, year=y, precision="month")
+    elif y:
+        return parse_release_date(day=None, month=None, year=y, precision="year")
+    return None
 
 def transform_anime(anime):
 
@@ -45,9 +59,9 @@ def transform_anime(anime):
 
         "source": SOURCE_MAPPING.get(anime.get("source", ""),"unknown"),
 
-        "start_date": format_date(anime.get("startDate")),
+        "start_date": _extract_date(anime.get("startDate")),
 
-        "end_date": format_date(anime.get("endDate")),
+        "end_date": _extract_date(anime.get("endDate")),
 
         "total_seasons": 1,
 

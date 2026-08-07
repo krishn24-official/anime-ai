@@ -2,7 +2,22 @@ from app.backend.utils.slug import create_slug
 from app.backend.transformers.character_transformer import (
     clean_description
 )
-from app.backend.utils.date import format_date
+from app.services.release_date_utils import parse_release_date
+
+
+def _extract_date(date_data):
+    if not date_data or not date_data.get("year"):
+        return None
+    y = date_data.get("year")
+    m = date_data.get("month")
+    d = date_data.get("day")
+    if y and m and d:
+        return parse_release_date(day=d, month=m, year=y, precision="day")
+    elif y and m:
+        return parse_release_date(day=None, month=m, year=y, precision="month")
+    elif y:
+        return parse_release_date(day=None, month=None, year=y, precision="year")
+    return None
 
 
 def extract_author(manga):
@@ -67,11 +82,11 @@ def transform_manga(manga):
             manga.get("volumes")
         ),
 
-        "start_date": format_date(
+        "start_date": _extract_date(
             manga.get("startDate")
         ),
 
-        "end_date": format_date(
+        "end_date": _extract_date(
             manga.get("endDate")
         ),
 

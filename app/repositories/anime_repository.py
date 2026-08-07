@@ -1,4 +1,6 @@
 from app.db.mongo import get_db
+import re
+from app.utils.search_utils import build_fuzzy_search_regex
 
 
 async def get_all_anime(page: int = 1, limit: int = 50, search: str = None):
@@ -8,9 +10,11 @@ async def get_all_anime(page: int = 1, limit: int = 50, search: str = None):
     
     query = {"is_deleted": False}
     if search:
+        fuzzy_pattern = build_fuzzy_search_regex(search)
+        search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
         query["$or"] = [
-            {"title.english": {"$regex": search, "$options": "i"}},
-            {"title.romaji": {"$regex": search, "$options": "i"}}
+            {"title.english": search_regex},
+            {"title.romaji": search_regex}
         ]
 
     items = await (
@@ -140,7 +144,7 @@ async def soft_delete_anime(content_id: str):
     )
     return result.modified_count > 0
 
-async def list_anime_for_admin(include_deleted: bool = False, search: str = None, limit: int = 50, skip: int = 0, needs_review: bool = False):
+async def list_anime_for_admin(include_deleted: bool = False, search: str = None, limit: int = 50, skip: int = 0, needs_review: bool = False, flagged_duplicates_only: bool = False):
     db = get_db()
     query = {}
     
@@ -150,10 +154,15 @@ async def list_anime_for_admin(include_deleted: bool = False, search: str = None
     if needs_review:
         query["needs_release_review"] = True
         
+    if flagged_duplicates_only:
+        query["possible_duplicate_of"] = {"$exists": True, "$ne": None}
+        
     if search:
+        fuzzy_pattern = build_fuzzy_search_regex(search)
+        search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
         query["$or"] = [
-            {"title.english": {"$regex": search, "$options": "i"}},
-            {"title.romaji": {"$regex": search, "$options": "i"}}
+            {"title.english": search_regex},
+            {"title.romaji": search_regex}
         ]
         
     cursor = db["anime"].find(query).skip(skip).limit(limit).sort("_id", -1)

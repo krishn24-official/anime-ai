@@ -18,6 +18,7 @@ class RatingRequest(BaseModel):
 class CommentRequest(BaseModel):
     text: str
     parent_id: str | None = None
+    is_spoiler: bool = False
 
 
 
@@ -215,16 +216,21 @@ async def add_comment(
 ):
     try:
         return await content_service.add_comment(
-            current_user["_id"], content_type, content_id, payload.text, payload.parent_id
+            current_user["_id"], content_type, content_id, payload.text, payload.parent_id, payload.is_spoiler
         )
     except ContentError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
 
 @router.get("/content/{content_type}/{content_id}/comments")
-async def get_comments(content_type: str, content_id: str):
+async def get_comments(
+    content_type: str, 
+    content_id: str,
+    current_user: dict | None = Depends(get_optional_user)
+):
+    user_id = current_user["_id"] if current_user else None
     try:
-        return await content_service.fetch_comments(content_type, content_id)
+        return await content_service.fetch_comments(content_type, content_id, user_id)
     except ContentError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
@@ -237,6 +243,21 @@ async def delete_comment(
     try:
         await content_service.remove_comment(current_user["_id"], comment_id)
         return {"status": "ok"}
+    except ContentError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+
+@router.post("/content/{content_type}/{content_id}/comments/{comment_id}/like")
+async def toggle_like_comment(
+    content_type: str,
+    content_id: str,
+    comment_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    try:
+        return await content_service.toggle_like_comment(
+            current_user["_id"], content_type, content_id, comment_id
+        )
     except ContentError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 

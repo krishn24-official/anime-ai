@@ -84,9 +84,10 @@ async def list_anime(
     limit: int = 50,
     skip: int = 0,
     needs_review: bool = False,
+    flagged_duplicates_only: bool = False,
     current_admin: dict = Depends(get_current_admin)
 ):
-    return await list_anime_for_admin(include_deleted, search, limit, skip, needs_review)
+    return await list_anime_for_admin(include_deleted, search, limit, skip, needs_review, flagged_duplicates_only)
 
 @router.post("/anime")
 async def create_new_anime(
@@ -232,6 +233,18 @@ async def delete_existing_anime(
         raise HTTPException(status_code=404, detail="Anime not found")
     return {"status": "ok"}
 
+@router.post("/anime/{content_id}/dismiss-duplicate")
+async def dismiss_anime_duplicate(
+    content_id: str,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.db.mongo import get_db
+    db = get_db()
+    res = await db["anime"].update_one({"_id": content_id}, {"$unset": {"possible_duplicate_of": ""}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Anime not found")
+    return {"status": "ok"}
+
 # --- Movies Admin ---
 
 @router.get("/movies")
@@ -241,10 +254,11 @@ async def list_movies(
     limit: int = 50,
     skip: int = 0,
     needs_review: bool = False,
+    flagged_duplicates_only: bool = False,
     current_admin: dict = Depends(get_current_admin)
 ):
     from app.repositories.movie_repository import list_movies_for_admin
-    return await list_movies_for_admin(include_deleted, search, limit, skip, needs_review)
+    return await list_movies_for_admin(include_deleted, search, limit, skip, needs_review, flagged_duplicates_only)
 
 @router.post("/movies")
 async def create_new_movie(
@@ -407,6 +421,18 @@ async def delete_existing_movie(
         raise HTTPException(status_code=404, detail="Movie not found")
     return {"status": "ok"}
 
+@router.post("/movies/{content_id}/dismiss-duplicate")
+async def dismiss_movie_duplicate(
+    content_id: str,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.db.mongo import get_db
+    db = get_db()
+    res = await db["movies"].update_one({"_id": content_id}, {"$unset": {"possible_duplicate_of": ""}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Movie not found")
+    return {"status": "ok"}
+
 # --- TV Series Admin ---
 
 @router.get("/tv-series")
@@ -416,10 +442,11 @@ async def list_tv_series(
     limit: int = 50,
     skip: int = 0,
     needs_review: bool = False,
+    flagged_duplicates_only: bool = False,
     current_admin: dict = Depends(get_current_admin)
 ):
     from app.repositories.tv_series_repository import list_tv_series_for_admin
-    return await list_tv_series_for_admin(include_deleted, search, limit, skip, needs_review)
+    return await list_tv_series_for_admin(include_deleted, search, limit, skip, needs_review, flagged_duplicates_only)
 
 @router.post("/tv-series")
 async def create_new_tv_series(
@@ -600,6 +627,18 @@ async def delete_existing_tv_series(
     success = await delete_tv_series(content_id)
     if not success:
         raise HTTPException(status_code=404, detail="TV Series not found")
+    return {"status": "ok"}
+
+@router.post("/tv-series/{content_id}/dismiss-duplicate")
+async def dismiss_tv_series_duplicate(
+    content_id: str,
+    current_admin: dict = Depends(get_current_admin)
+):
+    from app.db.mongo import get_db
+    db = get_db()
+    res = await db["tv_series"].update_one({"_id": content_id}, {"$unset": {"possible_duplicate_of": ""}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="TV series not found")
     return {"status": "ok"}
 
 # --- Episodes Admin ---

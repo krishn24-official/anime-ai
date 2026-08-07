@@ -1,4 +1,6 @@
 from app.db.mongo import get_db
+import re
+from app.utils.search_utils import build_fuzzy_search_regex
 
 
 async def search_characters(
@@ -6,14 +8,14 @@ async def search_characters(
 ):
 
     db = get_db()
+    
+    fuzzy_pattern = build_fuzzy_search_regex(query)
+    search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
 
     cursor = await db["characters"].aggregate([
         {
             "$match": {
-                "name": {
-                    "$regex": query,
-                    "$options": "i"
-                },
+                "name": search_regex,
                 "is_deleted": False
             }
         },
@@ -45,22 +47,19 @@ async def search_anime(
 ):
 
     db = get_db()
+    
+    fuzzy_pattern = build_fuzzy_search_regex(query)
+    search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
 
     cursor = await db["anime"].aggregate([
         {
             "$match": {
                 "$or": [
                     {
-                        "title.english": {
-                            "$regex": query,
-                            "$options": "i"
-                        }
+                        "title.english": search_regex
                     },
                     {
-                        "title.romaji": {
-                            "$regex": query,
-                            "$options": "i"
-                        }
+                        "title.romaji": search_regex
                     }
                 ],
                 "is_deleted": False
@@ -94,14 +93,14 @@ async def search_manga(
 ):
 
     db = get_db()
+    
+    fuzzy_pattern = build_fuzzy_search_regex(query)
+    search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
 
     cursor = await db["manga"].aggregate([
         {
             "$match": {
-                "name": {
-                    "$regex": query,
-                    "$options": "i"
-                },
+                "name": search_regex,
                 "is_deleted": False
             }
         },
@@ -133,14 +132,14 @@ async def search_movies(
 ):
 
     db = get_db()
+    
+    fuzzy_pattern = build_fuzzy_search_regex(query)
+    search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
 
     cursor = await db["movies"].aggregate([
         {
             "$match": {
-                "title": {
-                    "$regex": query,
-                    "$options": "i"
-                },
+                "title": search_regex,
                 "is_deleted": {"$ne": True}
             }
         },
@@ -173,14 +172,14 @@ async def search_tv_series(
 ):
 
     db = get_db()
+    
+    fuzzy_pattern = build_fuzzy_search_regex(query)
+    search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
 
     cursor = await db["tv_series"].aggregate([
         {
             "$match": {
-                "title": {
-                    "$regex": query,
-                    "$options": "i"
-                },
+                "title": search_regex,
                 "is_deleted": {"$ne": True}
             }
         },
@@ -213,13 +212,14 @@ async def search_organizations(
     query: str
 ):
     db = get_db()
+        
+    fuzzy_pattern = build_fuzzy_search_regex(query)
+    search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
+    
     cursor = await db["organizations"].aggregate([
         {
             "$match": {
-                "name": {
-                    "$regex": query,
-                    "$options": "i"
-                },
+                "name": search_regex,
                 "is_deleted": {"$ne": True}
             }
         },

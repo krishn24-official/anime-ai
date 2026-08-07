@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import re
 from app.db.mongo import get_db
+from app.utils.search_utils import build_fuzzy_search_regex
 
 async def find_character_by_slug(slug: str):
     db = get_db()
@@ -41,7 +42,8 @@ async def list_characters_for_admin(
         query["is_deleted"] = False
         
     if search:
-        search_regex = {"$regex": re.compile(search, re.IGNORECASE)}
+        fuzzy_pattern = build_fuzzy_search_regex(search)
+        search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
         query["$or"] = [
             {"name": search_regex},
             {"native_name": search_regex}
