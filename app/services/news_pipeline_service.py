@@ -1,4 +1,5 @@
 import asyncio
+import gc
 import time
 import re
 import httpx
@@ -17,6 +18,10 @@ from app.services import trending_service
 
 
 LAST_24_HOURS = 24 * 60 * 60
+# Alias index is expensive to build (scans all collections). Cache it for 2 h.
+_ALIAS_INDEX_CACHE: list = []
+_ALIAS_INDEX_BUILT_AT: float = 0.0
+_ALIAS_INDEX_TTL: float = 2 * 60 * 60  # 2 hours
 
 SOURCES = [
     fetch_animecorner_news,
@@ -26,6 +31,22 @@ SOURCES = [
     fetch_boxoffice_news,
     fetch_youtube_news,
 ]
+
+
+async def _get_alias_index() -> list:
+    """Return a cached alias index, rebuilding only when the TTL has expired."""
+    global _ALIAS_INDEX_CACHE, _ALIAS_INDEX_BUILT_AT
+    now = time.monotonic()
+    if now - _ALIAS_INDEX_BUILT_AT < _ALIAS_INDEX_TTL and _ALIAS_INDEX_CACHE:
+        return _ALIAS_INDEX_CACHE
+    try:
+        _ALIAS_INDEX_CACHE = await title_matcher.build_alias_index()
+        _ALIAS_INDEX_BUILT_AT = now
+        print(f"[news_pipeline] alias index rebuilt ({len(_ALIAS_INDEX_CACHE)} entries)")
+    except Exception as e:
+        print(f"[news_pipeline] failed to build alias index: {e}")
+        # Keep the stale cache rather than returning empty
+    return _ALIAS_INDEX_CACHE
 
 
 async def fetch_full_article_content(url: str) -> str | None:
@@ -113,11 +134,7 @@ async def run_news_pipeline():
     raw_articles = await _fetch_all_sources()
     print(f"[news_pipeline] fetched {len(raw_articles)} raw articles")
 
-    try:
-        alias_index = await title_matcher.build_alias_index()
-    except Exception as e:
-        print(f"[news_pipeline] failed to build alias index: {e}")
-        alias_index = []
+    alias_index = await _get_alias_index()
 
     fresh_articles = [a for a in raw_articles if _is_fresh(a)]
     print(f"[news_pipeline] {len(fresh_articles)} fresh (last 24h)")
@@ -189,11 +206,12 @@ async def run_news_pipeline():
         "skipped_unmapped": skipped_unmapped,
     }
 
-    try:
-        trending_summary = await trending_service.recompute_news_trending()
-        summary.update(trending_summary)
-    except Exception as trend_err:
-        print(f"[news_pipeline] failed to recompute trending: {trend_err}")
+    # NOTE: recompute_news_trending is intentionally NOT called here.
+    # It runs on its own scheduler job (every 30 min) to avoid double execution.
 
     print("[news_pipeline] done:", summary)
+
+    # Explicitly release memory held by this run's article list.
+    gc.collect()
+
     return summary

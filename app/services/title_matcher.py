@@ -40,8 +40,13 @@ async def build_alias_index() -> list[tuple[str, str, str]]:
                 seen.add(tup)
                 aliases.append(tup)
 
-    # Anime
-    async for doc in db["anime"].find({}, {"_id": 1, "title": 1}):
+    # Anime — sorted by AniList rating desc so the most popular survive the cap.
+    async for doc in (
+        db["anime"]
+        .find({}, {"_id": 1, "title": 1})
+        .sort("rating.anilist", -1)
+        .limit(2000)
+    ):
         cid = str(doc["_id"])
         title = doc.get("title", {})
         if isinstance(title, dict):
@@ -52,18 +57,34 @@ async def build_alias_index() -> list[tuple[str, str, str]]:
         elif isinstance(title, str):
             add_alias(title, "anime", cid)
 
-    # Manga
-    async for doc in db["manga"].find({}, {"_id": 1, "name": 1}):
+    # Manga — no numeric score stored; insertion order already reflects
+    # AniList popularity ranking from the bulk fetch, so sort by _id asc.
+    async for doc in (
+        db["manga"]
+        .find({}, {"_id": 1, "name": 1})
+        .sort("_id", 1)
+        .limit(2000)
+    ):
         add_alias(doc.get("name", ""), "manga", str(doc["_id"]))
 
-    # Movies
-    async for doc in db["movies"].find({}, {"_id": 1, "title": 1, "original_title": 1}):
+    # Movies — sorted by IMDb rating desc.
+    async for doc in (
+        db["movies"]
+        .find({}, {"_id": 1, "title": 1, "original_title": 1})
+        .sort("rating.imdb", -1)
+        .limit(2000)
+    ):
         cid = str(doc["_id"])
         add_alias(doc.get("title", ""), "movie", cid)
         add_alias(doc.get("original_title", ""), "movie", cid)
 
-    # TV Series
-    async for doc in db["tv_series"].find({}, {"_id": 1, "title": 1, "original_title": 1}):
+    # TV Series — sorted by IMDb rating desc.
+    async for doc in (
+        db["tv_series"]
+        .find({}, {"_id": 1, "title": 1, "original_title": 1})
+        .sort("rating.imdb", -1)
+        .limit(2000)
+    ):
         cid = str(doc["_id"])
         add_alias(doc.get("title", ""), "tv_series", cid)
         add_alias(doc.get("original_title", ""), "tv_series", cid)

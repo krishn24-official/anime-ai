@@ -8,51 +8,50 @@ scheduler = AsyncIOScheduler()
 
 
 def start_news_scheduler():
-    # Run every 5 minutes. Categorization is fully source/channel-mapped,
-    # no AI calls involved.
+    # Run every 30 minutes — reduced from 3 min to cut memory pressure.
+    # Categorization is fully source/channel-mapped, no AI calls involved.
     scheduler.add_job(
         run_news_pipeline,
         "interval",
-        minutes=3,
+        minutes=30,
         id="news_pipeline",
     )
-    
-    # Run every 15 minutes to recompute search trending
+
+    # Run every 30 minutes to recompute search trending (aligned with pipeline).
     async def _search_trending_job():
         try:
             await recompute_search_trending(hours=3)
         except Exception as e:
             print(f"[scheduler] failed to recompute search trending: {e}")
-            
+
     scheduler.add_job(
         _search_trending_job,
         "interval",
-        minutes=15,
+        minutes=30,
         id="search_trending_recompute",
     )
-    
+
     async def _release_status_sync_job():
         try:
             res = await sync_all_release_statuses()
             print(f"[scheduler] Release status sync: {res}")
         except Exception as e:
             print(f"[scheduler] failed to sync release statuses: {e}")
-            
+
     scheduler.add_job(
         _release_status_sync_job,
         "interval",
         hours=24,
         id="release_status_sync",
     )
-    
-    # Run it once immediately on startup
-    import asyncio
-    asyncio.create_task(_release_status_sync_job())
-    
+
+    # NOTE: No startup create_task for release_status_sync — avoids a memory
+    # spike on every deploy. It will run on its first scheduled tick (24 h).
+
     scheduler.start()
-    print(" News pipeline scheduler started (every 5 min)")
-    print(" Search trending scheduler started (every 15 min)")
-    print(" Release status sync scheduled (every 24 hours)")
+    print("[scheduler] News pipeline started (every 30 min)")
+    print("[scheduler] Search trending started (every 30 min)")
+    print("[scheduler] Release status sync scheduled (every 24 h)")
 
 
 def stop_news_scheduler():
