@@ -3,6 +3,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.services.news_pipeline_service import run_news_pipeline
 from app.services.trending_service import recompute_search_trending
 from app.services.release_status_sync import sync_all_release_statuses
+from app.services.daily_discovery_service import run_daily_discovery
 
 scheduler = AsyncIOScheduler()
 
@@ -48,10 +49,24 @@ def start_news_scheduler():
     # NOTE: No startup create_task for release_status_sync — avoids a memory
     # spike on every deploy. It will run on its first scheduled tick (24 h).
 
+    async def _daily_discovery_job():
+        try:
+            await run_daily_discovery()
+        except Exception as e:
+            print(f"[scheduler] failed to run daily discovery sync: {e}")
+
+    scheduler.add_job(
+        _daily_discovery_job,
+        "interval",
+        hours=24,
+        id="daily_discovery_sync",
+    )
+
     scheduler.start()
     print("[scheduler] News pipeline started (every 30 min)")
     print("[scheduler] Search trending started (every 30 min)")
     print("[scheduler] Release status sync scheduled (every 24 h)")
+    print("[scheduler] Daily discovery sync scheduled (every 24 h)")
 
 
 def stop_news_scheduler():
