@@ -4,14 +4,11 @@ import httpx
 from app.db.mongo import (
     connect_db,
     close_db,
-    get_db
 )
 
-from app.backend.transformers.character_transformer import (
-    transform_character
-)
-from app.backend.transformers.voice_actor_transformer import (
-    transform_voice_actor
+from app.backend.ingestion.anime.anilist_resolvers import (
+    resolve_or_create_voice_actor,
+    resolve_or_create_character,
 )
 
 from app.backend.utils.slug import create_slug
@@ -91,9 +88,7 @@ query ($anime: String, $page: Int) {
 
 async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
-    db = get_db()
-    character_collection = db["characters"]
-    voice_actor_collection = db["voice_actors"]
+    # DB handles are obtained internally by the shared resolver functions.
 
     page = 1
 
@@ -163,66 +158,29 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
                 role
             )
 
-            # Process and save Voice Actors
+            # ── Resolve voice actors (id-based dedup via shared resolver) ──
             voice_actor_ids = []
             voice_actors_data = character_edge.get("voiceActors", [])
-            if voice_actors_data:
-                for va_data in voice_actors_data:
-                    va_name = va_data.get("name", {}).get("full")
-                    if not va_name:
-                        continue
-                    
-                    formatted_va = transform_voice_actor(va_data)
-                    voice_actor_ids.append(formatted_va["_id"])
-                    
-                    await voice_actor_collection.replace_one(
-                        {"_id": formatted_va["_id"]},
-                        formatted_va,
-                        upsert=True
-                    )
-                    print(f"   Saved Voice Actor: {formatted_va['name']}")
+            for va_data in voice_actors_data:
+                if not va_data.get("name", {}).get("full"):
+                    continue
+                va_id = await resolve_or_create_voice_actor(va_data)
+                if va_id:
+                    voice_actor_ids.append(va_id)
+                    print(f"   Voice Actor: {va_data['name']['full']}")
 
-            formatted_character["voice_actor_ids"] = list(set(
-                formatted_character.get("voice_actor_ids", []) + voice_actor_ids
-            ))
-
-            # CHECK EXISTING CHARACTER
-            existing_character = await character_collection.find_one(
-                {"_id": formatted_character["_id"]}
+            # ── Resolve character (anilist_id-based dedup via shared resolver) ──
+            # Primary lookup: source_metadata.anilist_id — prevents name collisions.
+            char_id = await resolve_or_create_character(
+                char_node=character,
+                anime_id=anime_db_id,
+                role=role,
+                voice_actor_ids=voice_actor_ids,
             )
 
-            if existing_character:
-
-                # MERGE ANIME IDS
-                existing_anime_ids = existing_character.get(
-                    "anime_ids",
-                    []
-                )
-
-                merged_anime_ids = list(
-                    set(
-                        existing_anime_ids +
-                        formatted_character["anime_ids"]
-                    )
-                )
-                formatted_character["anime_ids"] = merged_anime_ids
-
-                existing_va_ids = existing_character.get("voice_actor_ids", [])
-                formatted_character["voice_actor_ids"] = list(set(
-                    existing_va_ids + formatted_character["voice_actor_ids"]
-                ))
-
-            await character_collection.replace_one(
-                {"_id": formatted_character["_id"]},
-                formatted_character,
-                upsert=True
-            )
-
-            total_saved += 1
-
-            print(
-                f"✅ Saved: {formatted_character['name']}"
-            )
+            if char_id:
+                total_saved += 1
+                print(f"✅ Saved: {character['name']['full']} → {char_id}")
 
         has_next_page = (
             characters_data["pageInfo"]["hasNextPage"]

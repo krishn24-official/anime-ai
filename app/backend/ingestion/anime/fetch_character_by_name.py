@@ -7,11 +7,9 @@ from app.db.mongo import (
     get_db
 )
 
-from app.backend.transformers.character_transformer import (
-    transform_character
-)
-from app.backend.transformers.voice_actor_transformer import (
-    transform_voice_actor
+from app.backend.ingestion.anime.anilist_resolvers import (
+    resolve_or_create_voice_actor,
+    resolve_or_create_character,
 )
 from app.services.game_property_extractor import extract_game_properties
 
@@ -85,10 +83,6 @@ async def fetch_and_save(
                        warn but still save (don't silently save wrong character).
                        Set to False to skip the check entirely.
     """
-
-    db = get_db()
-    character_collection = db["characters"]
-    voice_actor_collection = db["voice_actors"]
 
     print(f"\n Fetching: {character_name}")
 
@@ -174,78 +168,61 @@ async def fetch_and_save(
     # Use first anime_id as primary, or empty string if none
     primary_anime_id = anime_ids[0] if anime_ids else ""
 
-    formatted_character = transform_character(
-        character,
-        primary_anime_id,
-        role
-    )
 
-    # Merge all anime_ids
-    formatted_character["anime_ids"] = list(set(
-        formatted_character.get("anime_ids", []) + anime_ids
-    ))
-
-    # Process and save Voice Actors
+    # ── Resolve voice actors (id-based dedup via shared resolver) ──
     voice_actor_ids = []
     voice_actors_data = character.get("voiceActors", [])
-    if voice_actors_data:
-        for va_data in voice_actors_data:
-            va_name = va_data.get("name", {}).get("full")
-            if not va_name:
-                continue
-            
-            formatted_va = transform_voice_actor(va_data)
-            voice_actor_ids.append(formatted_va["_id"])
-            
-            await voice_actor_collection.replace_one(
-                {"_id": formatted_va["_id"]},
-                formatted_va,
-                upsert=True
+    for va_data in voice_actors_data:
+        if not va_data.get("name", {}).get("full"):
+            continue
+        va_id = await resolve_or_create_voice_actor(va_data)
+        if va_id:
+            voice_actor_ids.append(va_id)
+            print(f"   Voice Actor: {va_data['name']['full']}")
+
+    # ── Resolve character (anilist_id-based dedup via shared resolver) ──
+    # Primary lookup: source_metadata.anilist_id — prevents name collisions.
+    # This is the fix that prevents the Kohaku-style collision bug.
+    # Derive the primary anime_id for transform_character (the first one from the media list).
+    char_id = await resolve_or_create_character(
+        char_node=character,
+        anime_id=primary_anime_id,
+        role=role,
+        voice_actor_ids=voice_actor_ids,
+    )
+
+    # If the character had additional anime_ids from its media edges beyond the primary,
+    # merge them in now (resolve_or_create_character only seeds with primary_anime_id).
+    if char_id and len(anime_ids) > 1:
+        db = get_db()
+        existing = await db["characters"].find_one({"_id": char_id})
+        if existing:
+            merged = list(set(existing.get("anime_ids", []) + anime_ids))
+            await db["characters"].update_one(
+                {"_id": char_id},
+                {"$set": {"anime_ids": merged}}
             )
-            print(f"   Saved Voice Actor: {formatted_va['name']}")
 
-    formatted_character["voice_actor_ids"] = list(set(
-        formatted_character.get("voice_actor_ids", []) + voice_actor_ids
-    ))
+    if not char_id:
+        print(f"  ❌ Failed to save character: {returned_name}")
+        return
 
-    # CHECK EXISTING CHARACTER — merge anime_ids if already exists
-    existing = await character_collection.find_one(
-        {"_id": formatted_character["_id"]}
-    )
+    print(f"  ✅ Saved: {char_id}")
 
-    if existing:
-        existing_anime_ids = existing.get("anime_ids", [])
-        formatted_character["anime_ids"] = list(set(
-            existing_anime_ids + formatted_character["anime_ids"]
-        ))
-        
-        existing_va_ids = existing.get("voice_actor_ids", [])
-        formatted_character["voice_actor_ids"] = list(set(
-            existing_va_ids + formatted_character["voice_actor_ids"]
-        ))
-        print(f"   Updating existing: {formatted_character['name']}")
-
-    await character_collection.replace_one(
-        {"_id": formatted_character["_id"]},
-        formatted_character,
-        upsert=True
-    )
-
-    print(f"  ✅ Saved: {formatted_character['_id']}")
-
-    # Auto-extract game properties if character has a description
-    description = formatted_character.get("description")
-    if description and not existing:
+    # Auto-extract game properties if character is new and has a description
+    db = get_db()
+    doc = await db["characters"].find_one({"_id": char_id})
+    if doc and doc.get("description") and not doc.get("game_properties"):
         print(f"  🎮 Extracting game properties...")
         game_properties = await extract_game_properties(
-            character_name=formatted_character["name"],
-            description=description,
-            gender=formatted_character.get("gender"),
-            anime_ids=formatted_character.get("anime_ids", []),
+            character_name=doc["name"],
+            description=doc["description"],
+            gender=doc.get("gender"),
+            anime_ids=doc.get("anime_ids", []),
         )
         if game_properties:
-            await character_collection.update_one(
-                {"_id": formatted_character["_id"]},
+            await db["characters"].update_one(
+                {"_id": char_id},
                 {"$set": {"game_properties": game_properties}}
             )
             print(f"  🎮 Properties: {game_properties}")

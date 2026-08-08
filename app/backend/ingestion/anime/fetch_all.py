@@ -15,10 +15,8 @@ import asyncio
 import sys
 import io
 import time
-import uuid
 from datetime import datetime, timezone
 import httpx
-from pymongo.errors import DuplicateKeyError
 
 # Fix Windows console encoding for emoji / CJK
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -27,8 +25,10 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="repla
 from app.db.mongo import connect_db, close_db, get_db
 from app.backend.transformers.anime_transformer import transform_anime
 from app.backend.transformers.manga_transformer import transform_manga
-from app.backend.transformers.character_transformer import transform_character
-from app.backend.transformers.voice_actor_transformer import transform_voice_actor
+from app.backend.ingestion.anime.anilist_resolvers import (
+    resolve_or_create_voice_actor,
+    resolve_or_create_character,
+)
 from app.backend.utils.slug import create_slug
 
 ANILIST_URL = "https://graphql.anilist.co"
@@ -328,50 +328,6 @@ async def anilist_request(
 
     return None
 
-async def resolve_or_create_voice_actor(va_data: dict) -> str | None:
-    if not va_data:
-        return None
-        
-    anilist_staff_id = va_data.get("id")
-    if not anilist_staff_id:
-        return None
-
-    db = get_db()
-    existing = await db["voice_actors"].find_one({"source_metadata.anilist.id": anilist_staff_id})
-    if existing:
-        return str(existing["_id"])
-
-    name = va_data.get("name", {}).get("full")
-    if not name:
-        return None
-
-    slug = create_slug(name)
-    if not slug:
-        slug = f"va-anilist-{anilist_staff_id}"
-
-    base_id = f"va_{slug}"
-    va_id = base_id
-    counter = 1
-
-    while True:
-        if not await db["voice_actors"].find_one({"_id": va_id}):
-            break
-        va_id = f"{base_id}_{counter}"
-        counter += 1
-
-    doc = transform_voice_actor(va_data)
-    doc["_id"] = va_id
-    
-    try:
-        await db["voice_actors"].insert_one(doc)
-    except DuplicateKeyError:
-        # Re-query if concurrent insert happened
-        existing = await db["voice_actors"].find_one({"source_metadata.anilist.id": anilist_staff_id})
-        if existing:
-            return str(existing["_id"])
-            
-    return va_id
-
 
 # ─────────────────────────────────────────────────
 # Processors
@@ -388,27 +344,29 @@ async def process_anime_node(item: dict) -> bool:
         for edge in characters_data:
             role = edge.get("role")
             char_node = edge.get("node")
-            
+
             if not char_node or not char_node.get("name", {}).get("full"):
                 continue
 
             try:
-                char_doc = transform_character(char_node, anime_id, role)
-                
-                # Get voice actor
+                # ── Resolve voice actor (id-based dedup) ───────────────────────────────
+                va_ids = []
                 voice_actors = edge.get("voiceActors", [])
                 if voice_actors:
                     va_id = await resolve_or_create_voice_actor(voice_actors[0])
                     if va_id:
-                        char_doc["voice_actor_id"] = va_id
-                        char_doc["voice_actor_ids"] = [va_id]
-                
-                existing = await db["characters"].find_one({"_id": char_doc["_id"]})
-                if existing:
-                    merged = list(set(existing.get("anime_ids", []) + char_doc.get("anime_ids", [])))
-                    char_doc["anime_ids"] = merged
-                    
-                await db["characters"].replace_one({"_id": char_doc["_id"]}, char_doc, upsert=True)
+                        va_ids = [va_id]
+
+                # ── Resolve character (anilist_id-based dedup) ───────────────────────
+                # Primary key: source_metadata.anilist_id  — prevents name collisions.
+                # Two characters with the same display name but different anilist ids
+                # will be stored as separate documents (e.g. two different ‘Kohaku’s).
+                await resolve_or_create_character(
+                    char_node=char_node,
+                    anime_id=anime_id,
+                    role=role,
+                    voice_actor_ids=va_ids,
+                )
             except Exception as e:
                 print(f"    [ERR CHAR] {char_node.get('name', {}).get('full', '?')}: {e}")
 

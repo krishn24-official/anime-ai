@@ -137,6 +137,11 @@ def transform_character(character, anime_id, role):
         "tags": [],
 
         "source_metadata": {
+            # Top-level authoritative key — used as the primary dedup identifier.
+            # Mirrors the pattern used for anime documents (source_metadata.anilist_id).
+            "anilist_id": character["id"],
+            "source": "anilist",
+            # Kept for backwards compatibility with existing code that reads the nested form.
             "anilist": {
                 "id": character["id"]
             }
