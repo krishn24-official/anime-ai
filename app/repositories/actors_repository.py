@@ -105,8 +105,12 @@ async def get_birthdays_by_date_range(start_date: str, end_date: str):
     date_criteria = []
     for i in range(days + 1):
         dt = start_dt + timedelta(days=i)
-        # Actor birthdate is stored as YYYY-MM-DD
+        # Actor birthdate is stored as YYYY-MM-DD from TMDB
         date_criteria.append({"birthdate": {"$regex": f"-{dt.month:02d}-{dt.day:02d}$"}})
+        
+        # Manually updated actors might have "Month D, YYYY" or "Month DD, YYYY"
+        month_name = dt.strftime("%B")
+        date_criteria.append({"birthdate": {"$regex": f"^{month_name} {dt.day},"}})
         
     if not date_criteria:
         return []
@@ -127,11 +131,26 @@ async def get_birthdays_by_date_range(start_date: str, end_date: str):
     # Format like characters (birth_month, birth_day) for compatibility with frontend schedule
     for actor in actors:
         actor["entity_type"] = "actor"
-        if actor.get("birthdate"):
-            parts = actor["birthdate"].split("-")
-            if len(parts) == 3:
-                actor["birth_month"] = int(parts[1])
-                actor["birth_day"] = int(parts[2])
+        bd = actor.get("birthdate")
+        if bd:
+            if "-" in bd:
+                parts = bd.split("-")
+                if len(parts) == 3:
+                    actor["birth_month"] = int(parts[1])
+                    actor["birth_day"] = int(parts[2])
+            else:
+                # Fallback for "Month D, YYYY"
+                try:
+                    # Strip out comma if present
+                    clean_bd = bd.replace(",", "")
+                    parts = clean_bd.split(" ")
+                    if len(parts) >= 2:
+                        from datetime import datetime
+                        dt_obj = datetime.strptime(parts[0], "%B")
+                        actor["birth_month"] = dt_obj.month
+                        actor["birth_day"] = int(parts[1])
+                except (ValueError, IndexError):
+                    pass
 
     return actors
 
