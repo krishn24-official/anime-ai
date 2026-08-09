@@ -145,7 +145,6 @@ async def get_birthdays_by_date_range(start_date: str, end_date: str):
                     clean_bd = bd.replace(",", "")
                     parts = clean_bd.split(" ")
                     if len(parts) >= 2:
-                        from datetime import datetime
                         dt_obj = datetime.strptime(parts[0], "%B")
                         actor["birth_month"] = dt_obj.month
                         actor["birth_day"] = int(parts[1])

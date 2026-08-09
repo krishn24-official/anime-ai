@@ -64,15 +64,20 @@ async def get_today_actor_birthdays():
     db = get_db()
     today = datetime.utcnow()
     
-    # Actors birthdate is "YYYY-MM-DD"
-    # We use a regex to match the month and day part at the end
+    # Standard TMDB format
     regex_pattern = f"-{today.month:02d}-{today.day:02d}$"
+    # Manual entry format
+    month_name = today.strftime("%B")
+    manual_regex_pattern = f"^{month_name} {today.day},"
 
     return await (
         db["actors"]
         .find(
             {
-                "birthdate": {"$regex": regex_pattern},
+                "$or": [
+                    {"birthdate": {"$regex": regex_pattern}},
+                    {"birthdate": {"$regex": manual_regex_pattern}}
+                ],
                 "is_deleted": False
             },
             {
