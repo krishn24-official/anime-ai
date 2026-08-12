@@ -77,11 +77,24 @@ def get_mapped_category(article: dict) -> str | None:
     return SOURCE_CATEGORY_MAP.get(source)
 
 
+def smart_truncate(text: str, max_length: int = 500) -> str:
+    if len(text) <= max_length:
+        return text
+    truncated = text[:max_length]
+    # cut at the last complete sentence if one exists within range
+    last_period = truncated.rfind('. ')
+    if last_period > max_length * 0.5:  # only use it if it's not too far back
+        return truncated[:last_period + 1]
+    # otherwise cut at the last whole word
+    last_space = truncated.rfind(' ')
+    return truncated[:last_space] + '...' if last_space > 0 else truncated + '...'
+
+
 def make_fallback_summary(article: dict) -> str:
     """Summary for source-mapped articles: RSS description, truncated."""
     description = (article.get("description") or "").strip()
 
     if description:
-        return description[:240]
+        return smart_truncate(description, 240)
 
-    return (article.get("title") or "")[:240]
+    return smart_truncate((article.get("title") or ""), 240)

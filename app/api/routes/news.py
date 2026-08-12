@@ -23,8 +23,20 @@ async def get_news(
     category: str | None = Query(None, description="Anime, Games, Movies, TV Series"),
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=50),
+    start_date: str | None = Query(None, description="Start date in ISO format or YYYY-MM-DD"),
+    end_date: str | None = Query(None, description="End date in ISO format or YYYY-MM-DD"),
+    search: str | None = Query(None, description="Search term for title and summary"),
+    source: str | None = Query(None, description="Exact match for source"),
 ):
-    return await fetch_news_by_category(category=category, page=page, limit=limit)
+    return await fetch_news_by_category(
+        category=category, 
+        page=page, 
+        limit=limit,
+        start_date=start_date,
+        end_date=end_date,
+        search=search,
+        source=source,
+    )
 
 
 @router.get("/{news_id}")

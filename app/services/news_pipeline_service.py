@@ -3,6 +3,7 @@ import gc
 import time
 import re
 import httpx
+import trafilatura
 
 from app.backend.ingestion.news.sources.animecorner import fetch_animecorner_news
 from app.backend.ingestion.news.sources.animenewsnetwork import fetch_ann_news
@@ -49,6 +50,16 @@ async def _get_alias_index() -> list:
     return _ALIAS_INDEX_CACHE
 
 
+JUNK_PATTERNS = [
+    r"get our breaking news alerts",
+    r"comments? on .+ are monitored",
+    r"send us a tip using our anon+ymous form",
+    r"get our latest stories.*in the feed",
+    r"is a part of penske media corporation",
+    r"all rights reserved\.?$",
+    r"document\.getElementById\(",  # catches any raw script leakage that slips through
+]
+
 async def fetch_full_article_content(url: str) -> str | None:
     """Fetch and extract the main text content of an article from its webpage."""
     if not url:
@@ -59,35 +70,24 @@ async def fetch_full_article_content(url: str) -> str | None:
             r = await client.get(url, headers=headers, follow_redirects=True)
             if r.status_code == 200:
                 html = r.text
-                paragraphs = re.findall(r"<p[^>]*>(.*?)</p>", html, re.DOTALL)
-                text_list = []
-                for p in paragraphs:
-                    p_clean = re.sub(r"<[^>]+>", "", p).strip()
-                    # Decode HTML entities
-                    p_clean = (p_clean
-                               .replace("&nbsp;", " ")
-                               .replace("&amp;", "&")
-                               .replace("&lt;", "<")
-                               .replace("&gt;", ">")
-                               .replace("&#8217;", "'")
-                               .replace("&#8216;", "'")
-                               .replace("&#8220;", '"')
-                               .replace("&#8221;", '"')
-                               .replace("&#8212;", "—")
-                               .replace("&mdash;", "—")
-                               .replace("&ndash;", "–")
-                               .replace("&#038;", "&")
-                               .replace("&#39;", "'"))
-                    
-                    # Filter out scripts, ads, menus, and very short lines
-                    if "{" in p_clean or "}" in p_clean or "function" in p_clean or "gpt-" in p_clean or "pmcCnx" in p_clean or "blogherads" in p_clean:
-                        continue
-                        
-                    if len(p_clean) > 50 and not any(kw in p_clean.lower() for kw in ["cookie", "subscribe", "newsletter", "follow us", "privacy policy", "terms of service"]):
-                        text_list.append(p_clean)
+                result = trafilatura.extract(
+                    html,
+                    include_comments=False,
+                    include_tables=False,
+                    no_fallback=False,
+                )
                 
-                # Combine paragraphs
-                full_text = "\n\n".join(text_list[:12])
+                if not result:
+                    return None
+                    
+                # Secondary safety net: strip known junk patterns even after extraction
+                clean_lines = []
+                for line in result.split("\n"):
+                    if any(re.search(pattern, line, re.IGNORECASE) for pattern in JUNK_PATTERNS):
+                        continue
+                    clean_lines.append(line)
+                    
+                full_text = "\n\n".join(clean_lines)
                 return full_text if full_text.strip() else None
     except Exception as e:
         print(f"[news_pipeline] Failed to fetch full article content for {url}: {e}")

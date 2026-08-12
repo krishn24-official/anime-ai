@@ -33,8 +33,24 @@ async def fetch_latest_news(limit: int = 5):
     return [_serialize(a) for a in articles]
 
 
-async def fetch_news_by_category(category: str = None, page: int = 1, limit: int = 10):
-    items, total = await get_news_by_category(category=category, page=page, limit=limit)
+async def fetch_news_by_category(
+    category: str = None, 
+    page: int = 1, 
+    limit: int = 10,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    search: str | None = None,
+    source: str | None = None,
+):
+    items, total = await get_news_by_category(
+        category=category, 
+        page=page, 
+        limit=limit,
+        start_date=start_date,
+        end_date=end_date,
+        search=search,
+        source=source,
+    )
 
     return {
         "items": [_serialize(a) for a in items],
