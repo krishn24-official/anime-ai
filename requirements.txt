@@ -56,3 +56,4 @@ uritemplate
 urllib3
 uvicorn
 websockets
+trafilatura
