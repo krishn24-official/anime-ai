@@ -198,5 +198,5 @@ async def fetch_youtube_news():
             except Exception as e:
                 print("YouTube RSS error:", name, e)
 
-    print("📺 YouTube:", len(articles))
+    print("[YouTube]:", len(articles))
     return articles

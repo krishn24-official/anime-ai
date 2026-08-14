@@ -17,6 +17,7 @@ def _serialize(article: dict) -> dict:
 
     return {
         "id": str(article.get("_id")),
+        "_id": str(article.get("_id")),
         "title": article.get("title"),
         "url": article.get("url"),
         "source": article.get("source"),

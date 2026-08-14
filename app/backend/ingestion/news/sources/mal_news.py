@@ -33,6 +33,6 @@ async def fetch_mal_news():
     except Exception as e:
         print("MAL RSS error:", e)
 
-    print("📊 MAL News:", len(articles))
+    print("[MAL News]:", len(articles))
 
     return articles

@@ -44,5 +44,5 @@ async def fetch_ann_news():
                 "image_url": image_url
             })
 
-    print("📰 ANN:", len(articles))
+    print("[ANN]:", len(articles))
     return articles

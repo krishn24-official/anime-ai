@@ -43,5 +43,5 @@ async def fetch_animecorner_news():
             "image_url": image_url
         })
 
-    print("📰 AnimeCorner:", len(articles))
+    print("[AnimeCorner]:", len(articles))
     return articles

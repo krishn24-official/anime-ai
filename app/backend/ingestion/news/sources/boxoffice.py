@@ -33,6 +33,6 @@ async def fetch_boxoffice_news():
     except Exception as e:
         print("BoxOffice/Deadline error:", e)
 
-    print("💰 Box Office:", len(articles))
+    print("[Box Office]:", len(articles))
 
     return articles
