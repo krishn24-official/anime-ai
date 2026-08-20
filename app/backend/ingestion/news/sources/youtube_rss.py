@@ -153,7 +153,7 @@ async def fetch_youtube_news():
     articles = []
     last_24_hours = 24 * 60 * 60
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         for name, channel_id in CHANNELS.items():
 
             url = f"https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"

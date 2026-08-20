@@ -11,7 +11,7 @@ async def fetch_boxoffice_news():
     articles = []
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(BOXOFFICE_RSS, follow_redirects=True)
             feed = feedparser.parse(response.content)
 

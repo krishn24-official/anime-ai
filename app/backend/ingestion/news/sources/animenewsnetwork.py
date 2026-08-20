@@ -15,9 +15,12 @@ def clean_description(text: str) -> str:
 async def fetch_ann_news():
 
     url = "https://www.animenewsnetwork.com/all/rss.xml"
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, follow_redirects=True)
-        feed = feedparser.parse(response.content)
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url, follow_redirects=True)
+            feed = feedparser.parse(response.content)
+    except Exception:
+        return []
 
     articles = []
     last_24_hours = 24 * 60 * 60

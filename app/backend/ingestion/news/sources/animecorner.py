@@ -14,7 +14,7 @@ def clean_description(text: str) -> str:
 async def fetch_animecorner_news():
 
     url = "https://animecorner.me/feed/"
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.get(url, follow_redirects=True)
         feed = feedparser.parse(response.content)
 
