@@ -9,6 +9,13 @@ SOURCE_CATEGORY_MAP = {
     "myanimelist": "Anime",
 
     "boxoffice": "Movies",
+    "pinkvilla": "Movies",
+    "filmfare": "Movies",
+    "bollywood_hungama": "Movies",
+    "koimoi": "Movies",
+    "variety": "Movies",
+    "thr": "Movies",
+    "slashfilm": "Movies",
 }
 
 # YouTube channel name -> category. Channels not listed here are

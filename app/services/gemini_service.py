@@ -236,3 +236,41 @@ async def categorize_and_summarize_news(title: str, description: str = ""):
     except Exception as e:
         print(f"[gemini_service] news categorize error: {e}")
         return None
+
+
+LISTICLE_SYSTEM_PROMPT = (
+    "You are a news editor for an entertainment app. "
+    "You are given the title of a listicle and a list of items extracted from it. "
+    "Write a short, engaging introductory paragraph, followed by the complete list of items formatted as a webpage article body. "
+    "DO NOT truncate or skip any items from the provided list. Use markdown formatting (e.g., headings or bold for list items)."
+)
+
+
+async def generate_listicle_article_body(title: str, list_items: list[str], full_content: str = "") -> str:
+    """
+    Intro paragraph + the full ordered list of items,
+    formatted for a webpage article body.
+    """
+    if not GEMINI_API_KEY or not _can_call_gemini_news() or not _client:
+        return ""
+
+    prompt = f"TITLE: {title}\n\nEXTRACTED ITEMS:\n"
+    for idx, item in enumerate(list_items, 1):
+        prompt += f"{idx}. {item}\n"
+        
+    if full_content:
+        # Pass a truncated version of the full content for context
+        prompt += f"\n\nPAGE CONTEXT (TRUNCATED):\n{full_content[:2000]}"
+
+    try:
+        response = await _client.aio.models.generate_content(
+            model=GEMINI_MODEL_NAME,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=LISTICLE_SYSTEM_PROMPT,
+            )
+        )
+        return response.text.strip()
+    except Exception as e:
+        print(f"[gemini_service] listicle body generate error: {e}")
+        return ""

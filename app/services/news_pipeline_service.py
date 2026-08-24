@@ -11,7 +11,13 @@ from app.backend.ingestion.news.sources.crunchyroll import fetch_crunchyroll_new
 from app.backend.ingestion.news.sources.mal_news import fetch_mal_news
 from app.backend.ingestion.news.sources.boxoffice import fetch_boxoffice_news
 from app.backend.ingestion.news.sources.youtube_rss import fetch_youtube_news
-
+from app.backend.ingestion.news.sources.pinkvilla import fetch_pinkvilla_news
+from app.backend.ingestion.news.sources.filmfare import fetch_filmfare_news
+from app.backend.ingestion.news.sources.bollywood_hungama import fetch_bollywood_hungama_news
+from app.backend.ingestion.news.sources.koimoi import fetch_koimoi_news
+from app.backend.ingestion.news.sources.variety import fetch_variety_news
+from app.backend.ingestion.news.sources.thr import fetch_thr_news
+from app.backend.ingestion.news.sources.slashfilm import fetch_slashfilm_news
 from app.services.news_category_mapping import get_mapped_category, make_fallback_summary
 from app.repositories.news_repository import article_exists, insert_article
 from app.services import title_matcher
@@ -31,6 +37,13 @@ SOURCES = [
     fetch_mal_news,
     fetch_boxoffice_news,
     fetch_youtube_news,
+    fetch_pinkvilla_news,
+    fetch_filmfare_news,
+    fetch_bollywood_hungama_news,
+    fetch_koimoi_news,
+    fetch_variety_news,
+    fetch_thr_news,
+    fetch_slashfilm_news,
 ]
 
 
@@ -60,10 +73,29 @@ JUNK_PATTERNS = [
     r"document\.getElementById\(",  # catches any raw script leakage that slips through
 ]
 
-async def fetch_full_article_content(url: str) -> str | None:
+def is_listicle(title: str) -> bool:
+    if not title:
+        return False
+    # Matches "Top 10", "15 Best", "7 Things", etc.
+    return bool(re.search(r'\b(?:top\s)?\d+\s(?:best|worst|things|reasons|times|moments|movies|shows|anime|games|characters)\b|^\d+\s', title, re.IGNORECASE))
+
+def extract_list_items(html_content: str) -> list[str]:
+    items = []
+    if not html_content:
+        return items
+    # Extracting text from h2 and h3 tags
+    headings = re.findall(r'<h[23][^>]*>(.*?)</h[23]>', html_content, re.IGNORECASE | re.DOTALL)
+    for h in headings:
+        # strip tags inside heading
+        clean_text = re.sub(r'<[^>]+>', '', h).strip()
+        if clean_text and len(clean_text) > 3:
+            items.append(clean_text)
+    return items
+
+async def fetch_full_article_content(url: str) -> tuple[str | None, str | None]:
     """Fetch and extract the main text content of an article from its webpage."""
     if not url:
-        return None
+        return None, None
     try:
         async with httpx.AsyncClient(timeout=6.0) as client:
             headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
@@ -78,7 +110,7 @@ async def fetch_full_article_content(url: str) -> str | None:
                 )
                 
                 if not result:
-                    return None
+                    return None, html
                     
                 # Secondary safety net: strip known junk patterns even after extraction
                 clean_lines = []
@@ -88,10 +120,10 @@ async def fetch_full_article_content(url: str) -> str | None:
                     clean_lines.append(line)
                     
                 full_text = "\n\n".join(clean_lines)
-                return full_text if full_text.strip() else None
+                return (full_text if full_text.strip() else None), html
     except Exception as e:
         print(f"[news_pipeline] Failed to fetch full article content for {url}: {e}")
-    return None
+    return None, None
 
 
 async def _fetch_all_sources():
@@ -166,8 +198,17 @@ async def run_news_pipeline():
 
         # If it's a website article, fetch full content
         if article.get("source") != "youtube":
-            full_content = await fetch_full_article_content(url)
+            full_content, raw_html = await fetch_full_article_content(url)
             if full_content:
+                # Check for listicle before proceeding
+                if is_listicle(title) and raw_html:
+                    list_items = extract_list_items(raw_html)
+                    if list_items:
+                        from app.services.gemini_service import generate_listicle_article_body
+                        listicle_body = await generate_listicle_article_body(title, list_items, full_content)
+                        if listicle_body:
+                            full_content = listicle_body
+
                 article["description"] = full_content
 
         article["category"] = mapped_category

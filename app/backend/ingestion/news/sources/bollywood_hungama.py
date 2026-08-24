@@ -1,0 +1,37 @@
+import feedparser
+import httpx
+
+from app.services.news_date_utils import parse_published_entry, extract_image_url
+
+BOLLYWOOD_HUNGAMA_RSS = "https://www.bollywoodhungama.com/rss/news.xml"
+
+
+async def fetch_bollywood_hungama_news():
+    articles = []
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(BOLLYWOOD_HUNGAMA_RSS, follow_redirects=True)
+            feed = feedparser.parse(response.content)
+
+        for entry in feed.entries:
+            published_at = parse_published_entry(entry)
+            if not published_at:
+                continue
+
+            image_url = extract_image_url(entry)
+
+            articles.append({
+                "title": entry.title,
+                "url": entry.link,
+                "source": "bollywood_hungama",
+                "published_at": published_at,
+                "image_url": image_url
+            })
+
+    except Exception as e:
+        print("Bollywood Hungama error:", e)
+
+    print("[Bollywood Hungama]:", len(articles))
+
+    return articles

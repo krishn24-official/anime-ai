@@ -65,7 +65,7 @@ def mock_news_sources():
 async def test_run_news_pipeline(mock_news_sources):
     # Mock web fetch for full article content to avoid network calls
     with patch("app.services.news_pipeline_service.fetch_full_article_content", new_callable=AsyncMock) as mock_content:
-        mock_content.return_value = "Full fetched page content details."
+        mock_content.return_value = ("Full fetched page content details.", "<html><h2>Item 1</h2></html>")
         
         summary = await run_news_pipeline()
         
@@ -91,7 +91,7 @@ async def test_run_news_pipeline(mock_news_sources):
 
 async def test_news_apis(client, mock_news_sources):
     with patch("app.services.news_pipeline_service.fetch_full_article_content", new_callable=AsyncMock) as mock_content:
-        mock_content.return_value = "Short summary content."
+        mock_content.return_value = ("Short summary content.", "<html><h2>Item 1</h2></html>")
         await run_news_pipeline()
 
     # Get Latest news
