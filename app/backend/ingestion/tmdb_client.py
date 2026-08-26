@@ -125,6 +125,19 @@ async def discover_tv(page: int = 1, sort_by: str = "popularity.desc", **filters
     return await _get("/discover/tv", params) or {"results": [], "total_pages": 0, "total_results": 0}
 
 
+# --- Changes ---
+
+async def get_movie_changes(start_date: str, end_date: str, page: int = 1) -> dict:
+    """Fetch movie IDs that changed in the given date window. Dates in YYYY-MM-DD."""
+    params = {"start_date": start_date, "end_date": end_date, "page": page}
+    return await _get("/movie/changes", params) or {"results": [], "total_pages": 0, "total_results": 0}
+
+async def get_tv_changes(start_date: str, end_date: str, page: int = 1) -> dict:
+    """Fetch TV series IDs that changed in the given date window. Dates in YYYY-MM-DD."""
+    params = {"start_date": start_date, "end_date": end_date, "page": page}
+    return await _get("/tv/changes", params) or {"results": [], "total_pages": 0, "total_results": 0}
+
+
 # --- Details ---
 
 async def get_movie_details(tmdb_id: int) -> dict | None:
