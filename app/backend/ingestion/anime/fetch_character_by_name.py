@@ -35,7 +35,7 @@ query ($id: Int, $name: String) {
       day
       month
     }
-    media(sort: POPULARITY_DESC, perPage: 5) {
+    media(sort: POPULARITY_DESC, perPage: 5, isAdult: false) {
       edges {
         node {
           id

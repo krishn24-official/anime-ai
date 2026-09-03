@@ -3,13 +3,17 @@ import os
 import threading
 from datetime import date
 
-from google import genai
-from google.genai import types
-
 from app.config import GEMINI_API_KEY, GEMINI_MODEL_NAME
 
-
-_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+try:
+    from google import genai
+    from google.genai import types
+    _client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+except Exception as _e:
+    print(f"[gemini_service] Warning: Failed to initialize genai: {_e}")
+    genai = None
+    types = None
+    _client = None
 
 # Hard cap on Gemini calls per day for the chat bot.
 # Tune via GEMINI_DAILY_LIMIT if you upgrade.

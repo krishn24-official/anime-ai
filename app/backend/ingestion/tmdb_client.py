@@ -63,6 +63,8 @@ async def _get(path: str, params: dict | None = None) -> dict | None:
 
     request_params = dict(params or {})
     request_params["api_key"] = TMDB_API_KEY
+    if "include_adult" not in request_params:
+        request_params["include_adult"] = "false"
 
     client = await get_client()
 

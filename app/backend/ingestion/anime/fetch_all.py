@@ -46,7 +46,7 @@ query ($page: Int, $perPage: Int) {
       lastPage
       hasNextPage
     }
-    media(type: ANIME, sort: POPULARITY_DESC) {
+    media(type: ANIME, sort: POPULARITY_DESC, isAdult: false) {
       id
       title {
         english
@@ -135,7 +135,7 @@ query ($page: Int, $perPage: Int) {
       lastPage
       hasNextPage
     }
-    media(type: MANGA, sort: POPULARITY_DESC) {
+    media(type: MANGA, sort: POPULARITY_DESC, isAdult: false) {
       id
       title {
         romaji
@@ -178,7 +178,7 @@ query ($page: Int, $perPage: Int) {
 
 BACKFILL_ANIME_QUERY = """
 query ($id: Int) {
-  Media(id: $id, type: ANIME) {
+  Media(id: $id, type: ANIME, isAdult: false) {
     id
     startDate {
       year

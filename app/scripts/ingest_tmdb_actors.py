@@ -36,6 +36,10 @@ async def process_actor(client: httpx.AsyncClient, person_id: int, db):
         print(f"Failed to fetch ID {person_id} from TMDB.")
         return
 
+    if person_data.get("adult"):
+        print(f"Skipping ID {person_id}: Adult content.")
+        return
+
     name = person_data.get("name")
     if not name:
         return

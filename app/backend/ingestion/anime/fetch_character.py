@@ -20,7 +20,7 @@ ANILIST_URL = "https://graphql.anilist.co"
 query = """
 query ($anime: String, $page: Int) {
 
-  Media(search: $anime, type: ANIME) {
+  Media(search: $anime, type: ANIME, isAdult: false) {
 
     title {
       english

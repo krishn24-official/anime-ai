@@ -155,6 +155,7 @@ def map_movie(details: dict, max_cast: int = 10) -> dict:
             "imdb_id": details.get("imdb_id"),
         },
 
+        "is_adult": details.get("adult", False),
         "is_deleted": False,
         "deleted_at": None,
     }
@@ -216,6 +217,7 @@ def map_tv_series(details: dict, max_cast: int = 10) -> dict:
             "tmdb_id": tmdb_id,
         },
 
+        "is_adult": details.get("adult", False),
         "is_deleted": False,
         "deleted_at": None,
     }

@@ -24,7 +24,7 @@ from app.services import title_matcher
 from app.services import trending_service
 
 
-LAST_24_HOURS = 24 * 60 * 60
+LAST_72_HOURS = 72 * 60 * 60
 # Alias index is expensive to build (scans all collections). Cache it for 2 h.
 _ALIAS_INDEX_CACHE: list = []
 _ALIAS_INDEX_BUILT_AT: float = 0.0
@@ -145,7 +145,7 @@ def _is_fresh(article: dict) -> bool:
         return False
 
     try:
-        return (time.time() - published_at.timestamp()) <= LAST_24_HOURS
+        return (time.time() - published_at.timestamp()) <= LAST_72_HOURS
     except Exception:
         return False
 
@@ -169,7 +169,7 @@ async def run_news_pipeline():
     alias_index = await _get_alias_index()
 
     fresh_articles = [a for a in raw_articles if _is_fresh(a)]
-    print(f"[news_pipeline] {len(fresh_articles)} fresh (last 24h)")
+    print(f"[news_pipeline] {len(fresh_articles)} fresh (last 72h)")
 
     saved = 0
     skipped_duplicate = 0

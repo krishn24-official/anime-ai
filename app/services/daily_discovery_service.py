@@ -39,7 +39,7 @@ query ($page: Int, $perPage: Int, $season: MediaSeason, $seasonYear: Int) {
     pageInfo {
       hasNextPage
     }
-    media(type: ANIME, sort: ID_DESC, season: $season, seasonYear: $seasonYear) {
+    media(type: ANIME, sort: ID_DESC, season: $season, seasonYear: $seasonYear, isAdult: false) {
       id
       title {
         english

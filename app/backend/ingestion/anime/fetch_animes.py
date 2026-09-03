@@ -20,7 +20,8 @@ query ($anime: String) {
 
   Media(
     search: $anime,
-    type: ANIME
+    type: ANIME,
+    isAdult: false
   ) {
 
     id
