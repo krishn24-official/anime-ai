@@ -337,9 +337,12 @@ python -m app.scripts.seed_data
 
 ### Question 3: "How does the platform handle adult/NSFW content during ingestion?"
 > **Answer**: "Adult filtering is enforced at the network ingestion boundary rather than post-storage:
-> 1. In AniList queries (`fetch_all.py`), we request `isAdult: false` directly in the GraphQL query parameters.
-> 2. At the parser level, we inspect `genres` and immediately discard items containing `'Hentai'`.
-> 3. In TMDb synchronization (`tmdb_client.py`), we explicitly inject `include_adult=false` into every HTTP request query parameter."
+> 1. **Anime & Manga (AniList)**: We specify `isAdult: false` directly in the GraphQL query parameters. At the ingestion parser level (`fetch_all.py`, `fetch_animes.py`, `fetch_manga.py`), we inspect the `genres` array and reject any item containing `"Hentai"`.
+> 2. **Movies & TV Series (TMDb)**: 
+>    - At the API client boundary (`tmdb_client.py`), we inject `include_adult="false"` into every outbound HTTP request parameter.
+>    - At the synchronization and discovery layers (`tmdb_sync_service.py` and `daily_discovery_service.py`), we explicitly verify `if details.get("adult") is True:` and skip processing adult movies or TV series.
+>    - In `tmdb_mapper.py`, we map `"is_adult": details.get("adult", False)`, and the repository queries (`home_repository.py`) filter with `{"is_adult": {"$ne": True}}` to prevent adult media from surfacing.
+> 3. **Actors & Cast**: `ingest_tmdb_actors.py` checks `if person_data.get("adult"):` to exclude adult performers from being ingested."
 
 ---
 
