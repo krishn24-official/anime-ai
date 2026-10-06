@@ -35,6 +35,10 @@ async def process_movie(client: httpx.AsyncClient, movie_id: int, db):
         print(f"Failed to fetch ID {movie_id} from TMDB.")
         return
 
+    if movie_data.get("adult") is True:
+        print(f"Skipping ID {movie_id}: Adult movie.")
+        return
+
     title = movie_data.get("title")
     if not title:
         return
