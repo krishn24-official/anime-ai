@@ -11,7 +11,17 @@ from app.db.mongo import get_db
 MIN_ALIAS_LENGTH = 4
 IGNORED_ALIASES = {
     "that", "this", "time", "when", "some", "what", "where", "your", "with",
-    "will", "have", "they", "from", "more", "about"
+    "will", "have", "they", "from", "more", "about", "after", "together",
+    "days", "another", "home", "house", "cross", "strong", "city", "life",
+    "love", "live", "dead", "best", "good", "last", "next", "back", "down",
+    "look", "come", "make", "know", "take", "film", "show", "game", "play",
+    "star", "fire", "hero", "king", "dark", "free", "real", "true", "full",
+    "high", "open", "stop", "walk", "fall", "drop", "lost", "fast", "hard",
+    "late", "once", "soon", "here", "away", "over", "into", "then", "also",
+    "even", "only", "very", "just", "much", "well", "such", "each", "both",
+    "most", "many", "same", "like", "than", "them", "their", "there", "could",
+    "would", "should", "battleship", "friends", "trying", "judge", "beast",
+    "order", "water", "brother", "brothers", "producer"
 }
 
 def normalize_alias(text: str) -> str:

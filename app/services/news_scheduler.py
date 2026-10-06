@@ -3,7 +3,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.events import EVENT_JOB_ERROR
 
 from app.services.news_pipeline_service import run_news_pipeline
-from app.services.trending_service import recompute_search_trending
+from app.services.trending_service import recompute_search_trending, recompute_news_trending
 from app.services.release_status_sync import sync_all_release_statuses
 from app.services.daily_discovery_service import run_daily_discovery
 
@@ -38,6 +38,22 @@ def start_news_scheduler():
         "interval",
         minutes=30,
         id="search_trending_recompute",
+    )
+
+    # Run every 30 minutes to recompute news mention trending from RSS article scans
+    async def _news_trending_job():
+        try:
+            res = await recompute_news_trending(hours=48)
+            print(f"[scheduler] News trending recompute: {res}")
+        except Exception as e:
+            print(f"[scheduler] failed to recompute news trending: {e}")
+
+    scheduler.add_job(
+        _news_trending_job,
+        "interval",
+        minutes=30,
+        next_run_time=datetime.now() + timedelta(seconds=20),
+        id="news_trending_recompute",
     )
 
     async def _release_status_sync_job():
