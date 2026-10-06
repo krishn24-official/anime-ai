@@ -273,6 +273,33 @@ async def tool_get_organization_info(name: str) -> str:
     return json.dumps(details, default=_serialize)
 
 
+async def tool_query_lore(
+    query: str,
+    series_id: str,
+    media_type: str | None = None,
+    character_ids: list[str] | None = None,
+) -> str:
+    """
+    Executes a vector search query against lore chunks and returns
+    formatted markdown context.
+    """
+    from app.services import lore_service
+
+    try:
+        results = await lore_service.query_lore(
+            query=query,
+            series_id=series_id,
+            media_type=media_type,
+            character_ids=character_ids,
+        )
+        if not results:
+            return f"No relevant lore found for '{query}' in series '{series_id}'."
+
+        return lore_service.format_lore_context(results)
+    except Exception as e:
+        return f"Error querying lore: {e}"
+
+
 # --- Tool dispatcher ---
 TOOL_REGISTRY = {
     "get_today_birthdays": tool_get_today_birthdays,
@@ -283,6 +310,7 @@ TOOL_REGISTRY = {
     "get_character_info": tool_get_character_info,
     "get_content_trends": tool_get_content_trends,
     "get_organization_info": tool_get_organization_info,
+    "query_lore": tool_query_lore,
 }
 
 
@@ -295,4 +323,4 @@ async def execute_tool(tool_name: str, tool_args: dict) -> str:
     try:
         return await fn(**tool_args)
     except Exception as e:
-        return f"Tool '{tool_name}' error: {e}"
+        return f"Tool '{tool_name}' error: {e}"

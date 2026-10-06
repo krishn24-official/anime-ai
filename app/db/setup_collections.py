@@ -21,6 +21,7 @@ COLLECTIONS = [
     "trending",
     "search_logs",
     "actors",
+    "lore_chunks",
 ]
 
 async def create_collections():

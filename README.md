@@ -237,6 +237,12 @@ pytest -v
 | `REFRESH_TOKEN_EXPIRE_DAYS` | No | `30` | Refresh token expiration duration (days) |
 | `GMAIL_SENDER` | Optional | — | Sender email address for OTP verification emails |
 | `GMAIL_APP_PASSWORD` | Optional | — | Gmail 16-character App Password |
+| `LORE_CHUNK_SIZE` | No | `800` | Chunk size for RAG lore document chunking |
+| `LORE_CHUNK_OVERLAP` | No | `100` | Overlap size between adjacent text chunks |
+| `LORE_EMBEDDING_MODEL` | No | `all-MiniLM-L6-v2` | Embedding model for vectorizing lore text |
+| `LORE_TOP_K` | No | `5` | Top-K closest documents retrieved in vector search |
+| `LORE_VECTOR_INDEX_NAME` | No | `lore_vector_index` | MongoDB Atlas Vector Search index name |
+
 
 ---
 

@@ -57,3 +57,5 @@ urllib3
 uvicorn
 websockets
 trafilatura
+sentence-transformers
+pypdf

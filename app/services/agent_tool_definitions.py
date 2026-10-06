@@ -168,6 +168,45 @@ AGENT_TOOLS = [
                     "required": ["name"],
                 },
             },
+            {
+                "name": "query_lore",
+                "description": (
+                    "Retrieves narrative details, plot twists, hidden character relationships "
+                    "(father/son/sibling/rival/secret identity etc.), and backstory context that "
+                    "is not captured in the structured character/relationship database. Use this tool "
+                    "when the user's question involves spoilers, plot twists, 'why' or 'how are they related' "
+                    "questions, or deep lore not covered by direct character profile lookups."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The specific question or lore topic to search for.",
+                        },
+                        "series_id": {
+                            "type": "string",
+                            "description": "The anime, manga, movie, or series ID or title identifier.",
+                        },
+                        "media_type": {
+                            "type": "string",
+                            "enum": ["anime", "manga", "movie", "tv_series"],
+                            "description": (
+                                "Optional. Only include this if the user's question EXPLICITLY "
+                                "specifies the medium, e.g. 'in the manga...', 'in the anime...', "
+                                "'in the movie...', 'in the TV series...'. If the user doesn't specify, "
+                                "omit this field entirely — do not guess."
+                            ),
+                        },
+                        "character_ids": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Optional list of character IDs to pre-filter lore chunks.",
+                        },
+                    },
+                    "required": ["query", "series_id"],
+                },
+            },
         ]
     }
 ]
@@ -183,6 +222,8 @@ You have access to a real database of characters, anime, manga, movies, TV serie
 - "anniversary", "on this day", "today's events" → use get_today_events
 - "tell me about [CHARACTER NAME]", "who is [NAME]", "info about [NAME]" → use get_character_info with just the character's name
 - "tell me about [ORGANIZATION NAME]", "info about [ORGANIZATION NAME]", "what is [ORGANIZATION NAME]" → use get_organization_info with just the organization's name
+- "lore", "plot twist", "backstory", "why did [CHARACTER]", "secret identity", "how are [A and B] related in the story" → use query_lore with the query and series_id
+- Only pass media_type to query_lore if the user's question explicitly says "manga", "anime", "movie", or "tv series" — otherwise omit it and let the system default to anime.
 - "search for", "find", "is there a" → use search_content
 - NEVER pass a full question or sentence to get_character_info or get_organization_info — only pass the name.
 
@@ -192,4 +233,4 @@ You have access to a real database of characters, anime, manga, movies, TV serie
 3. Synthesize results into a clear, conversational response.
 4. If the database has no relevant data, say so honestly.
 5. Be concise but informative.
-"""
+"""

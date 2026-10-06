@@ -265,8 +265,29 @@ async def find_actor_candidates(name: str, limit: int = 5) -> list:
         return []
 
     results = []
-    for full_name in list(matched_full_names)[:limit]:
-        char = await db["actors"].find_one({"name": full_name, "is_deleted": False})
-        if char:
-            results.append(char)
-    return results
+    query_tokens = set(clean_for_fuzzy.split())
+    is_multi_word_query = len(query_tokens) >= 2
+
+    for full_name in matched_full_names:
+        cand_lower = full_name.lower()
+        cand_tokens = set(re.sub(r"[^\w\s]", "", cand_lower).split())
+        ratio = difflib.SequenceMatcher(None, clean_for_fuzzy, cand_lower).ratio()
+
+        if is_multi_word_query:
+            overlap = len(query_tokens.intersection(cand_tokens)) / max(len(query_tokens), len(cand_tokens))
+            if len(cand_tokens) == 1:
+                if ratio < 0.75:
+                    continue
+            else:
+                if ratio < 0.65 and overlap < 0.50:
+                    continue
+        else:
+            if ratio < 0.60:
+                continue
+
+        actor = await db["actors"].find_one({"name": full_name, "is_deleted": False})
+        if actor:
+            results.append((ratio, actor))
+
+    results.sort(key=lambda x: x[0], reverse=True)
+    return [actor for _, actor in results[:limit]]

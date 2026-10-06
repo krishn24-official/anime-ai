@@ -6,7 +6,7 @@ load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "anime_ai")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL_NAME = "gemini-2.5-flash-lite"
+GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash")
 
 # ── OMDb ──────────────────────────────────────────────
 OMDB_API_KEY = os.getenv("OMDB_API_KEY")
@@ -32,3 +32,10 @@ REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "30"))  #
 GMAIL_SENDER = os.getenv("GMAIL_SENDER")           # your Gmail address
 GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")  # Gmail App Password
 OTP_EXPIRE_MINUTES = 10
+
+# ── RAG / Lore Retrieval ──────────────────────────────
+LORE_CHUNK_SIZE = int(os.getenv("LORE_CHUNK_SIZE", "800"))
+LORE_CHUNK_OVERLAP = int(os.getenv("LORE_CHUNK_OVERLAP", "100"))
+LORE_EMBEDDING_MODEL = os.getenv("LORE_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+LORE_TOP_K = int(os.getenv("LORE_TOP_K", "5"))
+LORE_VECTOR_INDEX_NAME = os.getenv("LORE_VECTOR_INDEX_NAME", "lore_vector_index")

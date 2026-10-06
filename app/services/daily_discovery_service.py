@@ -188,6 +188,10 @@ async def _ingest_movie(tmdb_id: int, log_prefix: str, movies_collection) -> str
         logger.error(f"[{log_prefix}] Could not fetch details for {tmdb_id}")
         return "failed"
         
+    if details.get("adult") is True:
+        logger.info(f"[{log_prefix}] Skipping adult movie {tmdb_id} ({details.get('title')})")
+        return "skipped"
+
     title = details.get("title")
     if not title:
         return "failed"
@@ -239,6 +243,10 @@ async def _ingest_tv_series(tmdb_id: int, log_prefix: str, tv_collection) -> str
         logger.error(f"[{log_prefix}] Could not fetch details for {tmdb_id}")
         return "failed"
         
+    if details.get("adult") is True:
+        logger.info(f"[{log_prefix}] Skipping adult TV series {tmdb_id} ({details.get('name')})")
+        return "skipped"
+
     title = details.get("name")
     if not title:
         return "failed"

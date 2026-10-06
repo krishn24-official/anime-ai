@@ -148,8 +148,8 @@ async def run_agent(user_message: str) -> dict:
                 "iterations": iterations,
             }
 
-        candidate = response.candidates[0]
-        parts = candidate.content.parts if candidate.content else []
+        candidate = response.candidates[0] if response.candidates else None
+        parts = (candidate.content.parts if candidate and candidate.content and candidate.content.parts is not None else [])
 
         # Check if Gemini wants to call tools
         tool_call_parts = [p for p in parts if p.function_call]

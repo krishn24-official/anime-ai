@@ -141,10 +141,37 @@ async def find_character_candidates(name: str, limit: int = 5) -> list:
     if not matched_full_names:
         return []
 
-    # Fetch full documents for matched names
+    # Fetch and filter candidate characters by full query similarity
     results = []
-    for full_name in list(matched_full_names)[:limit]:
+    query_tokens = set(clean_for_fuzzy.split())
+    is_multi_word_query = len(query_tokens) >= 2
+
+    for full_name in matched_full_names:
+        cand_lower = full_name.lower()
+        cand_tokens = set(re.sub(r"[^\w\s]", "", cand_lower).split())
+        ratio = difflib.SequenceMatcher(None, clean_for_fuzzy, cand_lower).ratio()
+
+        if is_multi_word_query:
+            # For multi-word queries:
+            # 1. Single-word characters (e.g. 'Titan', 'Guy') must NOT match unless query is overwhelmingly that character
+            if len(cand_tokens) == 1:
+                if ratio < 0.75:
+                    continue
+            else:
+                # Multi-word characters must have decent sequence similarity (e.g. 'sasue uchiha' -> 'sasuke uchiha')
+                # or cover a significant proportion of the query tokens
+                overlap = len(query_tokens.intersection(cand_tokens)) / max(len(query_tokens), len(cand_tokens))
+                if ratio < 0.65 and overlap < 0.50:
+                    continue
+        else:
+            # Single-word query: require reasonable match ratio
+            if ratio < 0.60:
+                continue
+
         char = await db["characters"].find_one({"name": full_name})
         if char:
-            results.append(char)
-    return results
+            results.append((ratio, char))
+
+    # Sort descending by similarity ratio and limit results
+    results.sort(key=lambda x: x[0], reverse=True)
+    return [char for _, char in results[:limit]]

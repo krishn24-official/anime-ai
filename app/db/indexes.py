@@ -154,4 +154,33 @@ async def create_indexes():
     # actors
     await create_index_safely(db.actors, "name")
 
-    print("Indexes created")
+    # lore_chunks (standard B-Tree indexes)
+    await create_index_safely(db.lore_chunks, "series_id")
+    await create_index_safely(db.lore_chunks, "character_ids")
+
+    # ── Atlas Vector Search Index (Manual Setup Required in MongoDB Atlas) ──
+    # Note: Atlas Vector Search indexes cannot be created via standard PyMongo create_index calls.
+    # Define this vector search index in Atlas UI or Atlas CLI on collection "lore_chunks":
+    #
+    # Index Name: lore_vector_index (matches config LORE_VECTOR_INDEX_NAME)
+    # Definition (JSON):
+    # {
+    #   "fields": [
+    #     {
+    #       "type": "vector",
+    #       "path": "embedding_vector",
+    #       "numDimensions": 384,
+    #       "similarity": "cosine"
+    #     },
+    #     {
+    #       "type": "filter",
+    #       "path": "series_id"
+    #     },
+    #     {
+    #       "type": "filter",
+    #       "path": "character_ids"
+    #     }
+    #   ]
+    # }
+
+    print("Indexes created")

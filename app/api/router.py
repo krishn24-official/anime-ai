@@ -92,7 +92,12 @@ from app.api.routes.voice_actors import (
     router as voice_actors_router
 )
 
+from app.api.routes.admin_lore import (
+    router as admin_lore_router
+)
+
 api_router = APIRouter()
+
 
 api_router.include_router(
     character_router
@@ -185,3 +190,7 @@ api_router.include_router(
 api_router.include_router(
     voice_actors_router
 )
+
+api_router.include_router(
+    admin_lore_router
+)

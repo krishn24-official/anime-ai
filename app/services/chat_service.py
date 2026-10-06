@@ -27,8 +27,10 @@ from app.services.chat_context_service import (
 
 from app.services.gemini_service import (
     ask_gemini_with_context,
+    ask_gemini_with_lore,
     identify_image,
 )
+from app.services import lore_service
 
 
 # Map of intent keywords -> relationship name(s) to query.
@@ -85,15 +87,31 @@ TARGET_RELATIONSHIP_INTENTS = {
 }
 
 # Flat list of all recognised intent keywords — used for fuzzy matching.
-_ALL_INTENT_KEYWORDS = list(TARGET_RELATIONSHIP_INTENTS.keys()) + ["family", "team"]
+# 3-letter intents (son, mom, dad) are excluded from fuzzy matching to prevent
+# catastrophic collisions with 2-letter prepositions like 'on' -> 'son'.
+_FUZZY_INTENT_KEYWORDS = [
+    k for k in (list(TARGET_RELATIONSHIP_INTENTS.keys()) + ["family", "team"])
+    if len(k) >= 4
+]
+
+_STOP_WORDS = {
+    "on", "in", "to", "at", "by", "of", "or", "an", "is", "we", "he", "so",
+    "do", "no", "the", "and", "for", "with", "about", "from", "this", "that",
+    "what", "when", "where", "which", "who", "how", "into", "from"
+}
 
 
 def fuzzy_match_intent(word: str) -> str | None:
     """
-    Returns the closest intent keyword if similarity >= 80%, else None.
-    Handles typos like 'taemmates' -> 'teammate', 'clasmetes' -> 'classmate'.
+    Returns the closest intent keyword if similarity >= 82% and word >= 4 chars.
+    Handles legitimate typos like 'taemmates' -> 'teammate', 'clasmetes' -> 'classmate',
+    while strictly refusing to match short function words or prepositions.
     """
-    matches = difflib.get_close_matches(word, _ALL_INTENT_KEYWORDS, n=1, cutoff=0.8)
+    w = word.lower().strip()
+    if len(w) < 4 or w in _STOP_WORDS:
+        return None
+
+    matches = difflib.get_close_matches(w, _FUZZY_INTENT_KEYWORDS, n=1, cutoff=0.82)
     return matches[0] if matches else None
 
 
@@ -180,15 +198,13 @@ def extract_two_character_query(message: str):
         r"relationship between\s+(.+?)\s+and\s+(.+)$",
         text
     )
-
     if match:
         return match.group(1).strip(), match.group(2).strip()
 
     match = re.search(
-        r"^(?:are|is)\s+(.+?)\s+and\s+(.+?)\s+\w+$",
+        r"^(?:how are|how is|are|is)\s+(.+?)\s+and\s+(.+?)\s+(?:related|related to each other|connected|friends|enemies|family|brothers|sisters|rivals|\w+)$",
         text
     )
-
     if match:
         return match.group(1).strip(), match.group(2).strip()
 
@@ -196,7 +212,6 @@ def extract_two_character_query(message: str):
         r"^is\s+(.+?)\s+(.+?)'s\s+\w+$",
         text
     )
-
     if match:
         return match.group(1).strip(), match.group(2).strip()
 
@@ -210,7 +225,136 @@ SYMMETRIC_RELATIONS = {
 }
 
 
-async def describe_relationship_between(char_a, char_b):
+async def _extract_candidate_series_ids(
+    char_a: dict | None = None,
+    char_b: dict | None = None,
+    query: str = "",
+) -> list[str]:
+    """
+    Finds potential series_ids from character documents or by resolving the query.
+    Unions anime_ids, manga_ids, movie_ids, and tv_series_ids from both characters.
+    Prioritizes series that currently have indexed lore chunks in MongoDB Atlas.
+
+    Multi-match priority order & tie-breaking:
+    1. Common franchise entries shared by both characters come first.
+    2. Anime entries take priority over manga entries (consistent with platform default).
+    3. If multiple indexed entries exist (e.g. anime_attack_on_titan and manga_attack_on_titan),
+       _fetch_lore_for_query iterates through them in priority order, returning the first
+       series that yields matching semantic chunks.
+    (Note: If separate seasons/arcs are uploaded as distinct series IDs in the future,
+    explicit series hints or arc disambiguation can be added).
+    """
+    series_candidates: list[str] = []
+
+    def get_all_char_series(char: dict | None) -> list[str]:
+        if not char:
+            return []
+        # Priority order: anime -> movies -> tv -> manga
+        return (
+            (char.get("anime_ids") or []) +
+            (char.get("movie_ids") or []) +
+            (char.get("tv_series_ids") or []) +
+            (char.get("manga_ids") or [])
+        )
+
+    # 1. If two characters share an anime/manga/movie, that common ID is top priority
+    if char_a and char_b:
+        a_ids = set(get_all_char_series(char_a))
+        b_ids = set(get_all_char_series(char_b))
+        common = [s for s in get_all_char_series(char_a) if s in b_ids]
+        for s in common:
+            if s not in series_candidates:
+                series_candidates.append(s)
+
+    # 2. Add individual character series (anime first, then manga)
+    for char in [char_a, char_b]:
+        for s in get_all_char_series(char):
+            if s not in series_candidates:
+                series_candidates.append(s)
+
+    db = lore_service.get_db()
+    indexed_series = set(await db["lore_chunks"].distinct("series_id"))
+
+    # If characters point to indexed series, prioritize those immediately
+    prioritized = [s for s in series_candidates if s in indexed_series]
+    if prioritized:
+        return prioritized
+
+    # 3. If query mentions a series title directly (e.g. "in Attack on Titan" or "Attack Titan")
+    if query:
+        q_lower = query.lower()
+        q_tokens = set(re.sub(r"[^\w\s]", "", q_lower).split())
+        for s_id in indexed_series:
+            raw_slug = re.sub(r"^(anime|movie|tv_series|tv|manga)_", "", s_id).replace("_", " ")
+            if raw_slug in q_lower:
+                return [s_id]
+            # Match significant words of series title (e.g. 'attack' and 'titan' in 'attack on titan')
+            slug_words = set(raw_slug.split()) - {"on", "no", "the", "a", "an", "of", "in", "to", "for"}
+            if len(slug_words) >= 2 and slug_words.issubset(q_tokens):
+                return [s_id]
+
+        # Check explicit preposition phrase: "in <Series>", "from <Series>"
+        match = re.search(r"\b(?:in|from|of|for)\s+([A-Za-z0-9\s:_-]{3,35})(?:\?|$)", query, re.I)
+        if match:
+            candidate_phrase = match.group(1).strip()
+            try:
+                resolved = await lore_service.resolve_series_id(candidate_phrase)
+                if resolved and resolved in indexed_series:
+                    return [resolved]
+            except Exception:
+                pass
+
+        # 4. If query mentions any character by name, find that character's indexed series
+        try:
+            from app.repositories.character_repository import search_characters
+            matched_chars = await search_characters(query, limit=3)
+            for mc in matched_chars:
+                for s in get_all_char_series(mc):
+                    if s in indexed_series and s not in series_candidates:
+                        series_candidates.append(s)
+            if series_candidates:
+                return series_candidates
+        except Exception:
+            pass
+
+        # 5. Fallback: if only a single series is currently indexed in lore_chunks, try it
+        if len(indexed_series) == 1:
+            return list(indexed_series)
+
+    return series_candidates
+
+
+async def _fetch_lore_for_query(
+    query: str,
+    char_a: dict | None = None,
+    char_b: dict | None = None,
+    top_k: int = 4,
+) -> tuple[str, str | None]:
+    """
+    Attempts to retrieve matching lore context chunks from the vector database.
+    Returns (lore_context_markdown, matched_series_id).
+    """
+    series_ids = await _extract_candidate_series_ids(char_a, char_b, query)
+    if not series_ids:
+        return "", None
+
+    for s_id in series_ids:
+        try:
+            results = await lore_service.query_lore(
+                query=query,
+                series_id=s_id,
+                top_k=top_k,
+            )
+            if results:
+                context_str = lore_service.format_lore_context(results)
+                return context_str, s_id
+        except Exception as err:
+            print(f"[chat_service] Lore query error for series {s_id}: {err}")
+
+    return "", None
+
+
+async def describe_relationship_between(char_a, char_b, original_message: str = ""):
 
     relationships = await get_relationship_between(
         char_a["_id"],
@@ -218,6 +362,22 @@ async def describe_relationship_between(char_a, char_b):
     )
 
     if not relationships:
+        # RAG Fallback: Check if relation is explained in series lore PDF
+        rag_query = original_message or f"How are {char_a['name']} and {char_b['name']} related? What is the relationship between {char_a['name']} and {char_b['name']}?"
+        lore_context, _ = await _fetch_lore_for_query(rag_query, char_a=char_a, char_b=char_b)
+        if lore_context:
+            char_context = {
+                "character_a": {"name": char_a.get("name"), "description": char_a.get("description")},
+                "character_b": {"name": char_b.get("name"), "description": char_b.get("description")},
+            }
+            answer = await ask_gemini_with_lore(
+                question=rag_query,
+                lore_context=lore_context,
+                character_context=char_context,
+            )
+            if answer:
+                return {"answer": answer}
+
         return {
             "answer":
             f"I couldn't find any known relationship between "
@@ -272,21 +432,21 @@ def detect_intent(message: str):
         message
     )
 
-    # Check longest keywords first so e.g. "father_in_law" matches before
-    # the shorter "father" substring collision.
+    # Check whole-word matches, prioritizing longest keywords first
     for keyword in sorted(TARGET_RELATIONSHIP_INTENTS, key=len, reverse=True):
-        if keyword in message:
+        if re.search(rf"\b{re.escape(keyword)}s?\b", message):
             return keyword
 
-    if "family" in message:
+    if re.search(r"\bfamil(y|ies)\b", message):
         return "family"
 
-    if "team" in message:
+    if re.search(r"\bteams?\b", message):
         return "team"
 
     # Fuzzy fallback: check each word in the message for a close intent match.
     for word in message.split():
-        matched = fuzzy_match_intent(word)
+        clean_word = re.sub(r"[^\w]", "", word)
+        matched = fuzzy_match_intent(clean_word)
         if matched:
             return matched
 
@@ -453,7 +613,7 @@ async def process_chat_message(
         char_b = await find_character(name_b)
 
         if char_a and char_b:
-            return await describe_relationship_between(char_a, char_b)
+            return await describe_relationship_between(char_a, char_b, original_message=message)
 
     # Detect if user clicked a disambiguation chip (e.g. "Actor: Hrithik Roshan")
     temp_text = re.sub(
@@ -488,7 +648,30 @@ async def process_chat_message(
 
     candidates = []
     if forced_scope in (None, "character"):
-        candidates = await find_character_candidates(name_query)
+        raw_candidates = await find_character_candidates(name_query)
+        if forced_scope == "character":
+            candidates = raw_candidates
+        else:
+            # Guard against weak candidate matches for multi-word queries:
+            q_clean = name_query.lower().strip()
+            q_tokens = set(re.sub(r"[^\w\s]", "", q_clean).split())
+            for c in raw_candidates:
+                c_name = c["name"].lower().strip()
+                c_tokens = set(re.sub(r"[^\w\s]", "", c_name).split())
+                ratio = difflib.SequenceMatcher(None, q_clean, c_name).ratio()
+                is_exact = c_name == q_clean
+
+                # If multi-word query but character is a 1-word generic name (e.g. 'Titan'),
+                # reject unless exact match or ratio >= 0.75
+                if len(q_tokens) >= 2 and len(c_tokens) == 1:
+                    if is_exact or ratio >= 0.75:
+                        candidates.append(c)
+                elif len(q_tokens) >= 3:
+                    overlap = len(q_tokens.intersection(c_tokens)) / max(len(q_tokens), len(c_tokens))
+                    if is_exact or ratio >= 0.60 or overlap >= 0.50:
+                        candidates.append(c)
+                else:
+                    candidates.append(c)
 
     media_candidates = []
     if forced_scope in (None, "anime", "movie", "tv_series"):
@@ -499,11 +682,37 @@ async def process_chat_message(
     actor_candidates = []
     if forced_scope in (None, "actor"):
         from app.repositories.actors_repository import find_actor_candidates
-        actor_candidates = await find_actor_candidates(name_query)
+        raw_actors = await find_actor_candidates(name_query)
+        if forced_scope == "actor":
+            actor_candidates = raw_actors
+        else:
+            q_clean = name_query.lower().strip()
+            q_tokens = set(re.sub(r"[^\w\s]", "", q_clean).split())
+            for a in raw_actors:
+                a_name = a["name"].lower().strip()
+                a_tokens = set(re.sub(r"[^\w\s]", "", a_name).split())
+                ratio = difflib.SequenceMatcher(None, q_clean, a_name).ratio()
+                is_exact = a_name == q_clean
+                if len(q_tokens) >= 2 and len(a_tokens) == 1:
+                    if is_exact or ratio >= 0.75:
+                        actor_candidates.append(a)
+                elif len(q_tokens) >= 3:
+                    overlap = len(q_tokens.intersection(a_tokens)) / max(len(q_tokens), len(a_tokens))
+                    if is_exact or ratio >= 0.60 or overlap >= 0.50:
+                        actor_candidates.append(a)
+                else:
+                    actor_candidates.append(a)
 
     total_candidates = len(candidates) + len(media_candidates) + len(actor_candidates)
 
     if total_candidates == 0:
+        # RAG Fallback: Check if message matches narrative lore in any series
+        lore_context, _ = await _fetch_lore_for_query(message)
+        if lore_context:
+            gemini_answer = await ask_gemini_with_lore(message, lore_context)
+            if gemini_answer:
+                return {"answer": gemini_answer}
+
         # Try a general query before giving up
         gemini_answer = await ask_gemini_with_context(message, {})
         if gemini_answer:
@@ -544,23 +753,27 @@ async def process_chat_message(
             query_words = set(re.sub(r"[^\w\s]", "", name_query.lower()).split())
 
             for c in candidates:
-                cand_words = set(re.sub(r"[^\w\s]", "", c["name"].lower()).split())
-                max_word_score = 0.0
-                
-                if query_words.intersection(cand_words):
-                    max_word_score = 1.0
+                cand_lower = c["name"].lower().strip()
+                cand_words = set(re.sub(r"[^\w\s]", "", cand_lower).split())
+                if cand_lower == name_query.lower().strip():
+                    cand_score = 1.0
                 else:
-                    for qw in query_words:
-                        for cw in cand_words:
-                            score = difflib.SequenceMatcher(None, qw, cw).ratio()
-                            if score > max_word_score:
-                                max_word_score = score
-                
-                if max_word_score > highest_score:
-                    highest_score = max_word_score
+                    overlap = len(query_words.intersection(cand_words)) / max(len(query_words), len(cand_words))
+                    ratio = difflib.SequenceMatcher(None, name_query.lower(), cand_lower).ratio()
+                    cand_score = max(overlap, ratio)
+
+                if cand_score > highest_score:
+                    highest_score = cand_score
                     best_candidate = c
 
         if not exact_character_matches and not exact_media_matches and not exact_actor_matches and len(name_query.split()) >= 3:
+            # RAG Fallback: Check if message matches narrative lore in any series
+            lore_context, _ = await _fetch_lore_for_query(message)
+            if lore_context:
+                gemini_answer = await ask_gemini_with_lore(message, lore_context)
+                if gemini_answer:
+                    return {"answer": gemini_answer}
+
             gemini_answer = await ask_gemini_with_context(message, {})
             if gemini_answer:
                 return {"answer": gemini_answer}
@@ -631,6 +844,21 @@ async def process_chat_message(
             all_results.extend(results)
 
         if not all_results:
+            # RAG Fallback: Search series lore PDF for this specific relationship
+            rag_query = f"Who is {character['name']}'s {intent}? {message}"
+            lore_context, _ = await _fetch_lore_for_query(rag_query, char_a=character)
+            if lore_context:
+                char_context = {
+                    "character": {"name": character.get("name"), "description": character.get("description")}
+                }
+                answer = await ask_gemini_with_lore(
+                    question=message,
+                    lore_context=lore_context,
+                    character_context=char_context,
+                )
+                if answer:
+                    return {"answer": answer}
+
             return {
                 "answer":
                 f"I couldn't find a {intent} for {character['name']}."
@@ -670,6 +898,18 @@ async def process_chat_message(
         ]
 
         if not family_names:
+            # RAG Fallback: Search series lore PDF for family members
+            rag_query = f"Who are the family members of {character['name']}? {message}"
+            lore_context, _ = await _fetch_lore_for_query(rag_query, char_a=character)
+            if lore_context:
+                answer = await ask_gemini_with_lore(
+                    question=message,
+                    lore_context=lore_context,
+                    character_context={"character": {"name": character.get("name")}},
+                )
+                if answer:
+                    return {"answer": answer}
+
             return {
                 "answer":
                 f"No family members found for {character['name']}."
@@ -692,6 +932,18 @@ async def process_chat_message(
         ]
 
         if not team_names:
+            # RAG Fallback: Search series lore PDF for team/squad members
+            rag_query = f"Who are the team members or squad of {character['name']}? {message}"
+            lore_context, _ = await _fetch_lore_for_query(rag_query, char_a=character)
+            if lore_context:
+                answer = await ask_gemini_with_lore(
+                    question=message,
+                    lore_context=lore_context,
+                    character_context={"character": {"name": character.get("name")}},
+                )
+                if answer:
+                    return {"answer": answer}
+
             return {
                 "answer":
                 f"No team members found for {character['name']}."
@@ -702,6 +954,29 @@ async def process_chat_message(
             f"Team members of {character['name']}: "
             f"{', '.join(team_names)}"
         }
+
+    # Narrative query fallback: if the user asked an explanatory question about the character
+    narrative_keywords = {
+        "why", "how", "what", "when", "did", "does", "explain", "story", "lore",
+        "secret", "betray", "death", "die", "kill", "past", "backstory", "twist",
+        "characteristic", "characteristics", "ability", "abilities", "power", "powers",
+        "trait", "traits", "overview", "origin", "relic", "relics", "titan", "titans",
+        "rumbling", "history", "timeline", "meaning"
+    }
+    msg_words = set(re.sub(r"[^\w\s]", "", message.lower()).split())
+    if msg_words.intersection(narrative_keywords):
+        lore_context, _ = await _fetch_lore_for_query(message, char_a=character)
+        if lore_context:
+            char_context = {
+                "character": {"name": character.get("name"), "description": character.get("description")}
+            }
+            answer = await ask_gemini_with_lore(
+                question=message,
+                lore_context=lore_context,
+                character_context=char_context,
+            )
+            if answer:
+                return {"answer": answer}
 
     from app.services.character_profile_formatter import format_character_profile
     details = await build_character_context(character) or {}

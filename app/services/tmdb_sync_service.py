@@ -31,6 +31,10 @@ async def sync_discover_movies(pages: int = 5, max_cast: int = 10, sort_by: str 
                 print(f"    [FAIL] Could not fetch details for tmdb_id={item['id']}")
                 continue
 
+            if details.get("adult") is True:
+                print(f"    [SKIP] Adult movie tmdb_id={item['id']}")
+                continue
+
             doc = map_movie(details, max_cast=max_cast)
             doc["director"] = await reconcile_directors(doc.get("director", []))
             doc["writer"] = await reconcile_writers(doc.get("writers", []))
@@ -59,6 +63,10 @@ async def sync_discover_tv(pages: int = 5, max_cast: int = 10, sort_by: str = "p
                 print(f"    [FAIL] Could not fetch details for tmdb_id={item['id']}")
                 continue
 
+            if details.get("adult") is True:
+                print(f"    [SKIP] Adult TV series tmdb_id={item['id']}")
+                continue
+
             doc = map_tv_series(details, max_cast=max_cast)
             doc["creators"] = await reconcile_creators(doc.get("creators", []))
             doc["cast"] = await reconcile_cast(doc.get("cast", []))
@@ -83,6 +91,10 @@ async def sync_trending_movies(pages: int = 1) -> dict:
             if not details:
                 failed += 1
                 print(f"    [FAIL] Could not fetch details for tmdb_id={item['id']}")
+                continue
+
+            if details.get("adult") is True:
+                print(f"    [SKIP] Adult movie tmdb_id={item['id']}")
                 continue
 
             doc = map_movie(details)
@@ -110,6 +122,10 @@ async def sync_trending_tv(pages: int = 1) -> dict:
             if not details:
                 failed += 1
                 print(f"    [FAIL] Could not fetch details for tmdb_id={item['id']}")
+                continue
+
+            if details.get("adult") is True:
+                print(f"    [SKIP] Adult TV series tmdb_id={item['id']}")
                 continue
 
             doc = map_tv_series(details)

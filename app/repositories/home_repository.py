@@ -99,7 +99,8 @@ async def get_today_anime_anniversaries():
         db["anime"]
         .find(
             {
-                "is_deleted": False
+                "is_deleted": False,
+                "is_adult": {"$ne": True}
             }
         )
         .to_list(None)
@@ -134,7 +135,8 @@ async def get_today_manga_anniversaries():
         db["manga"]
         .find(
             {
-                "is_deleted": False
+                "is_deleted": False,
+                "is_adult": {"$ne": True}
             }
         )
         .to_list(None)
@@ -169,7 +171,8 @@ async def get_today_movie_anniversaries():
         db["movies"]
         .find(
             {
-                "is_deleted": False
+                "is_deleted": False,
+                "is_adult": {"$ne": True}
             }
         )
         .to_list(None)
@@ -204,7 +207,8 @@ async def get_today_tv_series_anniversaries():
         db["tv_series"]
         .find(
             {
-                "is_deleted": False
+                "is_deleted": False,
+                "is_adult": {"$ne": True}
             }
         )
         .to_list(None)
@@ -246,7 +250,8 @@ async def get_today_episode_anniversaries():
         db["episodes"]
         .find({
             "release_date": {"$regex": regex_pattern},
-            "is_deleted": {"$ne": True}
+            "is_deleted": {"$ne": True},
+            "is_adult": {"$ne": True}
         })
         .to_list(None)
     )
