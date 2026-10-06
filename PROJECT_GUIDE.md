@@ -235,6 +235,26 @@ All documents adhere to a strict, prefixed primary key naming standard:
                                   [JSON Response to User]
 ```
 
+### Flow C: Trending Now Tri-Pillar Engine
+```
+[User Search Logs] (Last 3h)          [RSS News Feeds] (Trailer/Release Drops)        [Admin Dashboard]
+          │                                              │                                    │
+          ▼                                              ▼                                    ▼
+ `recompute_search_trending()`               `scan_article_for_mentions()`           `set_manual_trending()`
+ - Adaptive spike threshold                  - `title_matcher.py` regex scan         - Custom Cloudinary poster
+ - "Searched by X people"                    - Logs to `trending_mentions`           - "Editor's Pick"
+          │                                              │                           - score = 1000.0, pinned=True
+          │                                              ▼                                    │
+          │                                 `recompute_news_trending()`                       │
+          │                                 - "Mentioned in X articles"                       │
+          │                                              │                                    │
+          └──────────────────────────────┬───────────────┴────────────────────────────────────┘
+                                         ▼
+                             [trending Collection]
+                             - Sorted by `pinned: -1, score: -1`
+                             - Surfaces on Home Screen & `/content/trending`
+```
+
 ---
 
 ## 7. Architectural Decisions & Tradeoffs
