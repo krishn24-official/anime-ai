@@ -15,7 +15,7 @@ def start_tmdb_scheduler():
         kwargs={"pages": 1},
     )
     scheduler.start()
-    print("🎬 TMDB sync scheduler started (every 24h)")
+    print("TMDB sync scheduler started (every 24h)")
 
 
 def stop_tmdb_scheduler():

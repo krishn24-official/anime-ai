@@ -44,7 +44,7 @@ FIELDNAMES = [
 
 
 async def main():
-    print("🚀 Exporting existing relationships to CSV...")
+    print("Exporting existing relationships to CSV...")
 
     await connect_db()
     db = get_db()
@@ -112,9 +112,9 @@ async def main():
             }
         )
 
-    print(f"✅ Exported {len(rows)} existing relationships to {OUTPUT_FILE}")
-    print("📝 Add new rows at the bottom (use the example row as a template)")
-    print("📝 Then run bulk_update_relationships.py")
+    print(f"Exported {len(rows)} existing relationships to {OUTPUT_FILE}")
+    print("Add new rows at the bottom (use the example row as a template)")
+    print("Then run bulk_update_relationships.py")
 
 
 if __name__ == "__main__":

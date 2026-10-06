@@ -72,7 +72,7 @@ async def startup():
     await connect_db()
     await check_db()
 
-    # 🔥 create structure
+    # create structure
     await create_collections()
     await create_indexes()
 
@@ -87,7 +87,7 @@ async def shutdown():
 
 @app.get("/")
 async def root():
-    return {"status": "Anime AI DB running 🚀"}
+    return {"status": "Anime AI DB running"}
 
 
 @app.get("/health")

@@ -78,7 +78,7 @@ async def fetch_and_save(client: httpx.AsyncClient, manga_name: str):
 
     manga_collection = db["manga"]
 
-    print(f"\n📚 Fetching: {manga_name}")
+    print(f"\nFetching: {manga_name}")
 
     response = await client.post(
         ANILIST_URL,
@@ -92,7 +92,7 @@ async def fetch_and_save(client: httpx.AsyncClient, manga_name: str):
 
     if "errors" in data:
 
-        print(f"❌ AniList Error: {manga_name}")
+        print(f"AniList Error: {manga_name}")
 
         print(data["errors"])
 
@@ -102,12 +102,12 @@ async def fetch_and_save(client: httpx.AsyncClient, manga_name: str):
 
     if not media:
 
-        print(f"❌ Manga not found: {manga_name}")
+        print(f"Manga not found: {manga_name}")
 
         return
 
     if "Hentai" in (media.get("genres") or []):
-        print(f"🔞 Skipping adult manga: {manga_name}")
+        print(f"Skipping adult manga: {manga_name}")
         return
 
     formatted_manga = transform_manga(media)
@@ -116,12 +116,12 @@ async def fetch_and_save(client: httpx.AsyncClient, manga_name: str):
         {"_id": formatted_manga["_id"]}, formatted_manga, upsert=True
     )
 
-    print(f"✅ Saved: " f"{formatted_manga['_id']}")
+    print(f"Saved: " f"{formatted_manga['_id']}")
 
 
 async def main():
 
-    print("🚀 Starting manga ingestion...")
+    print("Starting manga ingestion...")
 
     await connect_db()
 

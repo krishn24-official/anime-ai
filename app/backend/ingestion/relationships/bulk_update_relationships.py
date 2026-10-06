@@ -68,7 +68,7 @@ async def _validate_rows(rows: list[dict], known_ids: set[str]) -> list[str]:
 
 
 async def main():
-    print("🚀 Starting bulk relationship import...")
+    print("Starting bulk relationship import...")
 
     rows = []
     input_file_used = None
@@ -94,7 +94,7 @@ async def main():
                             )
                     rows.append(row_dict)
         except Exception as e:
-            print(f"❌ Error reading {input_file_used}: {e}")
+            print(f"Error reading {input_file_used}: {e}")
             return
     elif os.path.exists(INPUT_CSV):
         input_file_used = INPUT_CSV
@@ -102,11 +102,11 @@ async def main():
             with open(input_file_used, "r", encoding="utf-8") as f:
                 rows = [r for r in csv.DictReader(f) if any(r.values())]
         except Exception as e:
-            print(f"❌ Error reading {input_file_used}: {e}")
+            print(f"Error reading {input_file_used}: {e}")
             return
     else:
         print(
-            f"❌ Neither {INPUT_XLSX} nor {INPUT_CSV} was found. Run export_relationship_csv.py first."
+            f"Neither {INPUT_XLSX} nor {INPUT_CSV} was found. Run export_relationship_csv.py first."
         )
         return
 
@@ -121,7 +121,7 @@ async def main():
         )
     ]
 
-    print(f"📊 Read {len(rows)} rows from {input_file_used}\n")
+    print(f"Read {len(rows)} rows from {input_file_used}\n")
 
     await connect_db()
     db = get_db()
@@ -143,14 +143,14 @@ async def main():
     warnings = await _validate_rows(rows, known_ids)
 
     if warnings:
-        print(f"⚠️  {len(warnings)} warning(s) found:\n")
+        print(f"Warning: {len(warnings)} warning(s) found:\n")
         for w in warnings:
             print(f"  - {w}")
         print()
 
         confirm = input("Continue with import anyway? (y/n): ").strip().lower()
         if confirm != "y":
-            print("❌ Import cancelled.")
+            print("Import cancelled.")
             await close_db()
             return
         print()
@@ -192,18 +192,18 @@ async def main():
 
         if len(docs) > 1:
             print(
-                f"  ✅ {docs[0]['source_id']} --{docs[0]['relationship']}--> {docs[0]['target_id']}  "
+                f"  {docs[0]['source_id']} --{docs[0]['relationship']}--> {docs[0]['target_id']}  "
                 f"(+ inverse: --{docs[1]['relationship']}-->)"
             )
         elif len(docs) == 1:
             print(
-                f"  ✅ {docs[0]['source_id']} --{docs[0]['relationship']}--> {docs[0]['target_id']}"
+                f"  {docs[0]['source_id']} --{docs[0]['relationship']}--> {docs[0]['target_id']}"
             )
 
     await close_db()
 
     print(
-        f"\n🏁 Done. Relationship documents created/updated: {created}, Rows skipped: {skipped}"
+        f"\nDone. Relationship documents created/updated: {created}, Rows skipped: {skipped}"
     )
 
 

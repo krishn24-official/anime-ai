@@ -10,7 +10,7 @@ from app.db.mongo import connect_db, close_db, get_db
 
 
 async def cleanup_collection(db, collection_name: str, has_dict_title: bool = False):
-    print(f"\n🔍 Looking for duplicate {collection_name}...")
+    print(f"\nLooking for duplicate {collection_name}...")
     cursor = db[collection_name].find({"is_deleted": {"$ne": True}})
     items = await cursor.to_list(length=None)
 
@@ -82,7 +82,7 @@ async def cleanup_collection(db, collection_name: str, has_dict_title: bool = Fa
                 merged_count += 1
 
     print(
-        f"✅ Finished! Merged {merged_count} duplicate records across {duplicates_found} titles in {collection_name}."
+        f"Finished! Merged {merged_count} duplicate records across {duplicates_found} titles in {collection_name}."
     )
 
 

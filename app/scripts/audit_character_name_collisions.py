@@ -65,7 +65,7 @@ def get_anilist_id(doc: dict) -> int | None:
 
 
 async def main(csv_path: str | None = None):
-    print("🔍 Starting character name collision audit...")
+    print("Starting character name collision audit...")
     await connect_db()
     db = get_db()
 
@@ -135,22 +135,22 @@ async def main(csv_path: str | None = None):
     print("  AUDIT REPORT — Character Name Collisions")
     print("=" * 70)
 
-    print("\n📊 Summary")
+    print("\nSummary")
     print(f"  Total characters          : {total}")
     print(f"  Distinct normalized names : {len(by_name)}")
     print(f"  Characters without anilist_id : {len(no_anilist_id)}")
     print("\n  Names shared by 2+ docs:")
-    print(f"    ✅ All have distinct anilist_ids (safe)  : {len(shared_names_ok)}")
-    print(f"    ⚠️  At least one has no anilist_id       : {len(shared_names_no_id)}")
+    print(f"    All have distinct anilist_ids (safe)  : {len(shared_names_ok)}")
     print(
-        f"    ❌ Duplicate anilist_id across docs (BUG): {len(shared_names_conflict)}"
+        f"    Warning: At least one has no anilist_id       : {len(shared_names_no_id)}"
     )
+    print(f"    Duplicate anilist_id across docs (BUG): {len(shared_names_conflict)}")
 
     # --- Category OK (informational) ---
     if shared_names_ok:
         print(f"\n{'─' * 70}")
         print(
-            f"  ✅ SAFE SHARED NAMES ({len(shared_names_ok)}) — distinct anilist_ids, no action needed"
+            f"  SAFE SHARED NAMES ({len(shared_names_ok)}) - distinct anilist_ids, no action needed"
         )
         print(f"{'─' * 70}")
         for norm_name, docs in sorted(shared_names_ok, key=lambda x: x[0]):
@@ -161,7 +161,7 @@ async def main(csv_path: str | None = None):
     if shared_names_no_id:
         print(f"\n{'─' * 70}")
         print(
-            f"  ⚠️  SHARED NAMES WITH MISSING ANILIST_ID ({len(shared_names_no_id)})"
+            f"  SHARED NAMES WITH MISSING ANILIST_ID ({len(shared_names_no_id)})"
             f" — manual review recommended"
         )
         print(f"{'─' * 70}")
@@ -178,7 +178,7 @@ async def main(csv_path: str | None = None):
     if shared_names_conflict:
         print(f"\n{'─' * 70}")
         print(
-            f"  ❌ ANILIST_ID CONFLICTS ({len(shared_names_conflict)})"
+            f"  ANILIST_ID CONFLICTS ({len(shared_names_conflict)})"
             f" — two documents share the same anilist_id (likely a dedup artifact)"
         )
         print(f"{'─' * 70}")
@@ -191,13 +191,13 @@ async def main(csv_path: str | None = None):
                     f"  anime_ids={doc.get('anime_ids', [])}"
                 )
     else:
-        print("\n  ✅ No anilist_id conflicts detected.")
+        print("\n  No anilist_id conflicts detected.")
 
     # --- Characters with no anilist_id ---
     if no_anilist_id:
         print(f"\n{'─' * 70}")
         print(
-            f"  🔗 CHARACTERS WITHOUT ANILIST_ID ({len(no_anilist_id)}) — admin-created, no AniList link"
+            f"  CHARACTERS WITHOUT ANILIST_ID ({len(no_anilist_id)}) - admin-created, no AniList link"
         )
         print(f"{'─' * 70}")
         for doc in sorted(no_anilist_id, key=lambda d: d.get("name", "")):
@@ -208,16 +208,16 @@ async def main(csv_path: str | None = None):
     print("  RECOMMENDATIONS")
     print(f"{'=' * 70}")
     if shared_names_conflict:
-        print("  ❌ Duplicate anilist_id documents found. These indicate the dedup bug")
+        print("  Duplicate anilist_id documents found. These indicate the dedup bug")
         print("     created two documents for the same character. Investigate each and")
         print("     soft-delete the spurious one, or re-run ingestion after verifying.")
     if shared_names_no_id:
-        print("  ⚠️  Characters with missing anilist_id sharing a name with another")
+        print("  Characters with missing anilist_id sharing a name with another")
         print("     character may have been affected by the old name-slug dedup.")
         print("     Check their anime_ids and data manually; re-run ingestion for any")
         print("     anime where you suspect a character was overwritten.")
     if not shared_names_conflict and not shared_names_no_id:
-        print("  ✅ No suspicious collisions found. The database appears clean.")
+        print("  No suspicious collisions found. The database appears clean.")
 
     # ── Optional CSV output ───────────────────────────────────────────────────
     if csv_path:
@@ -263,10 +263,10 @@ async def main(csv_path: str | None = None):
             )
             writer.writeheader()
             writer.writerows(rows)
-        print(f"\n  📄 CSV written to: {csv_path}")
+        print(f"\n  CSV written to: {csv_path}")
 
     await close_db()
-    print("\n✅ Audit complete.")
+    print("\nAudit complete.")
 
 
 if __name__ == "__main__":

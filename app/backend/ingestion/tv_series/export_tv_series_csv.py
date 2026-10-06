@@ -81,7 +81,7 @@ def _val(value):
 
 
 async def main():
-    print("🚀 Exporting TV Series to CSV...")
+    print("Exporting TV Series to CSV...")
 
     await connect_db()
     db = get_db()
@@ -129,15 +129,15 @@ async def main():
                     }
                 )
         else:
-            print("📝 No TV Series found — writing example rows as template")
+            print("No TV Series found — writing example rows as template")
             for row in EXAMPLE_ROWS:
                 writer.writerow(row)
 
     count = len(tv_series) if tv_series else len(EXAMPLE_ROWS)
-    print(f"✅ Exported {count} TV Series to {OUTPUT_FILE}")
-    print("📝 Fill in data, then run bulk_update_tv_series.py")
+    print(f"Exported {count} TV Series to {OUTPUT_FILE}")
+    print("Fill in data, then run bulk_update_tv_series.py")
     print()
-    print("💡 To fetch from OMDb API, run:")
+    print("To fetch from OMDb API, run:")
     print("   python -m app.backend.ingestion.tv_series.fetch_tv_series")
 
 

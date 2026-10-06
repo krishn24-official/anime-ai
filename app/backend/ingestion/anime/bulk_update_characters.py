@@ -197,16 +197,16 @@ def _build_update(row: dict) -> dict:
 
 
 async def main():
-    print("🚀 Starting bulk character update from CSV...")
+    print("Starting bulk character update from CSV...")
 
     try:
         with open(INPUT_FILE, "r", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
     except FileNotFoundError:
-        print(f"❌ {INPUT_FILE} not found. Run export_character_csv.py first.")
+        print(f"{INPUT_FILE} not found. Run export_character_csv.py first.")
         return
 
-    print(f"📊 Read {len(rows)} rows from {INPUT_FILE}\n")
+    print(f"Read {len(rows)} rows from {INPUT_FILE}\n")
 
     # --- Validation pass ---
     all_warnings = []
@@ -214,14 +214,14 @@ async def main():
         all_warnings.extend(_validate_row(row, i))
 
     if all_warnings:
-        print(f"⚠️  {len(all_warnings)} warning(s) found:\n")
+        print(f"Warning: {len(all_warnings)} warning(s) found:\n")
         for w in all_warnings:
             print(f"  - {w}")
         print()
 
         confirm = input("Continue with import anyway? (y/n): ").strip().lower()
         if confirm != "y":
-            print("❌ Import cancelled.")
+            print("Import cancelled.")
             return
         print()
 
@@ -250,17 +250,15 @@ async def main():
 
         if result.matched_count:
             updated += 1
-            print(
-                f"  ✅ Updated: {row.get('name')} ({char_id}) — {list(update.keys())}"
-            )
+            print(f"  Updated: {row.get('name')} ({char_id}) - {list(update.keys())}")
         else:
             not_found += 1
-            print(f"  ❌ Not found in DB: {char_id} ({row.get('name')})")
+            print(f"  Not found in DB: {char_id} ({row.get('name')})")
 
     await close_db()
 
     print(
-        f"\n🏁 Done. Updated: {updated}, Skipped (no changes): {skipped}, Not found: {not_found}"
+        f"\nDone. Updated: {updated}, Skipped (no changes): {skipped}, Not found: {not_found}"
     )
 
 

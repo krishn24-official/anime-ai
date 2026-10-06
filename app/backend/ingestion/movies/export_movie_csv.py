@@ -102,7 +102,7 @@ def _val(value):
 
 
 async def main():
-    print("🚀 Exporting movies to CSV...")
+    print("Exporting movies to CSV...")
 
     await connect_db()
     db = get_db()
@@ -148,15 +148,15 @@ async def main():
                     }
                 )
         else:
-            print("📝 No movies found — writing example rows as template")
+            print("No movies found - writing example rows as template")
             for row in EXAMPLE_ROWS:
                 writer.writerow(row)
 
     count = len(movies) if movies else len(EXAMPLE_ROWS)
-    print(f"✅ Exported {count} movies to {OUTPUT_FILE}")
-    print("📝 Fill in data, then run bulk_update_movies.py")
+    print(f"Exported {count} movies to {OUTPUT_FILE}")
+    print("Fill in data, then run bulk_update_movies.py")
     print()
-    print("💡 To fetch from OMDb API, run:")
+    print("To fetch from OMDb API, run:")
     print("   python -m app.backend.ingestion.movies.fetch_movies")
     print("   Then edit fetch_movies.py to add your titles to the list")
 

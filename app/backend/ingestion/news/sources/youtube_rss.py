@@ -13,31 +13,31 @@ CHANNELS = {
     "Nintendo": "UCgK_2VQWwigtTr_5TviGy2w",
     "Eurogamer": "UCciKycgzURdymx-GRSY2_dA",
     "PC Gamer": "UCgaPRP68bbyHnfkPhWWBrNw",
-    # 🎮 Game Publishers
+    # Game Publishers
     "Bandai Namco": "UCUfPqBj40lJtfAf78WtEGlQ",
     "Ubisoft": "UCBMvc6jvuTxH6TNo9ThpYjg",
     "Square Enix": "UCH3sMKVJ2P7hm7ROBy5FHJg",
     "Capcom": "UCbReH8gzVeGr6wuQHEOiHFA",
     "Epic Games": "UC5Qk8mWBwtMyEj7iQQYRk1A",
     "SEGA": "UCWfXR0-F7MI-TbqikgEdJc",
-    # 📚 Manga / Anime Publishers
+    # Manga / Anime Publishers
     "Shonen Jump": "UC47AYUs8AVU1QsT5LhpXjaw",
     "Kodansha": "UCo-Z2r9KeM1uv11uLdnsBMg",
     "VIZ Media": "UCcckdFKX9yMZBiTDb7HNmhw",
     "Aniplex USA": "UCDb0peSmF5rLX7BvuTcJfCw",
     "Toei Animation": "UCLhgIX2L5ZCaWdlaxR_oTAg",
     "Mappa": "UCjfAEJZdfbIjVHdo5yODfyQ",
-    # 🎥 Anime Streaming
+    # Anime Streaming
     "Crunchyroll": "UC6pGDc4bFGD1_36IKv3FnYg",
     "Netflix Anime": "UCWOA1ZGywLbqmigxE4Qlvuw",
     "Ani-One Asia": "UC0wNSTMWIL3qaorLx0jie6A",
-    # 📺 Streaming Platforms
+    # Streaming Platforms
     "Netflix": "UCGie8GMlUo3kBKIopdvumVQ",
     "Prime Video": "UCyouSlyNTfwX_pnGvlfIL3Q",
     "Disney+": "UC_5niPa-d35gg88HaS7RrIw",
     "Apple TV+": "UC1Myj674wRVXB9I4c6Hm5zA",
     "HBO": "UCVTQuK2CaWaTgSsoNkn5AiQ",
-    # 🎬 Movie Studios
+    # Movie Studios
     "Marvel": "UCxwitsUVNzwS5XBSC5UQV8Q",
     "DC": "UCiifkYAs_bq1pt_zbNAzYGg",
     "Warner Bros": "UCjmJDM5pRKbUlVIzDYYWb6g",
@@ -47,7 +47,7 @@ CHANNELS = {
     "Lionsgate": "UCFR6sruqEq52xEqjE84tq4A",
     "20th Century Studios": "UCi_MYg8bBEbfIHfLRxGd_Eg",
     "A24": "UCuPivVjnfNo4mb3Oog_frZg",
-    # 🎬 Trailer Channels
+    # Trailer Channels
     "Rotten Tomatoes Trailers": "UCE0Wkd9Jcn2-TNo5G8bLQrA",
     # # 🇮🇳 Indian Studios
     # "T-Series": "UChz5aEi3dfrDVC8-YJsMUDA",

@@ -28,9 +28,9 @@ async def main():
     await close_db()
 
     if result.matched_count == 0:
-        print(f"❌ No user found with email: {email}")
+        print(f"No user found with email: {email}")
     else:
-        print(f"✅ {email} is now an admin")
+        print(f"{email} is now an admin")
 
 
 if __name__ == "__main__":

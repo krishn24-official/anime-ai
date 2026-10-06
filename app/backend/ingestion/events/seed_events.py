@@ -28,7 +28,7 @@ async def seed_events():
 
     for file_path in event_files:
 
-        print(f"\n📂 Reading: {file_path}")
+        print(f"\nReading: {file_path}")
 
         events = await asyncio.to_thread(load_json_file, file_path)
 
@@ -38,7 +38,7 @@ async def seed_events():
 
             total += 1
 
-    print(f"\n✅ Seeded {total} events")
+    print(f"\nSeeded {total} events")
 
     await close_db()
 

@@ -80,12 +80,12 @@ async def main():
             existing = await movies_collection.find_one({"tmdb_id": tmdb_id})
             if existing:
                 print(
-                    f"  [{idx}/{len(credits)}] ⏭️ Skipped (already exists): {title} ({existing['_id']})"
+                    f"  [{idx}/{len(credits)}] Skipped (already exists): {title} ({existing['_id']})"
                 )
                 skipped += 1
                 continue
 
-            print(f"  [{idx}/{len(credits)}] ⬇️ Fetching: {title} (TMDB: {tmdb_id})")
+            print(f"  [{idx}/{len(credits)}] Fetching: {title} (TMDB: {tmdb_id})")
             details = await get_movie_details(tmdb_id)
 
             if not details:

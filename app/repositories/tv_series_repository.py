@@ -47,7 +47,7 @@ async def upsert_tv_series(doc: dict):
         doc["possible_duplicate_of"] = dup
         await apply_reciprocal_duplicate_flag(doc["_id"], "tv_series", dup)
         print(
-            f"⚠️ Possible duplicate detected: '{doc.get('title')}' ({doc['_id']}) may duplicate {dup['content_type']}_{dup['content_id']} -- flagged, not skipped"
+            f"Possible duplicate detected: '{doc.get('title')}' ({doc['_id']}) may duplicate {dup['content_type']}_{dup['content_id']} -- flagged, not skipped"
         )
 
     await db["tv_series"].update_one(

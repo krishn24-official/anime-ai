@@ -125,17 +125,17 @@ def _build_update(row: dict) -> dict:
 
 
 async def main():
-    print("🚀 Starting bulk movie import...")
+    print("Starting bulk movie import...")
 
     if not os.path.exists(INPUT_CSV):
-        print(f"❌ {INPUT_CSV} not found. Run export_movie_csv.py first.")
+        print(f"{INPUT_CSV} not found. Run export_movie_csv.py first.")
         return
 
     try:
         with open(INPUT_CSV, "r", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
     except Exception as e:
-        print(f"❌ Error reading {INPUT_CSV}: {e}")
+        print(f"Error reading {INPUT_CSV}: {e}")
         return
 
     # Filter out template example row
@@ -149,7 +149,7 @@ async def main():
         )
     ]
 
-    print(f"📊 Read {len(rows)} rows from {INPUT_CSV}\n")
+    print(f"Read {len(rows)} rows from {INPUT_CSV}\n")
 
     # Validation pass
     all_warnings = []
@@ -164,13 +164,13 @@ async def main():
         valid_rows.append(row)
 
     if all_warnings:
-        print(f"⚠️  {len(all_warnings)} warning(s) / error(s) found:\n")
+        print(f"Warning: {len(all_warnings)} warning(s) / error(s) found:\n")
         for w in all_warnings:
             print(f"  - {w}")
         print()
 
     if not valid_rows:
-        print("❌ No valid rows to import.")
+        print("No valid rows to import.")
         return
 
     await connect_db()
@@ -186,7 +186,7 @@ async def main():
         if not movie_id:
             # Auto generate ID using slug
             movie_id = f"movie_{create_slug(title)}"
-            print(f"💡 Auto-generated ID '{movie_id}' for '{title}'")
+            print(f"Auto-generated ID '{movie_id}' for '{title}'")
 
         update = _build_update(row)
 
@@ -206,10 +206,10 @@ async def main():
             upsert=True,
         )
         updated += 1
-        print(f"  ✅ Upserted movie: {movie_id} ({title})")
+        print(f"  Upserted movie: {movie_id} ({title})")
 
     await close_db()
-    print(f"\n🏁 Done. Movies created/updated: {updated}")
+    print(f"\nDone. Movies created/updated: {updated}")
 
 
 if __name__ == "__main__":

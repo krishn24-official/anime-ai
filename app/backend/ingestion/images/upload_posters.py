@@ -54,7 +54,7 @@ async def upload_posters_for_collection(
         {"_id": 1, "images": 1, "title": 1, "name": 1},
     ).to_list(None)
 
-    print(f"\n📦 {collection_name} ({image_field}): {len(docs)} docs with image")
+    print(f"\n{collection_name} ({image_field}): {len(docs)} docs with image")
 
     # Parse dot-notation to extract nested value
     field_keys = image_field.split(".")
@@ -91,13 +91,13 @@ async def upload_posters_for_collection(
             await col.update_one(
                 {"_id": doc_id}, {"$set": {image_field: cloudinary_url}}
             )
-            print(f"  ✅ Updated: {doc_id} → {cloudinary_url}")
+            print(f"  Updated: {doc_id} -> {cloudinary_url}")
         else:
-            print(f"  ❌ Failed: {doc_id}")
+            print(f"  Failed: {doc_id}")
 
 
 async def main():
-    print("🚀 Starting poster upload to Cloudinary...")
+    print("Starting poster upload to Cloudinary...")
 
     await connect_db()
 
@@ -111,7 +111,7 @@ async def main():
 
     await close_db()
 
-    print("\n🏁 Done.")
+    print("\nDone.")
 
 
 if __name__ == "__main__":

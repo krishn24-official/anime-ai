@@ -97,19 +97,19 @@ async def fetch_and_save(
     data = response.json()
 
     if "errors" in data:
-        print(f"❌ AniList Error for '{character_name}': {data['errors']}")
+        print(f"AniList Error for '{character_name}': {data['errors']}")
         return
 
     character = data.get("data", {}).get("Character")
 
     if not character:
-        print(f"❌ Character not found: {character_name}")
+        print(f"Character not found: {character_name}")
         return
 
     returned_name = character.get("name", {}).get("full", "")
 
     if not returned_name:
-        print(f"❌ Character has no name: {character_name}")
+        print(f"Character has no name: {character_name}")
         return
 
     # Name mismatch check
@@ -124,7 +124,7 @@ async def fetch_and_save(
 
     if check_name is not False and returned_name.lower() != check_name.lower():
         print(
-            f"  ⚠️  Name mismatch: searched '{character_name}' "
+            f"  Name mismatch: searched '{character_name}' "
             f"→ got '{returned_name}' (expected '{check_name}'). Saving anyway."
         )
 
@@ -194,16 +194,16 @@ async def fetch_and_save(
             )
 
     if not char_id:
-        print(f"  ❌ Failed to save character: {returned_name}")
+        print(f"  Failed to save character: {returned_name}")
         return
 
-    print(f"  ✅ Saved: {char_id}")
+    print(f"  Saved: {char_id}")
 
     # Auto-extract game properties if character is new and has a description
     db = get_db()
     doc = await db["characters"].find_one({"_id": char_id})
     if doc and doc.get("description") and not doc.get("game_properties"):
-        print("  🎮 Extracting game properties...")
+        print("  Extracting game properties...")
         game_properties = await extract_game_properties(
             character_name=doc["name"],
             description=doc["description"],
@@ -214,12 +214,12 @@ async def fetch_and_save(
             await db["characters"].update_one(
                 {"_id": char_id}, {"$set": {"game_properties": game_properties}}
             )
-            print(f"  🎮 Properties: {game_properties}")
+            print(f"  Properties: {game_properties}")
 
 
 async def main():
 
-    print("🚀 Starting individual character ingestion...")
+    print("Starting individual character ingestion...")
 
     await connect_db()
 
@@ -402,10 +402,10 @@ async def main():
                 await fetch_and_save(client, name, expected_name=expected)
                 await asyncio.sleep(0.7)
             except Exception as e:
-                print(f"❌ Error fetching '{name}': {e}")
+                print(f"Error fetching '{name}': {e}")
 
     await close_db()
-    print("\n🏁 Done.")
+    print("\nDone.")
 
 
 if __name__ == "__main__":

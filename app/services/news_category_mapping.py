@@ -21,7 +21,7 @@ SOURCE_CATEGORY_MAP = {
 # unmapped and will be skipped by the pipeline (skipped_unmapped) until
 # added here.
 YOUTUBE_CHANNEL_CATEGORY_MAP = {
-    # 🎮 Games
+    # Games
     "IGN": "Games",
     "GameSpot": "Games",
     "PlayStation": "Games",
@@ -35,7 +35,7 @@ YOUTUBE_CHANNEL_CATEGORY_MAP = {
     "Capcom": "Games",
     "Epic Games": "Games",
     "SEGA": "Games",
-    # 📚 Anime
+    # Anime
     "Shonen Jump": "Anime",
     "Kodansha": "Anime",
     "VIZ Media": "Anime",
@@ -45,7 +45,7 @@ YOUTUBE_CHANNEL_CATEGORY_MAP = {
     "Netflix Anime": "Anime",
     "Muse Asia": "Anime",
     "Ani-One Asia": "Anime",
-    # 🎬 Movies
+    # Movies
     "Netflix": "Movies",
     "Prime Video": "Movies",
     "Disney+": "Movies",

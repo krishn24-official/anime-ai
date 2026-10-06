@@ -33,7 +33,7 @@ async def seed_relationships():
 
     for filepath in filepaths:
 
-        print(f"\n📂 Reading: {filepath}")
+        print(f"\nReading: {filepath}")
 
         relationships = await asyncio.to_thread(load_json_file, filepath)
 
@@ -45,9 +45,9 @@ async def seed_relationships():
 
             total_saved += 1
 
-            print(f"✅ Saved: {relationship['_id']}")
+            print(f"Saved: {relationship['_id']}")
 
-    print(f"\n🎉 Total relationships saved: {total_saved}")
+    print(f"\nTotal relationships saved: {total_saved}")
 
     await close_db()
 

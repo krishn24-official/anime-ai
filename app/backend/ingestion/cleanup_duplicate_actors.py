@@ -13,7 +13,7 @@ async def cleanup_duplicates():
     await connect_db()
     db = get_db()
 
-    print("🔍 Looking for duplicate actors...")
+    print("Looking for duplicate actors...")
     actors_cursor = db["actors"].find({"is_deleted": False})
 
     actors = await actors_cursor.to_list(length=None)
@@ -102,7 +102,7 @@ async def cleanup_duplicates():
                 merged_count += 1
 
     print(
-        f"\n✅ Finished! Merged {merged_count} duplicate records across {duplicates_found} names."
+        f"\nFinished! Merged {merged_count} duplicate records across {duplicates_found} names."
     )
     await close_db()
 

@@ -95,7 +95,7 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
     while True:
 
-        print(f"\n📄 Fetching page {page} for {anime_name}...")
+        print(f"\nFetching page {page} for {anime_name}...")
 
         variables = {"anime": anime_name, "page": page}
 
@@ -108,14 +108,14 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
         # ERROR HANDLING
         if "errors" in data:
-            print("❌ GraphQL Errors:")
+            print("GraphQL Errors:")
             print(data["errors"])
             break
 
         media = data.get("data", {}).get("Media")
 
         if not media:
-            print("❌ No media found")
+            print("No media found")
             break
 
         title = media["title"].get("english") or media["title"].get("romaji")
@@ -164,7 +164,7 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
             if char_id:
                 total_saved += 1
-                print(f"✅ Saved: {character['name']['full']} → {char_id}")
+                print(f"Saved: {character['name']['full']} -> {char_id}")
 
         has_next_page = characters_data["pageInfo"]["hasNextPage"]
 
@@ -173,12 +173,12 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
         page += 1
 
-    print(f"\n🎉 Total characters saved for {anime_name}: {total_saved}")
+    print(f"\nTotal characters saved for {anime_name}: {total_saved}")
 
 
 async def main():
 
-    print("🚀 Starting character ingestion...")
+    print("Starting character ingestion...")
 
     await connect_db()
 

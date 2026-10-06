@@ -78,7 +78,7 @@ def _val(value):
 
 
 async def main():
-    print("🚀 Exporting characters to CSV...")
+    print("Exporting characters to CSV...")
 
     await connect_db()
     db = get_db()
@@ -144,8 +144,8 @@ async def main():
                 }
             )
 
-    print(f"✅ Exported {len(characters)} characters to {OUTPUT_FILE}")
-    print("📝 Fill in the empty cells, then run bulk_update_characters.py")
+    print(f"Exported {len(characters)} characters to {OUTPUT_FILE}")
+    print("Fill in the empty cells, then run bulk_update_characters.py")
 
 
 if __name__ == "__main__":

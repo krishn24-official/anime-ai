@@ -13,7 +13,7 @@ async def fetch_and_save(client: httpx.AsyncClient, title: str):
 
     movies_collection = db["movies"]
 
-    print(f"\n🎬 Fetching: {title}")
+    print(f"\nFetching: {title}")
 
     response = await client.get(
         OMDB_BASE_URL,
@@ -30,7 +30,7 @@ async def fetch_and_save(client: httpx.AsyncClient, title: str):
     data = response.json()
 
     if data.get("Response") != "True":
-        print(f"❌ Movie not found: {title} ({data.get('Error')})")
+        print(f"Movie not found: {title} ({data.get('Error')})")
         return
 
     formatted_movie = transform_movie(data)
@@ -39,16 +39,16 @@ async def fetch_and_save(client: httpx.AsyncClient, title: str):
         {"_id": formatted_movie["_id"]}, formatted_movie, upsert=True
     )
 
-    print(f"✅ Saved: {formatted_movie['_id']}")
+    print(f"Saved: {formatted_movie['_id']}")
 
 
 async def main():
 
     if not OMDB_API_KEY:
-        print("❌ OMDB_API_KEY not set in .env")
+        print("OMDB_API_KEY not set in .env")
         return
 
-    print("🚀 Starting movie ingestion...")
+    print("Starting movie ingestion...")
 
     await connect_db()
 
@@ -67,11 +67,11 @@ async def main():
             try:
                 await fetch_and_save(client, title)
             except Exception as e:
-                print(f"❌ Error fetching {title}: {e}")
+                print(f"Error fetching {title}: {e}")
 
     await close_db()
 
-    print("\n🏁 Done.")
+    print("\nDone.")
 
 
 if __name__ == "__main__":

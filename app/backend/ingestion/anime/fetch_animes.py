@@ -79,7 +79,7 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
     anime_collection = db["anime"]
 
-    print(f"\n🎬 Fetching: {anime_name}")
+    print(f"\nFetching: {anime_name}")
 
     response = await client.post(
         ANILIST_URL,
@@ -92,7 +92,7 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
     if "errors" in data:
 
-        print(f"❌ AniList Error: {anime_name}")
+        print(f"AniList Error: {anime_name}")
 
         print(data["errors"])
 
@@ -102,12 +102,12 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
     if not media:
 
-        print(f"❌ Anime not found: {anime_name}")
+        print(f"Anime not found: {anime_name}")
 
         return
 
     if "Hentai" in (media.get("genres") or []):
-        print(f"🔞 Skipping adult anime: {anime_name}")
+        print(f"Skipping adult anime: {anime_name}")
         return
 
     formatted_anime = transform_anime(media)
@@ -123,19 +123,19 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
         formatted_anime["possible_duplicate_of"] = dup
         await apply_reciprocal_duplicate_flag(formatted_anime["_id"], "anime", dup)
         print(
-            f"⚠️ Possible duplicate detected: '{formatted_anime.get('title', {}).get('english') or formatted_anime.get('title', {}).get('romaji')}' ({formatted_anime['_id']}) may duplicate {dup['content_type']}_{dup['content_id']} -- flagged, not skipped"
+            f"Possible duplicate detected: '{formatted_anime.get('title', {}).get('english') or formatted_anime.get('title', {}).get('romaji')}' ({formatted_anime['_id']}) may duplicate {dup['content_type']}_{dup['content_id']} -- flagged, not skipped"
         )
 
     await anime_collection.replace_one(
         {"_id": formatted_anime["_id"]}, formatted_anime, upsert=True
     )
 
-    print(f"✅ Saved: {formatted_anime['_id']}")
+    print(f"Saved: {formatted_anime['_id']}")
 
 
 async def main():
 
-    print("🚀 Starting anime ingestion...")
+    print("Starting anime ingestion...")
 
     await connect_db()
 
