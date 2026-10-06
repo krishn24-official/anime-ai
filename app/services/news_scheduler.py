@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.events import EVENT_JOB_ERROR
 
@@ -67,6 +67,7 @@ def start_news_scheduler():
         _daily_discovery_job,
         "interval",
         hours=24,
+        next_run_time=datetime.now() + timedelta(seconds=15),
         id="daily_discovery_sync",
     )
 

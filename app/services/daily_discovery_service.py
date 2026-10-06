@@ -196,13 +196,23 @@ async def _ingest_movie(tmdb_id: int, log_prefix: str, movies_collection) -> str
     if not title:
         return "failed"
         
-    # 3. Existence check by title (for manual entries missing tmdb_id)
+    # 3. Existence check by title (only skip if it's the exact same film/year or manual entry)
     existing_by_title = await movies_collection.find_one({
         "title": title,
         "is_deleted": {"$ne": True}
     })
     if existing_by_title:
-        return "skipped"
+        existing_tmdb_id = existing_by_title.get("source_metadata", {}).get("tmdb_id")
+        if existing_tmdb_id and existing_tmdb_id != tmdb_id:
+            # Different film sharing the same title (e.g. reboot/remake like Ghost Rider 2007 vs 2028)
+            pass
+        else:
+            incoming_year = (details.get("release_date") or "")[:4]
+            existing_year = str(existing_by_title.get("year") or "")
+            if incoming_year and existing_year and incoming_year == existing_year:
+                return "skipped"
+            elif not existing_tmdb_id and not incoming_year:
+                return "skipped"
         
     # 4. Map and ingest (exact same path as bulk importer)
     doc = map_movie(details, max_cast=10)
@@ -256,7 +266,16 @@ async def _ingest_tv_series(tmdb_id: int, log_prefix: str, tv_collection) -> str
         "is_deleted": {"$ne": True}
     })
     if existing_by_title:
-        return "skipped"
+        existing_tmdb_id = existing_by_title.get("source_metadata", {}).get("tmdb_id")
+        if existing_tmdb_id and existing_tmdb_id != tmdb_id:
+            pass
+        else:
+            incoming_year = (details.get("first_air_date") or "")[:4]
+            existing_year = str(existing_by_title.get("year") or "")
+            if incoming_year and existing_year and incoming_year == existing_year:
+                return "skipped"
+            elif not existing_tmdb_id and not incoming_year:
+                return "skipped"
         
     doc = map_tv_series(details, max_cast=10)
     
@@ -279,156 +298,226 @@ async def _ingest_tv_series(tmdb_id: int, log_prefix: str, tv_collection) -> str
     return "saved"
 
 async def discover_new_movies():
-    """Discover newly released or announced movies on TMDB using both date-range and changes-feed."""
+    """Discover newly released or announced movies on TMDB using popularity, future-window date range, and changes-feed."""
     now = datetime.now(timezone.utc)
-    gte_date = (now - timedelta(days=3)).strftime("%Y-%m-%d")
-    lte_date = (now + timedelta(days=120)).strftime("%Y-%m-%d")
-    
+    now_str = now.strftime("%Y-%m-%d")
+    upcoming_gte = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+    upcoming_lte = (now + timedelta(days=365 * 4)).strftime("%Y-%m-%d")  # 4 years ahead to capture announced blockbusters
+    recent_gte = (now - timedelta(days=14)).strftime("%Y-%m-%d")
+
     changes_start_date = (now - timedelta(days=2)).strftime("%Y-%m-%d")
-    changes_end_date = now.strftime("%Y-%m-%d")
+    changes_end_date = now_str
 
     db = get_db()
     movies_collection = db["movies"]
-    
+
     stats = {
-        "date_range": {"saved": 0, "skipped": 0, "failed": 0},
+        "upcoming": {"saved": 0, "skipped": 0, "failed": 0},
+        "recent": {"saved": 0, "skipped": 0, "failed": 0},
         "changes_feed": {"saved": 0, "skipped": 0, "failed": 0},
         "total": {"saved": 0, "skipped": 0, "failed": 0}
     }
-    
-    # Track processed IDs so we don't process the same ID twice across mechanisms
+
     processed_ids = set()
-    
-    # 1. Date-range path
-    logger.info(f"Starting TMDB movie discovery window (date-range): {gte_date} to {lte_date}")
+
+    # 1. Popular upcoming / announced movies (captures Marvel, sequels, announced titles like Ghost Rider)
+    logger.info(f"Starting TMDB popular upcoming movie discovery: {upcoming_gte} to {upcoming_lte}")
     current_page = 1
-    max_pages = 50
+    max_pages = 25
     while current_page <= max_pages:
         response = await discover_movies(
             page=current_page,
-            sort_by="primary_release_date.desc",
+            sort_by="popularity.desc",
             **{
-                "primary_release_date.gte": gte_date,
-                "primary_release_date.lte": lte_date,
-                "with_release_type": "2|3"
+                "primary_release_date.gte": upcoming_gte,
+                "primary_release_date.lte": upcoming_lte,
             }
         )
-        
+
         results = response.get("results", [])
         if not results:
             break
-            
+
         for item in results:
             tmdb_id = item["id"]
             if tmdb_id in processed_ids:
                 continue
-                
+
             processed_ids.add(tmdb_id)
-            res = await _ingest_movie(tmdb_id, "TMDB Movies Date-Range", movies_collection)
-            stats["date_range"][res] += 1
+            res = await _ingest_movie(tmdb_id, "TMDB Movies Upcoming", movies_collection)
+            stats["upcoming"][res] += 1
             stats["total"][res] += 1
-            
+
             await asyncio.sleep(0.05)
-            
+
         total_pages = response.get("total_pages", 1)
         if current_page >= total_pages:
             break
         current_page += 1
 
-    if current_page > max_pages:
-        logger.warning(f"TMDB Movies daily discovery date-range hit the {max_pages}-page failsafe cap!")
+    # 2. Popular recently released movies (past 14 days)
+    logger.info(f"Starting TMDB recently released movie discovery: {recent_gte} to {now_str}")
+    current_page = 1
+    recent_max_pages = 10
+    while current_page <= recent_max_pages:
+        response = await discover_movies(
+            page=current_page,
+            sort_by="popularity.desc",
+            **{
+                "primary_release_date.gte": recent_gte,
+                "primary_release_date.lte": now_str,
+            }
+        )
 
-    # 2. Changes feed path
+        results = response.get("results", [])
+        if not results:
+            break
+
+        for item in results:
+            tmdb_id = item["id"]
+            if tmdb_id in processed_ids:
+                continue
+
+            processed_ids.add(tmdb_id)
+            res = await _ingest_movie(tmdb_id, "TMDB Movies Recent", movies_collection)
+            stats["recent"][res] += 1
+            stats["total"][res] += 1
+
+            await asyncio.sleep(0.05)
+
+        total_pages = response.get("total_pages", 1)
+        if current_page >= total_pages:
+            break
+        current_page += 1
+
+    # 3. Changes feed path
     logger.info(f"Starting TMDB movie discovery window (changes-feed): {changes_start_date} to {changes_end_date}")
     changed_ids = await fetch_recent_tmdb_movie_changes(changes_start_date, changes_end_date)
-    
+
     for tmdb_id in changed_ids:
         if tmdb_id in processed_ids:
             continue
-            
+
         processed_ids.add(tmdb_id)
         res = await _ingest_movie(tmdb_id, "TMDB Movies Changes-Feed", movies_collection)
         stats["changes_feed"][res] += 1
         stats["total"][res] += 1
-        
+
         await asyncio.sleep(0.05)
-        
+
     return stats
 
+
 async def discover_new_tv():
-    """Discover newly released or announced TV series on TMDB using both date-range and changes-feed."""
+    """Discover newly released or announced TV series on TMDB using popularity, future-window date range, and changes-feed."""
     now = datetime.now(timezone.utc)
-    gte_date = (now - timedelta(days=3)).strftime("%Y-%m-%d")
-    lte_date = (now + timedelta(days=120)).strftime("%Y-%m-%d")
-    
+    now_str = now.strftime("%Y-%m-%d")
+    upcoming_gte = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+    upcoming_lte = (now + timedelta(days=365 * 4)).strftime("%Y-%m-%d")
+    recent_gte = (now - timedelta(days=14)).strftime("%Y-%m-%d")
+
     changes_start_date = (now - timedelta(days=2)).strftime("%Y-%m-%d")
-    changes_end_date = now.strftime("%Y-%m-%d")
+    changes_end_date = now_str
 
     db = get_db()
     tv_collection = db["tv_series"]
-    
+
     stats = {
-        "date_range": {"saved": 0, "skipped": 0, "failed": 0},
+        "upcoming": {"saved": 0, "skipped": 0, "failed": 0},
+        "recent": {"saved": 0, "skipped": 0, "failed": 0},
         "changes_feed": {"saved": 0, "skipped": 0, "failed": 0},
         "total": {"saved": 0, "skipped": 0, "failed": 0}
     }
-    
+
     processed_ids = set()
-    
-    # 1. Date-range path
-    logger.info(f"Starting TMDB TV discovery window (date-range): {gte_date} to {lte_date}")
+
+    # 1. Popular upcoming / announced TV series (e.g. VisionQuest)
+    logger.info(f"Starting TMDB popular upcoming TV discovery: {upcoming_gte} to {upcoming_lte}")
     current_page = 1
-    max_pages = 50
+    max_pages = 20
     while current_page <= max_pages:
         response = await discover_tv(
             page=current_page,
-            sort_by="first_air_date.desc",
+            sort_by="popularity.desc",
             **{
-                "first_air_date.gte": gte_date,
-                "first_air_date.lte": lte_date
+                "first_air_date.gte": upcoming_gte,
+                "first_air_date.lte": upcoming_lte,
             }
         )
-        
+
         results = response.get("results", [])
         if not results:
             break
-            
+
         for item in results:
             tmdb_id = item["id"]
             if tmdb_id in processed_ids:
                 continue
-                
+
             processed_ids.add(tmdb_id)
-            res = await _ingest_tv_series(tmdb_id, "TMDB TV Date-Range", tv_collection)
-            stats["date_range"][res] += 1
+            res = await _ingest_tv_series(tmdb_id, "TMDB TV Upcoming", tv_collection)
+            stats["upcoming"][res] += 1
             stats["total"][res] += 1
-            
+
             await asyncio.sleep(0.05)
-            
+
         total_pages = response.get("total_pages", 1)
         if current_page >= total_pages:
             break
         current_page += 1
 
-    if current_page > max_pages:
-        logger.warning(f"TMDB TV daily discovery date-range hit the {max_pages}-page failsafe cap!")
+    # 2. Popular recently released TV series
+    logger.info(f"Starting TMDB recently released TV discovery: {recent_gte} to {now_str}")
+    current_page = 1
+    recent_max_pages = 10
+    while current_page <= recent_max_pages:
+        response = await discover_tv(
+            page=current_page,
+            sort_by="popularity.desc",
+            **{
+                "first_air_date.gte": recent_gte,
+                "first_air_date.lte": now_str,
+            }
+        )
 
-    # 2. Changes feed path
+        results = response.get("results", [])
+        if not results:
+            break
+
+        for item in results:
+            tmdb_id = item["id"]
+            if tmdb_id in processed_ids:
+                continue
+
+            processed_ids.add(tmdb_id)
+            res = await _ingest_tv_series(tmdb_id, "TMDB TV Recent", tv_collection)
+            stats["recent"][res] += 1
+            stats["total"][res] += 1
+
+            await asyncio.sleep(0.05)
+
+        total_pages = response.get("total_pages", 1)
+        if current_page >= total_pages:
+            break
+        current_page += 1
+
+    # 3. Changes feed path
     logger.info(f"Starting TMDB TV discovery window (changes-feed): {changes_start_date} to {changes_end_date}")
     changed_ids = await fetch_recent_tmdb_tv_changes(changes_start_date, changes_end_date)
-    
+
     for tmdb_id in changed_ids:
         if tmdb_id in processed_ids:
             continue
-            
+
         processed_ids.add(tmdb_id)
         res = await _ingest_tv_series(tmdb_id, "TMDB TV Changes-Feed", tv_collection)
         stats["changes_feed"][res] += 1
         stats["total"][res] += 1
-        
+
         await asyncio.sleep(0.05)
-        
+
     return stats
+
 
 def get_seasons(now: datetime) -> list[tuple[str, int]]:
     """Determine the current and next anime season based on the date."""
