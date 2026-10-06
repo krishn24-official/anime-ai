@@ -2,7 +2,7 @@ import re
 import feedparser
 import httpx
 
-from app.services.news_date_utils import parse_published_entry, extract_image_url
+from app.services.news_date_utils import parse_published_entry, extract_image_url, DEFAULT_NEWS_HEADERS
 
 
 def clean_description(text: str) -> str:
@@ -12,13 +12,16 @@ def clean_description(text: str) -> str:
 
 
 async def fetch_animecorner_news():
-
-    url = "https://animecorner.me/feed/"
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        response = await client.get(url, follow_redirects=True)
-        feed = feedparser.parse(response.content)
-
     articles = []
+    url = "https://animecorner.me/feed/"
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0, headers=DEFAULT_NEWS_HEADERS) as client:
+            response = await client.get(url, follow_redirects=True)
+            feed = feedparser.parse(response.content)
+    except Exception as e:
+        print("[AnimeCorner] error:", e)
+        return []
 
     for entry in feed.entries:
 

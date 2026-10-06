@@ -6,6 +6,20 @@ from app.db.mongo import get_db
 VALID_CATEGORIES = ["Anime", "Games", "Movies", "TV Series"]
 
 
+def normalize_category(cat: str | None) -> str | None:
+    if not cat:
+        return None
+    cat_clean = cat.strip()
+    if cat_clean.lower() in ["all", ""]:
+        return None
+    if cat_clean.lower() in ["tv-series", "tv series", "tv_series", "tvseries"]:
+        return "TV Series"
+    for valid in VALID_CATEGORIES:
+        if valid.lower() == cat_clean.lower():
+            return valid
+    return cat_clean
+
+
 async def article_exists(url: str) -> bool:
     db = get_db()
     existing = await db["news"].find_one({"url": url}, {"_id": 1})
@@ -40,6 +54,8 @@ async def get_news_by_category(
 ):
     db = get_db()
     skip = (page - 1) * limit
+
+    category = normalize_category(category)
 
     query = {}
     if category:

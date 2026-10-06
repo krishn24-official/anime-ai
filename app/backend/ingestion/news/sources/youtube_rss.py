@@ -3,7 +3,7 @@ import time
 import feedparser
 import httpx
 
-from app.services.news_date_utils import parse_published_entry
+from app.services.news_date_utils import parse_published_entry, DEFAULT_NEWS_HEADERS
 
 CHANNELS = {
     "IGN": "UCKy1dAqELo0zrOtPkf0eTMw",
@@ -151,9 +151,9 @@ def extract_description(entry) -> str:
 async def fetch_youtube_news():
 
     articles = []
-    last_24_hours = 24 * 60 * 60
+    last_72_hours = 72 * 60 * 60
 
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=10.0, headers=DEFAULT_NEWS_HEADERS) as client:
         for name, channel_id in CHANNELS.items():
 
             url = f"https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
@@ -167,7 +167,7 @@ async def fetch_youtube_news():
                     if not published_at:
                         continue
 
-                    if (time.time() - published_at.timestamp()) <= last_24_hours:
+                    if (time.time() - published_at.timestamp()) <= last_72_hours:
                         title = sanitize_text(entry.title)
                         description = extract_description(entry)
 

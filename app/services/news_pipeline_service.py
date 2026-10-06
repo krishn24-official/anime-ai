@@ -92,14 +92,15 @@ def extract_list_items(html_content: str) -> list[str]:
             items.append(clean_text)
     return items
 
+from app.services.news_date_utils import DEFAULT_NEWS_HEADERS
+
 async def fetch_full_article_content(url: str) -> tuple[str | None, str | None]:
     """Fetch and extract the main text content of an article from its webpage."""
     if not url:
         return None, None
     try:
-        async with httpx.AsyncClient(timeout=6.0) as client:
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-            r = await client.get(url, headers=headers, follow_redirects=True)
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(url, headers=DEFAULT_NEWS_HEADERS, follow_redirects=True)
             if r.status_code == 200:
                 html = r.text
                 result = trafilatura.extract(
@@ -177,67 +178,72 @@ async def run_news_pipeline():
     processed_urls = set()
 
     for article in fresh_articles:
-
-        url = article.get("url")
-        title = article.get("title")
-
-        if not url or not title:
-            continue
-
-        if url in processed_urls or await article_exists(url):
-            skipped_duplicate += 1
-            continue
-
-        processed_urls.add(url)
-
-        mapped_category = get_mapped_category(article)
-
-        if not mapped_category:
-            skipped_unmapped += 1
-            continue
-
-        # If it's a website article, fetch full content
-        if article.get("source") != "youtube":
-            full_content, raw_html = await fetch_full_article_content(url)
-            if full_content:
-                # Check for listicle before proceeding
-                if is_listicle(title) and raw_html:
-                    list_items = extract_list_items(raw_html)
-                    if list_items:
-                        from app.services.gemini_service import generate_listicle_article_body
-                        listicle_body = await generate_listicle_article_body(title, list_items, full_content)
-                        if listicle_body:
-                            full_content = listicle_body
-
-                article["description"] = full_content
-
-        article["category"] = mapped_category
-        article["summary"] = make_fallback_summary(article)
-
         try:
-            await insert_article(article)
-            saved += 1
+            url = article.get("url")
+            title = article.get("title")
+
+            if not url or not title:
+                continue
+
+            if url in processed_urls or await article_exists(url):
+                skipped_duplicate += 1
+                continue
+
+            processed_urls.add(url)
+
+            mapped_category = get_mapped_category(article)
+
+            if not mapped_category:
+                skipped_unmapped += 1
+                continue
+
+            # If it's a website article, fetch full content
+            if article.get("source") != "youtube":
+                try:
+                    full_content, raw_html = await fetch_full_article_content(url)
+                    if full_content:
+                        # Check for listicle before proceeding
+                        if is_listicle(title) and raw_html:
+                            list_items = extract_list_items(raw_html)
+                            if list_items:
+                                from app.services.gemini_service import generate_listicle_article_body
+                                listicle_body = await generate_listicle_article_body(title, list_items, full_content)
+                                if listicle_body:
+                                    full_content = listicle_body
+
+                        article["description"] = full_content
+                except Exception as content_err:
+                    print(f"[news_pipeline] Error extracting full content for {url}: {content_err}")
+
+            article["category"] = mapped_category
+            article["summary"] = make_fallback_summary(article)
 
             try:
-                from app.services.websocket_manager import manager
-                from app.services.news_service import _serialize
-                await manager.broadcast({
-                    "type": "NEW_ARTICLE",
-                    "data": _serialize(article)
-                })
-            except Exception as ws_err:
-                print("[news_pipeline] websocket broadcast error:", ws_err)
-        except Exception as e:
-            if "duplicate key" in str(e).lower() or "11000" in str(e):
-                skipped_duplicate += 1
-            else:
-                raise e
-        else:
-            if alias_index:
+                await insert_article(article)
+                saved += 1
+
                 try:
-                    await trending_service.scan_article_for_mentions(article, alias_index)
-                except Exception as match_err:
-                    print("[news_pipeline] title matcher error:", match_err)
+                    from app.services.websocket_manager import manager
+                    from app.services.news_service import _serialize
+                    await manager.broadcast({
+                        "type": "NEW_ARTICLE",
+                        "data": _serialize(article)
+                    })
+                except Exception as ws_err:
+                    print("[news_pipeline] websocket broadcast error:", ws_err)
+            except Exception as e:
+                if "duplicate key" in str(e).lower() or "11000" in str(e):
+                    skipped_duplicate += 1
+                else:
+                    print(f"[news_pipeline] insert error for {url}: {e}")
+            else:
+                if alias_index:
+                    try:
+                        await trending_service.scan_article_for_mentions(article, alias_index)
+                    except Exception as match_err:
+                        print("[news_pipeline] title matcher error:", match_err)
+        except Exception as item_err:
+            print(f"[news_pipeline] Unexpected item error: {item_err}")
 
     summary = {
         "fetched": len(raw_articles),

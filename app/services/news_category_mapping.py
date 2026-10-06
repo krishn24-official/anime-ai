@@ -70,6 +70,13 @@ YOUTUBE_CHANNEL_CATEGORY_MAP = {
 }
 
 
+TV_KEYWORDS = (
+    "season ", "episode ", "series", "tv show", "web series",
+    "docuseries", "miniseries", "limited series", "sitcom",
+    "k-drama", "drama series", "spinoff series", "ott release"
+)
+
+
 def get_mapped_category(article: dict) -> str | None:
     """
     Return a category for the article based on its source/channel, or
@@ -79,9 +86,16 @@ def get_mapped_category(article: dict) -> str | None:
 
     if source == "youtube":
         channel = article.get("youtube_channel")
-        return YOUTUBE_CHANNEL_CATEGORY_MAP.get(channel)
+        cat = YOUTUBE_CHANNEL_CATEGORY_MAP.get(channel)
+    else:
+        cat = SOURCE_CATEGORY_MAP.get(source)
 
-    return SOURCE_CATEGORY_MAP.get(source)
+    if cat == "Movies":
+        title_lower = (article.get("title") or "").lower()
+        if any(kw in title_lower for kw in TV_KEYWORDS):
+            return "TV Series"
+
+    return cat
 
 
 def smart_truncate(text: str, max_length: int = 500) -> str:

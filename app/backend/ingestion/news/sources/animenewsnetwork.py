@@ -3,7 +3,7 @@ import time
 import feedparser
 import httpx
 
-from app.services.news_date_utils import parse_published_entry, extract_image_url
+from app.services.news_date_utils import parse_published_entry, extract_image_url, DEFAULT_NEWS_HEADERS
 
 
 def clean_description(text: str) -> str:
@@ -16,14 +16,15 @@ async def fetch_ann_news():
 
     url = "https://www.animenewsnetwork.com/all/rss.xml"
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=10.0, headers=DEFAULT_NEWS_HEADERS) as client:
             response = await client.get(url, follow_redirects=True)
             feed = feedparser.parse(response.content)
-    except Exception:
+    except Exception as e:
+        print("[ANN] error:", e)
         return []
 
     articles = []
-    last_24_hours = 24 * 60 * 60
+    last_72_hours = 72 * 60 * 60
 
     for entry in feed.entries:
 
@@ -31,7 +32,7 @@ async def fetch_ann_news():
         if not published_at:
             continue
 
-        if (time.time() - published_at.timestamp()) <= last_24_hours:
+        if (time.time() - published_at.timestamp()) <= last_72_hours:
             description = ""
             if hasattr(entry, "summary"):
                 description = clean_description(entry.summary)

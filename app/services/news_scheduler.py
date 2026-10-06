@@ -1,4 +1,6 @@
+from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.events import EVENT_JOB_ERROR
 
 from app.services.news_pipeline_service import run_news_pipeline
 from app.services.trending_service import recompute_search_trending
@@ -7,14 +9,20 @@ from app.services.daily_discovery_service import run_daily_discovery
 
 scheduler = AsyncIOScheduler()
 
+def _job_error_listener(event):
+    if event.exception:
+        print(f"[scheduler] Job {event.job_id} encountered error: {event.exception}")
+
+scheduler.add_listener(_job_error_listener, EVENT_JOB_ERROR)
+
 
 def start_news_scheduler():
-    # Run every 30 minutes — reduced from 3 min to cut memory pressure.
-    # Categorization is fully source/channel-mapped, no AI calls involved.
+    # Run immediately on startup in background, and then every 30 minutes
     scheduler.add_job(
         run_news_pipeline,
         "interval",
         minutes=30,
+        next_run_time=datetime.now(),
         id="news_pipeline",
     )
 
