@@ -7,3 +7,5 @@ __pycache__/
 *.xlsx
 .DS_Store
 .vscode/
+.pytest_cache/
+*.log

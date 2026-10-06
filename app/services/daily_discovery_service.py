@@ -631,10 +631,3 @@ async def run_daily_discovery():
         "tv_series": tv_res,
         "anime": anime_res
     }
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    async def main():
-        await connect_db()
-        await run_daily_discovery()
-    asyncio.run(main())
