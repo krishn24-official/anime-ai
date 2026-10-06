@@ -253,8 +253,11 @@ async def run_news_pipeline():
         "skipped_unmapped": skipped_unmapped,
     }
 
-    # NOTE: recompute_news_trending is intentionally NOT called here.
-    # It runs on its own scheduler job (every 30 min) to avoid double execution.
+    if saved > 0:
+        try:
+            await trending_service.recompute_news_trending(hours=48)
+        except Exception as trend_err:
+            print("[news_pipeline] Failed to recompute trending after ingest:", trend_err)
 
     print("[news_pipeline] done:", summary)
 

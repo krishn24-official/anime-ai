@@ -37,6 +37,7 @@ def start_news_scheduler():
         _search_trending_job,
         "interval",
         minutes=30,
+        next_run_time=datetime.now() + timedelta(seconds=10),
         id="search_trending_recompute",
     )
 
