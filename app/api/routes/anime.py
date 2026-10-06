@@ -1,8 +1,4 @@
-from fastapi import (
-    APIRouter,
-    HTTPException,
-    Query
-)
+from fastapi import APIRouter, HTTPException, Query
 
 from app.services.anime_service import (
     fetch_all_anime,
@@ -10,13 +6,11 @@ from app.services.anime_service import (
     fetch_anime_search,
     fetch_anime_characters,
     fetch_anime_details,
-    fetch_anime_summary
+    fetch_anime_summary,
 )
 
-router = APIRouter(
-    prefix="/anime",
-    tags=["Anime"]
-)
+router = APIRouter(prefix="/anime", tags=["Anime"])
+
 
 @router.get("")
 async def get_anime(
@@ -25,98 +19,52 @@ async def get_anime(
     search: str | None = Query(None),
 ):
 
-    return await (
-        fetch_all_anime(page=page, limit=limit, search=search)
-    )
+    return await fetch_all_anime(page=page, limit=limit, search=search)
 
-@router.get(
-    "/{anime_id}"
-)
-async def get_anime_by_id(
-    anime_id: str
-):
 
-    anime = await (
-        fetch_anime(
-            anime_id
-        )
-    )
+@router.get("/{anime_id}")
+async def get_anime_by_id(anime_id: str):
+
+    anime = await fetch_anime(anime_id)
 
     if not anime:
 
-        raise HTTPException(
-            status_code=404,
-            detail="Anime not found"
-        )
+        raise HTTPException(status_code=404, detail="Anime not found")
 
     return anime
 
-@router.get(
-    "/search/{query}"
-)
-async def search(
-    query: str
-):
 
-    return await (
-        fetch_anime_search(
-            query
-        )
-    )
+@router.get("/search/{query}")
+async def search(query: str):
 
-@router.get(
-    "/{anime_id}/characters"
-)
-async def get_anime_characters(
-    anime_id: str
-):
+    return await fetch_anime_search(query)
 
-    return await (
-        fetch_anime_characters(
-            anime_id
-        )
-    )
 
-@router.get(
-    "/{anime_id}/details"
-)
-async def get_anime_details(
-    anime_id: str
-):
+@router.get("/{anime_id}/characters")
+async def get_anime_characters(anime_id: str):
 
-    anime = await (
-        fetch_anime_details(
-            anime_id
-        )
-    )
+    return await fetch_anime_characters(anime_id)
+
+
+@router.get("/{anime_id}/details")
+async def get_anime_details(anime_id: str):
+
+    anime = await fetch_anime_details(anime_id)
 
     if not anime:
 
-        raise HTTPException(
-            status_code=404,
-            detail="Anime not found"
-        )
+        raise HTTPException(status_code=404, detail="Anime not found")
 
     return anime
 
-@router.get(
-    "/{anime_id}/summary"
-)
-async def get_anime_summary(
-    anime_id: str
-):
 
-    summary = await (
-        fetch_anime_summary(
-            anime_id
-        )
-    )
+@router.get("/{anime_id}/summary")
+async def get_anime_summary(anime_id: str):
+
+    summary = await fetch_anime_summary(anime_id)
 
     if not summary:
 
-        raise HTTPException(
-            status_code=404,
-            detail="Anime not found"
-        )
+        raise HTTPException(status_code=404, detail="Anime not found")
 
     return summary

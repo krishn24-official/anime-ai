@@ -2,8 +2,9 @@
 Tool implementations for the AI agent.
 Each function is the actual execution of a tool call from Gemini.
 """
+
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 
 from app.repositories.home_repository import (
     get_today_birthdays,
@@ -47,7 +48,11 @@ async def tool_get_today_birthdays() -> str:
         }
         for b in birthdays
     ]
-    return json.dumps(result, default=_serialize) if result else "No character birthdays today."
+    return (
+        json.dumps(result, default=_serialize)
+        if result
+        else "No character birthdays today."
+    )
 
 
 async def tool_get_today_events() -> str:
@@ -57,7 +62,8 @@ async def tool_get_today_events() -> str:
     result = {
         "anime_anniversaries": [
             {
-                "title": a.get("title", {}).get("english") or a.get("title", {}).get("romaji"),
+                "title": a.get("title", {}).get("english")
+                or a.get("title", {}).get("romaji"),
                 "years_ago": a.get("years_ago"),
             }
             for a in anime
@@ -114,7 +120,11 @@ async def tool_get_news_by_category(category: str, limit: int = 5) -> str:
         for a in articles
     ]
 
-    return json.dumps(result, default=_serialize) if result else f"No recent {category} news found."
+    return (
+        json.dumps(result, default=_serialize)
+        if result
+        else f"No recent {category} news found."
+    )
 
 
 async def tool_search_content(query: str) -> str:
@@ -126,12 +136,27 @@ async def tool_search_content(query: str) -> str:
     organizations = await search_organizations(query)
 
     result = {
-        "characters": [{"name": c.get("name"), "id": str(c.get("_id"))} for c in characters],
-        "anime": [{"title": a.get("title", {}).get("english") or a.get("title", {}).get("romaji"), "id": str(a.get("_id"))} for a in anime],
+        "characters": [
+            {"name": c.get("name"), "id": str(c.get("_id"))} for c in characters
+        ],
+        "anime": [
+            {
+                "title": a.get("title", {}).get("english")
+                or a.get("title", {}).get("romaji"),
+                "id": str(a.get("_id")),
+            }
+            for a in anime
+        ],
         "manga": [{"name": m.get("name"), "id": str(m.get("_id"))} for m in manga],
-        "movies": [{"title": mv.get("title"), "id": str(mv.get("_id"))} for mv in movies],
-        "tv_series": [{"title": tv.get("title"), "id": str(tv.get("_id"))} for tv in tv_series],
-        "organizations": [{"name": o.get("name"), "id": str(o.get("id"))} for o in organizations],
+        "movies": [
+            {"title": mv.get("title"), "id": str(mv.get("_id"))} for mv in movies
+        ],
+        "tv_series": [
+            {"title": tv.get("title"), "id": str(tv.get("_id"))} for tv in tv_series
+        ],
+        "organizations": [
+            {"name": o.get("name"), "id": str(o.get("id"))} for o in organizations
+        ],
     }
 
     total = sum(len(v) for v in result.values())
@@ -148,7 +173,18 @@ async def tool_get_character_info(name: str) -> str:
     If not found, falls back to search to find close matches.
     """
     # Guard: if the input looks like a question rather than a name, reject early
-    question_words = {"what", "which", "who", "how", "when", "where", "tell", "show", "list", "get"}
+    question_words = {
+        "what",
+        "which",
+        "who",
+        "how",
+        "when",
+        "where",
+        "tell",
+        "show",
+        "list",
+        "get",
+    }
     first_word = name.strip().lower().split()[0] if name.strip() else ""
     if first_word in question_words or len(name.split()) > 5:
         return (
@@ -210,12 +246,14 @@ async def tool_get_content_trends(
             doc_info = await resolve_content_title(ctype, cid)
             title = doc_info["title"] if doc_info else cid
 
-            enriched.append({
-                "content_type": ctype,
-                "content_id": cid,
-                "title": title,
-                "watchlist_count": r["count"],
-            })
+            enriched.append(
+                {
+                    "content_type": ctype,
+                    "content_id": cid,
+                    "title": title,
+                    "watchlist_count": r["count"],
+                }
+            )
 
         return json.dumps(enriched, default=_serialize)
 
@@ -235,29 +273,29 @@ async def tool_get_content_trends(
             doc_info = await resolve_content_title(ctype, cid)
             title = doc_info["title"] if doc_info else cid
 
-            enriched.append({
-                "content_type": ctype,
-                "content_id": cid,
-                "title": title,
-                "average_rating": weight_to_label(avg_weight),
-                "average_weight": avg_weight,
-                "rating_count": r["count"],
-            })
+            enriched.append(
+                {
+                    "content_type": ctype,
+                    "content_id": cid,
+                    "title": title,
+                    "average_rating": weight_to_label(avg_weight),
+                    "average_weight": avg_weight,
+                    "rating_count": r["count"],
+                }
+            )
 
         return json.dumps(enriched, default=_serialize)
 
 
 async def tool_get_organization_info(name: str) -> str:
     db = get_db()
-    org = await db["organizations"].find_one({
-        "name": {"$regex": f"^{name}$", "$options": "i"},
-        "is_deleted": {"$ne": True}
-    })
+    org = await db["organizations"].find_one(
+        {"name": {"$regex": f"^{name}$", "$options": "i"}, "is_deleted": {"$ne": True}}
+    )
     if not org:
-        cursor = db["organizations"].find({
-            "name": {"$regex": name, "$options": "i"},
-            "is_deleted": {"$ne": True}
-        })
+        cursor = db["organizations"].find(
+            {"name": {"$regex": name, "$options": "i"}, "is_deleted": {"$ne": True}}
+        )
         orgs = await cursor.to_list(1)
         if orgs:
             org = orgs[0]
@@ -266,6 +304,7 @@ async def tool_get_organization_info(name: str) -> str:
         return f"Organization '{name}' not found in the database."
 
     from app.services.organization_service import fetch_organization_details
+
     details = await fetch_organization_details(str(org["_id"]))
     if not details:
         return f"Could not fetch details for organization '{name}'."
@@ -323,4 +362,4 @@ async def execute_tool(tool_name: str, tool_args: dict) -> str:
     try:
         return await fn(**tool_args)
     except Exception as e:
-        return f"Tool '{tool_name}' error: {e}"
+        return f"Tool '{tool_name}' error: {e}"

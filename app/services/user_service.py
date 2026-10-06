@@ -44,7 +44,7 @@ def _auth_response(user: dict, access_token: str, refresh_token: str) -> dict:
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
-        "expires_in": 900,   # 15 minutes in seconds
+        "expires_in": 900,  # 15 minutes in seconds
     }
 
 

@@ -7,15 +7,12 @@ async def get_all_manga(page: int = 1, limit: int = 50, search: str = None):
 
     db = get_db()
     skip = (page - 1) * limit
-    
+
     query = {"is_deleted": False}
     if search:
         fuzzy_pattern = build_fuzzy_search_regex(search)
         search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
-        query["$or"] = [
-            {"name": search_regex},
-            {"native_name": search_regex}
-        ]
+        query["$or"] = [{"name": search_regex}, {"native_name": search_regex}]
 
     items = await (
         db["manga"]
@@ -31,26 +28,14 @@ async def get_all_manga(page: int = 1, limit: int = 50, search: str = None):
     return items, total
 
 
-async def get_manga_by_id(
-    manga_id: str
-):
+async def get_manga_by_id(manga_id: str):
 
     db = get_db()
 
-    return await (
-        db["manga"]
-        .find_one(
-            {
-                "_id": manga_id,
-                "is_deleted": False
-            }
-        )
-    )
+    return await db["manga"].find_one({"_id": manga_id, "is_deleted": False})
 
 
-async def search_manga(
-    query: str
-):
+async def search_manga(query: str):
 
     db = get_db()
 
@@ -59,17 +44,6 @@ async def search_manga(
 
     return await (
         db["manga"]
-        .find(
-            {
-                "$or": [
-                    {
-                        "name": search_regex
-                    },
-                    {
-                        "native_name": search_regex
-                    }
-                ]
-            }
-        )
+        .find({"$or": [{"name": search_regex}, {"native_name": search_regex}]})
         .to_list(None)
     )

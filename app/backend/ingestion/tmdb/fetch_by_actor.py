@@ -16,14 +16,25 @@ from app.backend.ingestion.tmdb_client import (
 )
 from app.backend.ingestion.tmdb_mapper import map_movie
 from app.repositories.movie_repository import upsert_movie
-from app.services.cast_reconciliation_service import reconcile_cast, reconcile_directors, reconcile_writers
+from app.services.cast_reconciliation_service import (
+    reconcile_cast,
+    reconcile_directors,
+    reconcile_writers,
+)
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="Fetch movies for a specific actor from TMDb")
+    parser = argparse.ArgumentParser(
+        description="Fetch movies for a specific actor from TMDb"
+    )
     parser.add_argument("--actor", type=str, help="Name of the actor to search for")
     parser.add_argument("--actor-id", type=int, help="TMDb ID of the actor")
-    parser.add_argument("--max-cast", type=int, default=10, help="Maximum number of cast members to fetch per movie")
+    parser.add_argument(
+        "--max-cast",
+        type=int,
+        default=10,
+        help="Maximum number of cast members to fetch per movie",
+    )
     args = parser.parse_args()
 
     if not args.actor and not args.actor_id:
@@ -32,7 +43,7 @@ async def main():
 
     print("Connecting to MongoDB...")
     await connect_db()
-    
+
     try:
         actor_tmdb_id = args.actor_id
         actor_name = args.actor
@@ -43,7 +54,7 @@ async def main():
             if not results:
                 print(f"Actor '{actor_name}' not found on TMDb.")
                 return
-            
+
             # Use the most popular match
             person = results[0]
             actor_tmdb_id = person["id"]
@@ -68,7 +79,9 @@ async def main():
             # Check if movie already exists using TMDB ID
             existing = await movies_collection.find_one({"tmdb_id": tmdb_id})
             if existing:
-                print(f"  [{idx}/{len(credits)}] ⏭️ Skipped (already exists): {title} ({existing['_id']})")
+                print(
+                    f"  [{idx}/{len(credits)}] ⏭️ Skipped (already exists): {title} ({existing['_id']})"
+                )
                 skipped += 1
                 continue
 
@@ -81,12 +94,12 @@ async def main():
                 continue
 
             doc = map_movie(details, max_cast=args.max_cast)
-            
+
             # Map returns base doc. Let's resolve actors for cast & crew
             doc["director"] = await reconcile_directors(doc.get("director", []))
             doc["writer"] = await reconcile_writers(doc.get("writers", []))
             doc["cast"] = await reconcile_cast(doc.get("cast", []))
-            
+
             # Save the movie
             await upsert_movie(doc)
             saved += 1
@@ -95,14 +108,15 @@ async def main():
     except Exception as e:
         print(f"An error occurred: {e}")
         import traceback
+
         traceback.print_exc()
     finally:
         await close_client()
         await close_db()
-        
-    print(f"\n============================================================")
+
+    print("\n============================================================")
     print("  TMDb ACTOR MOVIES INGESTION COMPLETE")
-    print(f"============================================================")
+    print("============================================================")
     print(f"  Saved new movies : {saved}")
     print(f"  Skipped existing : {skipped}")
     print(f"  Failed to fetch  : {failed}")

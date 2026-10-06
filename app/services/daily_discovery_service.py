@@ -4,14 +4,14 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
-from app.db.mongo import get_db, connect_db
+from app.db.mongo import get_db
 from app.backend.ingestion.tmdb_client import (
     discover_movies,
     discover_tv,
     get_movie_details,
     get_tv_details,
     get_movie_changes,
-    get_tv_changes
+    get_tv_changes,
 )
 from app.backend.ingestion.tmdb_mapper import map_movie, map_tv_series
 from app.repositories.movie_repository import upsert_movie
@@ -20,14 +20,14 @@ from app.services.cast_reconciliation_service import (
     reconcile_cast,
     reconcile_directors,
     reconcile_creators,
-    reconcile_writers
+    reconcile_writers,
 )
 
 from app.backend.ingestion.anime.fetch_all import AniListRateLimiter, anilist_request
 from app.backend.transformers.anime_transformer import transform_anime
 from app.backend.ingestion.anime.anilist_resolvers import (
     resolve_or_create_character,
-    resolve_or_create_voice_actor
+    resolve_or_create_voice_actor,
 )
 
 logger = logging.getLogger(__name__)
@@ -119,6 +119,7 @@ query ($page: Int, $perPage: Int, $season: MediaSeason, $seasonYear: Int) {
 }
 """
 
+
 async def fetch_recent_tmdb_movie_changes(start_date: str, end_date: str) -> list[int]:
     """
     Returns movie ids that changed (including brand-new additions) in the given
@@ -127,23 +128,24 @@ async def fetch_recent_tmdb_movie_changes(start_date: str, end_date: str) -> lis
     changed_ids = set()
     current_page = 1
     max_pages = 50
-    
+
     while current_page <= max_pages:
         response = await get_movie_changes(start_date, end_date, page=current_page)
         results = response.get("results", [])
         if not results:
             break
-            
+
         for item in results:
             changed_ids.add(item["id"])
-            
+
         total_pages = response.get("total_pages", 1)
         if current_page >= total_pages:
             break
-            
+
         current_page += 1
-        
+
     return list(changed_ids)
+
 
 async def fetch_recent_tmdb_tv_changes(start_date: str, end_date: str) -> list[int]:
     """
@@ -153,54 +155,55 @@ async def fetch_recent_tmdb_tv_changes(start_date: str, end_date: str) -> list[i
     changed_ids = set()
     current_page = 1
     max_pages = 50
-    
+
     while current_page <= max_pages:
         response = await get_tv_changes(start_date, end_date, page=current_page)
         results = response.get("results", [])
         if not results:
             break
-            
+
         for item in results:
             changed_ids.add(item["id"])
-            
+
         total_pages = response.get("total_pages", 1)
         if current_page >= total_pages:
             break
-            
+
         current_page += 1
-        
+
     return list(changed_ids)
+
 
 async def _ingest_movie(tmdb_id: int, log_prefix: str, movies_collection) -> str:
     """Core ingestion path for movies. Returns 'saved', 'skipped', or 'failed'."""
     # 1. Existence check by tmdb_id
-    existing_by_tmdb = await movies_collection.find_one({
-        "source_metadata.tmdb_id": tmdb_id,
-        "is_deleted": {"$ne": True}
-    })
-    
+    existing_by_tmdb = await movies_collection.find_one(
+        {"source_metadata.tmdb_id": tmdb_id, "is_deleted": {"$ne": True}}
+    )
+
     if existing_by_tmdb:
         return "skipped"
-        
+
     # 2. Fetch full details for new entries
     details = await get_movie_details(tmdb_id)
     if not details:
         logger.error(f"[{log_prefix}] Could not fetch details for {tmdb_id}")
         return "failed"
-        
+
     if details.get("adult") is True:
-        logger.info(f"[{log_prefix}] Skipping adult movie {tmdb_id} ({details.get('title')})")
+        logger.info(
+            f"[{log_prefix}] Skipping adult movie {tmdb_id} ({details.get('title')})"
+        )
         return "skipped"
 
     title = details.get("title")
     if not title:
         return "failed"
-        
+
     # 3. Existence check by title (only skip if it's the exact same film/year or manual entry)
-    existing_by_title = await movies_collection.find_one({
-        "title": title,
-        "is_deleted": {"$ne": True}
-    })
+    existing_by_title = await movies_collection.find_one(
+        {"title": title, "is_deleted": {"$ne": True}}
+    )
     if existing_by_title:
         existing_tmdb_id = existing_by_title.get("source_metadata", {}).get("tmdb_id")
         if existing_tmdb_id and existing_tmdb_id != tmdb_id:
@@ -213,10 +216,10 @@ async def _ingest_movie(tmdb_id: int, log_prefix: str, movies_collection) -> str
                 return "skipped"
             elif not existing_tmdb_id and not incoming_year:
                 return "skipped"
-        
+
     # 4. Map and ingest (exact same path as bulk importer)
     doc = map_movie(details, max_cast=10)
-    
+
     # Ensure unique _id (same logic as ingest_tmdb_movies.py)
     movie_db_id = doc["_id"]
     base_movie_id = movie_db_id
@@ -224,47 +227,48 @@ async def _ingest_movie(tmdb_id: int, log_prefix: str, movies_collection) -> str
     while await movies_collection.find_one({"_id": movie_db_id}):
         movie_db_id = f"{base_movie_id}_{counter}"
         counter += 1
-        
+
     doc["_id"] = movie_db_id
     doc["source_metadata"]["source"] = "tmdb"
     doc["source_metadata"]["created_by"] = "daily_discovery"
     doc["source_metadata"]["created_at"] = datetime.now(timezone.utc)
-    
+
     doc["director"] = await reconcile_directors(doc.get("director", []))
     doc["writer"] = await reconcile_writers(doc.get("writers", []))
     doc["cast"] = await reconcile_cast(doc.get("cast", []))
-    
+
     # upsert_movie does the cross-collection duplicate check inside
     await upsert_movie(doc)
     return "saved"
 
+
 async def _ingest_tv_series(tmdb_id: int, log_prefix: str, tv_collection) -> str:
     """Core ingestion path for TV series. Returns 'saved', 'skipped', or 'failed'."""
-    existing_by_tmdb = await tv_collection.find_one({
-        "source_metadata.tmdb_id": tmdb_id,
-        "is_deleted": {"$ne": True}
-    })
-    
+    existing_by_tmdb = await tv_collection.find_one(
+        {"source_metadata.tmdb_id": tmdb_id, "is_deleted": {"$ne": True}}
+    )
+
     if existing_by_tmdb:
         return "skipped"
-        
+
     details = await get_tv_details(tmdb_id)
     if not details:
         logger.error(f"[{log_prefix}] Could not fetch details for {tmdb_id}")
         return "failed"
-        
+
     if details.get("adult") is True:
-        logger.info(f"[{log_prefix}] Skipping adult TV series {tmdb_id} ({details.get('name')})")
+        logger.info(
+            f"[{log_prefix}] Skipping adult TV series {tmdb_id} ({details.get('name')})"
+        )
         return "skipped"
 
     title = details.get("name")
     if not title:
         return "failed"
-        
-    existing_by_title = await tv_collection.find_one({
-        "title": title,
-        "is_deleted": {"$ne": True}
-    })
+
+    existing_by_title = await tv_collection.find_one(
+        {"title": title, "is_deleted": {"$ne": True}}
+    )
     if existing_by_title:
         existing_tmdb_id = existing_by_title.get("source_metadata", {}).get("tmdb_id")
         if existing_tmdb_id and existing_tmdb_id != tmdb_id:
@@ -276,33 +280,36 @@ async def _ingest_tv_series(tmdb_id: int, log_prefix: str, tv_collection) -> str
                 return "skipped"
             elif not existing_tmdb_id and not incoming_year:
                 return "skipped"
-        
+
     doc = map_tv_series(details, max_cast=10)
-    
+
     tv_db_id = doc["_id"]
     base_tv_id = tv_db_id
     counter = 1
     while await tv_collection.find_one({"_id": tv_db_id}):
         tv_db_id = f"{base_tv_id}_{counter}"
         counter += 1
-        
+
     doc["_id"] = tv_db_id
     doc["source_metadata"]["source"] = "tmdb"
     doc["source_metadata"]["created_by"] = "daily_discovery"
     doc["source_metadata"]["created_at"] = datetime.now(timezone.utc)
-    
+
     doc["creators"] = await reconcile_creators(doc.get("creators", []))
     doc["cast"] = await reconcile_cast(doc.get("cast", []))
-    
+
     await upsert_tv_series(doc)
     return "saved"
+
 
 async def discover_new_movies():
     """Discover newly released or announced movies on TMDB using popularity, future-window date range, and changes-feed."""
     now = datetime.now(timezone.utc)
     now_str = now.strftime("%Y-%m-%d")
     upcoming_gte = (now - timedelta(days=7)).strftime("%Y-%m-%d")
-    upcoming_lte = (now + timedelta(days=365 * 4)).strftime("%Y-%m-%d")  # 4 years ahead to capture announced blockbusters
+    upcoming_lte = (now + timedelta(days=365 * 4)).strftime(
+        "%Y-%m-%d"
+    )  # 4 years ahead to capture announced blockbusters
     recent_gte = (now - timedelta(days=14)).strftime("%Y-%m-%d")
 
     changes_start_date = (now - timedelta(days=2)).strftime("%Y-%m-%d")
@@ -315,13 +322,15 @@ async def discover_new_movies():
         "upcoming": {"saved": 0, "skipped": 0, "failed": 0},
         "recent": {"saved": 0, "skipped": 0, "failed": 0},
         "changes_feed": {"saved": 0, "skipped": 0, "failed": 0},
-        "total": {"saved": 0, "skipped": 0, "failed": 0}
+        "total": {"saved": 0, "skipped": 0, "failed": 0},
     }
 
     processed_ids = set()
 
     # 1. Popular upcoming / announced movies (captures Marvel, sequels, announced titles like Ghost Rider)
-    logger.info(f"Starting TMDB popular upcoming movie discovery: {upcoming_gte} to {upcoming_lte}")
+    logger.info(
+        f"Starting TMDB popular upcoming movie discovery: {upcoming_gte} to {upcoming_lte}"
+    )
     current_page = 1
     max_pages = 25
     while current_page <= max_pages:
@@ -331,7 +340,7 @@ async def discover_new_movies():
             **{
                 "primary_release_date.gte": upcoming_gte,
                 "primary_release_date.lte": upcoming_lte,
-            }
+            },
         )
 
         results = response.get("results", [])
@@ -344,7 +353,9 @@ async def discover_new_movies():
                 continue
 
             processed_ids.add(tmdb_id)
-            res = await _ingest_movie(tmdb_id, "TMDB Movies Upcoming", movies_collection)
+            res = await _ingest_movie(
+                tmdb_id, "TMDB Movies Upcoming", movies_collection
+            )
             stats["upcoming"][res] += 1
             stats["total"][res] += 1
 
@@ -356,7 +367,9 @@ async def discover_new_movies():
         current_page += 1
 
     # 2. Popular recently released movies (past 14 days)
-    logger.info(f"Starting TMDB recently released movie discovery: {recent_gte} to {now_str}")
+    logger.info(
+        f"Starting TMDB recently released movie discovery: {recent_gte} to {now_str}"
+    )
     current_page = 1
     recent_max_pages = 10
     while current_page <= recent_max_pages:
@@ -366,7 +379,7 @@ async def discover_new_movies():
             **{
                 "primary_release_date.gte": recent_gte,
                 "primary_release_date.lte": now_str,
-            }
+            },
         )
 
         results = response.get("results", [])
@@ -391,15 +404,21 @@ async def discover_new_movies():
         current_page += 1
 
     # 3. Changes feed path
-    logger.info(f"Starting TMDB movie discovery window (changes-feed): {changes_start_date} to {changes_end_date}")
-    changed_ids = await fetch_recent_tmdb_movie_changes(changes_start_date, changes_end_date)
+    logger.info(
+        f"Starting TMDB movie discovery window (changes-feed): {changes_start_date} to {changes_end_date}"
+    )
+    changed_ids = await fetch_recent_tmdb_movie_changes(
+        changes_start_date, changes_end_date
+    )
 
     for tmdb_id in changed_ids:
         if tmdb_id in processed_ids:
             continue
 
         processed_ids.add(tmdb_id)
-        res = await _ingest_movie(tmdb_id, "TMDB Movies Changes-Feed", movies_collection)
+        res = await _ingest_movie(
+            tmdb_id, "TMDB Movies Changes-Feed", movies_collection
+        )
         stats["changes_feed"][res] += 1
         stats["total"][res] += 1
 
@@ -426,13 +445,15 @@ async def discover_new_tv():
         "upcoming": {"saved": 0, "skipped": 0, "failed": 0},
         "recent": {"saved": 0, "skipped": 0, "failed": 0},
         "changes_feed": {"saved": 0, "skipped": 0, "failed": 0},
-        "total": {"saved": 0, "skipped": 0, "failed": 0}
+        "total": {"saved": 0, "skipped": 0, "failed": 0},
     }
 
     processed_ids = set()
 
     # 1. Popular upcoming / announced TV series (e.g. VisionQuest)
-    logger.info(f"Starting TMDB popular upcoming TV discovery: {upcoming_gte} to {upcoming_lte}")
+    logger.info(
+        f"Starting TMDB popular upcoming TV discovery: {upcoming_gte} to {upcoming_lte}"
+    )
     current_page = 1
     max_pages = 20
     while current_page <= max_pages:
@@ -442,7 +463,7 @@ async def discover_new_tv():
             **{
                 "first_air_date.gte": upcoming_gte,
                 "first_air_date.lte": upcoming_lte,
-            }
+            },
         )
 
         results = response.get("results", [])
@@ -467,7 +488,9 @@ async def discover_new_tv():
         current_page += 1
 
     # 2. Popular recently released TV series
-    logger.info(f"Starting TMDB recently released TV discovery: {recent_gte} to {now_str}")
+    logger.info(
+        f"Starting TMDB recently released TV discovery: {recent_gte} to {now_str}"
+    )
     current_page = 1
     recent_max_pages = 10
     while current_page <= recent_max_pages:
@@ -477,7 +500,7 @@ async def discover_new_tv():
             **{
                 "first_air_date.gte": recent_gte,
                 "first_air_date.lte": now_str,
-            }
+            },
         )
 
         results = response.get("results", [])
@@ -502,8 +525,12 @@ async def discover_new_tv():
         current_page += 1
 
     # 3. Changes feed path
-    logger.info(f"Starting TMDB TV discovery window (changes-feed): {changes_start_date} to {changes_end_date}")
-    changed_ids = await fetch_recent_tmdb_tv_changes(changes_start_date, changes_end_date)
+    logger.info(
+        f"Starting TMDB TV discovery window (changes-feed): {changes_start_date} to {changes_end_date}"
+    )
+    changed_ids = await fetch_recent_tmdb_tv_changes(
+        changes_start_date, changes_end_date
+    )
 
     for tmdb_id in changed_ids:
         if tmdb_id in processed_ids:
@@ -523,7 +550,7 @@ def get_seasons(now: datetime) -> list[tuple[str, int]]:
     """Determine the current and next anime season based on the date."""
     year = now.year
     month = now.month
-    
+
     if 1 <= month <= 3:
         current = ("WINTER", year)
         next_season = ("SPRING", year)
@@ -536,92 +563,89 @@ def get_seasons(now: datetime) -> list[tuple[str, int]]:
     else:
         current = ("FALL", year)
         next_season = ("WINTER", year + 1)
-        
+
     return [current, next_season]
 
+
 async def process_anilist_season(
-    client: httpx.AsyncClient, 
-    limiter: AniListRateLimiter, 
-    season: str, 
-    season_year: int, 
-    last_seen_id: int, 
-    db
+    client: httpx.AsyncClient,
+    limiter: AniListRateLimiter,
+    season: str,
+    season_year: int,
+    last_seen_id: int,
+    db,
 ):
     saved_count = 0
     skipped_count = 0
     failed_count = 0
     highest_seen = last_seen_id
-    
+
     anime_collection = db["anime"]
-    
+
     page = 1
     has_next_page = True
-    
+
     logger.info(f"Starting AniList discovery for {season} {season_year}")
-    
+
     while has_next_page:
         data = await anilist_request(
-            client, limiter, ANIME_INCREMENTAL_QUERY, 
-            {
-                "page": page, 
-                "perPage": 50, 
-                "season": season, 
-                "seasonYear": season_year
-            }
+            client,
+            limiter,
+            ANIME_INCREMENTAL_QUERY,
+            {"page": page, "perPage": 50, "season": season, "seasonYear": season_year},
         )
-        
+
         if not data:
             break
-            
+
         page_info = data.get("data", {}).get("Page", {}).get("pageInfo", {})
         has_next_page = page_info.get("hasNextPage", False)
         media_list = data.get("data", {}).get("Page", {}).get("media", [])
-        
+
         if not media_list:
             break
-            
+
         for item in media_list:
             anilist_id = item["id"]
-            
+
             if anilist_id <= last_seen_id:
                 # We have reached old territory. Since results are ID_DESC, everything from here on is old.
                 has_next_page = False
                 break
-                
+
             if anilist_id > highest_seen:
                 highest_seen = anilist_id
-                
+
             # Double-check DB (failsafe)
-            existing_by_id = await anime_collection.find_one({
-                "source_metadata.anilist_id": anilist_id,
-                "is_deleted": {"$ne": True}
-            })
-            
+            existing_by_id = await anime_collection.find_one(
+                {"source_metadata.anilist_id": anilist_id, "is_deleted": {"$ne": True}}
+            )
+
             if existing_by_id:
                 skipped_count += 1
                 continue
-                
+
             # Process new Anime and Characters
             try:
                 doc = transform_anime(item)
                 anime_db_id = doc["_id"]
                 base_anime_id = anime_db_id
-                
+
                 # Check for slug collision
                 existing_by_slug = await anime_collection.find_one({"_id": anime_db_id})
                 if existing_by_slug:
                     # Append anilist_id if slug taken
                     anime_db_id = f"{base_anime_id}_{anilist_id}"
-                    
+
                 doc["_id"] = anime_db_id
-                
+
                 # Process Characters & VAs
                 characters_data = item.get("characters", {}).get("edges", [])
                 for edge in characters_data:
                     char_node = edge.get("node")
                     if not char_node:
                         continue
-                        
+
                     role = edge.get("role")
                     va_ids = []
                     voice_actors = edge.get("voiceActors", [])
@@ -629,81 +653,93 @@ async def process_anilist_season(
                         va_id = await resolve_or_create_voice_actor(voice_actors[0])
                         if va_id:
                             va_ids = [va_id]
-                            
+
                     await resolve_or_create_character(
                         char_node=char_node,
                         anime_id=anime_db_id,
                         role=role,
-                        voice_actor_ids=va_ids
+                        voice_actor_ids=va_ids,
                     )
-                
+
                 # Check for cross-collection duplicates before insert
-                from app.services.duplicate_detection_service import check_for_duplicate, apply_reciprocal_duplicate_flag
+                from app.services.duplicate_detection_service import (
+                    check_for_duplicate,
+                    apply_reciprocal_duplicate_flag,
+                )
+
                 dup = await check_for_duplicate(doc, "anime")
                 if dup:
                     doc["possible_duplicate_of"] = dup
                     await apply_reciprocal_duplicate_flag(doc["_id"], "anime", dup)
-                    logger.info(f"Possible duplicate detected for anime: '{doc.get('title', {}).get('english')}' ({doc['_id']})")
-                    
+                    logger.info(
+                        f"Possible duplicate detected for anime: '{doc.get('title', {}).get('english')}' ({doc['_id']})"
+                    )
+
                 await anime_collection.insert_one(doc)
                 saved_count += 1
-                
+
             except Exception as e:
-                logger.error(f"[AniList] Failed to process {item.get('title', {}).get('romaji')}: {e}")
+                logger.error(
+                    f"[AniList] Failed to process {item.get('title', {}).get('romaji')}: {e}"
+                )
                 failed_count += 1
-                
+
         page += 1
-        
+
     return {
         "saved": saved_count,
         "skipped": skipped_count,
         "failed": failed_count,
-        "highest_seen": highest_seen
+        "highest_seen": highest_seen,
     }
+
 
 async def discover_new_anime():
     """Discover newly added Anime from AniList for current and next seasons."""
     db = get_db()
     checkpoints = db["sync_checkpoints"]
-    
+
     checkpoint = await checkpoints.find_one({"_id": "anilist_daily_discovery"})
     last_seen_id = checkpoint.get("last_seen_anilist_media_id", 0) if checkpoint else 0
-    
+
     limiter = AniListRateLimiter()
     now = datetime.now(timezone.utc)
     seasons = get_seasons(now)
-    
+
     total_saved = 0
     total_skipped = 0
     total_failed = 0
     overall_highest_seen = last_seen_id
-    
+
     async with httpx.AsyncClient() as client:
         for season, season_year in seasons:
-            res = await process_anilist_season(client, limiter, season, season_year, last_seen_id, db)
+            res = await process_anilist_season(
+                client, limiter, season, season_year, last_seen_id, db
+            )
             total_saved += res["saved"]
             total_skipped += res["skipped"]
             total_failed += res["failed"]
             if res["highest_seen"] > overall_highest_seen:
                 overall_highest_seen = res["highest_seen"]
-                
+
     if overall_highest_seen > last_seen_id:
         await checkpoints.update_one(
             {"_id": "anilist_daily_discovery"},
             {"$set": {"last_seen_anilist_media_id": overall_highest_seen}},
-            upsert=True
+            upsert=True,
         )
-        
+
     return {"saved": total_saved, "skipped": total_skipped, "failed": total_failed}
+
 
 async def run_daily_discovery():
     """Run all discovery jobs and log a summary."""
     logger.info("Starting Daily Discovery Sync...")
-    
+
     movies_res = await discover_new_movies()
     tv_res = await discover_new_tv()
     anime_res = await discover_new_anime()
-    
+
     logger.info(
         f"Daily Discovery Sync Complete.\n"
         f"Movies (Total) -> Saved: {movies_res['total']['saved']}, Skipped: {movies_res['total']['skipped']}, Failed: {movies_res['total']['failed']}\n"
@@ -714,9 +750,5 @@ async def run_daily_discovery():
         f"  - via changes-feed: Saved {tv_res['changes_feed']['saved']}, Skipped {tv_res['changes_feed']['skipped']}\n"
         f"Anime          -> Saved: {anime_res['saved']}, Skipped: {anime_res['skipped']}, Failed: {anime_res['failed']}"
     )
-    
-    return {
-        "movies": movies_res,
-        "tv_series": tv_res,
-        "anime": anime_res
-    }
+
+    return {"movies": movies_res, "tv_series": tv_res, "anime": anime_res}

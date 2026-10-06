@@ -23,7 +23,7 @@ async def fetch_and_save(client: httpx.AsyncClient, title: str):
             "type": "movie",
             "plot": "full",
         },
-        timeout=30.0
+        timeout=30.0,
     )
 
     response.raise_for_status()
@@ -36,9 +36,7 @@ async def fetch_and_save(client: httpx.AsyncClient, title: str):
     formatted_movie = transform_movie(data)
 
     await movies_collection.replace_one(
-        {"_id": formatted_movie["_id"]},
-        formatted_movie,
-        upsert=True
+        {"_id": formatted_movie["_id"]}, formatted_movie, upsert=True
     )
 
     print(f"✅ Saved: {formatted_movie['_id']}")

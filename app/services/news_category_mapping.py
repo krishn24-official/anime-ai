@@ -7,7 +7,6 @@ SOURCE_CATEGORY_MAP = {
     "animenewsnetwork": "Anime",
     "crunchyroll": "Anime",
     "myanimelist": "Anime",
-
     "boxoffice": "Movies",
     "pinkvilla": "Movies",
     "filmfare": "Movies",
@@ -36,7 +35,6 @@ YOUTUBE_CHANNEL_CATEGORY_MAP = {
     "Capcom": "Games",
     "Epic Games": "Games",
     "SEGA": "Games",
-
     # 📚 Anime
     "Shonen Jump": "Anime",
     "Kodansha": "Anime",
@@ -47,7 +45,6 @@ YOUTUBE_CHANNEL_CATEGORY_MAP = {
     "Netflix Anime": "Anime",
     "Muse Asia": "Anime",
     "Ani-One Asia": "Anime",
-
     # 🎬 Movies
     "Netflix": "Movies",
     "Prime Video": "Movies",
@@ -71,9 +68,19 @@ YOUTUBE_CHANNEL_CATEGORY_MAP = {
 
 
 TV_KEYWORDS = (
-    "season ", "episode ", "series", "tv show", "web series",
-    "docuseries", "miniseries", "limited series", "sitcom",
-    "k-drama", "drama series", "spinoff series", "ott release"
+    "season ",
+    "episode ",
+    "series",
+    "tv show",
+    "web series",
+    "docuseries",
+    "miniseries",
+    "limited series",
+    "sitcom",
+    "k-drama",
+    "drama series",
+    "spinoff series",
+    "ott release",
 )
 
 
@@ -103,12 +110,12 @@ def smart_truncate(text: str, max_length: int = 500) -> str:
         return text
     truncated = text[:max_length]
     # cut at the last complete sentence if one exists within range
-    last_period = truncated.rfind('. ')
+    last_period = truncated.rfind(". ")
     if last_period > max_length * 0.5:  # only use it if it's not too far back
-        return truncated[:last_period + 1]
+        return truncated[: last_period + 1]
     # otherwise cut at the last whole word
-    last_space = truncated.rfind(' ')
-    return truncated[:last_space] + '...' if last_space > 0 else truncated + '...'
+    last_space = truncated.rfind(" ")
+    return truncated[:last_space] + "..." if last_space > 0 else truncated + "..."
 
 
 def make_fallback_summary(article: dict) -> str:

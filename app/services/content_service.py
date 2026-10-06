@@ -1,5 +1,4 @@
 from bson import ObjectId
-from datetime import datetime, timedelta
 
 from app.services.content_types import (
     is_valid_content_type,
@@ -29,8 +28,6 @@ from app.repositories.comment_repository import (
     toggle_like_comment as toggle_like_comment_repo,
 )
 from app.repositories.content_repository import (
-    get_dated_releases_range,
-    get_announced_releases_range,
     get_weekly_suggestions,
 )
 
@@ -64,7 +61,10 @@ def _validate(content_type: str, content_id: str) -> str:
 
 # --- Ratings ---
 
-async def rate_content(user_id: ObjectId, content_type: str, content_id: str, rating: str):
+
+async def rate_content(
+    user_id: ObjectId, content_type: str, content_id: str, rating: str
+):
     if not is_valid_rating(rating):
         raise ContentError(400, f"Rating must be one of: {', '.join(RATING_SCALE)}")
 
@@ -76,7 +76,9 @@ async def rate_content(user_id: ObjectId, content_type: str, content_id: str, ra
     return await get_content_rating(user_id, content_type, content_id)
 
 
-async def get_content_rating(user_id: ObjectId | None, content_type: str, content_id: str):
+async def get_content_rating(
+    user_id: ObjectId | None, content_type: str, content_id: str
+):
     content_id = _validate(content_type, content_id)
 
     stats = await get_rating_stats(content_type, content_id)
@@ -101,13 +103,18 @@ async def remove_rating(user_id: ObjectId, content_type: str, content_id: str):
 
 # --- Watchlist ---
 
+
 async def add_watchlist_item(user_id: ObjectId, content_type: str, content_id: str):
     content_id = _validate(content_type, content_id)
     await _ensure_content_exists(content_type, content_id)
 
     await add_to_watchlist(user_id, content_type, content_id)
 
-    return {"content_type": content_type, "content_id": content_id, "in_watchlist": True}
+    return {
+        "content_type": content_type,
+        "content_id": content_id,
+        "in_watchlist": True,
+    }
 
 
 async def remove_watchlist_item(user_id: ObjectId, content_type: str, content_id: str):
@@ -115,7 +122,11 @@ async def remove_watchlist_item(user_id: ObjectId, content_type: str, content_id
 
     await remove_from_watchlist(user_id, content_type, content_id)
 
-    return {"content_type": content_type, "content_id": content_id, "in_watchlist": False}
+    return {
+        "content_type": content_type,
+        "content_id": content_id,
+        "in_watchlist": False,
+    }
 
 
 async def check_watchlist_item(user_id: ObjectId, content_type: str, content_id: str):
@@ -123,7 +134,11 @@ async def check_watchlist_item(user_id: ObjectId, content_type: str, content_id:
 
     in_list = await is_in_watchlist(user_id, content_type, content_id)
 
-    return {"content_type": content_type, "content_id": content_id, "in_watchlist": in_list}
+    return {
+        "content_type": content_type,
+        "content_id": content_id,
+        "in_watchlist": in_list,
+    }
 
 
 async def fetch_user_watchlist(user_id: ObjectId):
@@ -141,33 +156,38 @@ async def fetch_user_watchlist(user_id: ObjectId):
 
 # --- Comments ---
 
+
 def _serialize_comment(comment: dict, current_user_id: ObjectId | None = None) -> dict:
     likes = comment.get("likes", [])
     if isinstance(likes, int):
         likes = []
-    
+
     is_liked = False
     if current_user_id:
         is_liked = any(str(uid) == str(current_user_id) for uid in likes)
-        
+
     return {
         "id": str(comment["_id"]),
         "user_id": str(comment["user_id"]),
-        "display_name": comment.get("display_name"),    # enriched by caller
-        "username": comment.get("username"),            # enriched by caller
+        "display_name": comment.get("display_name"),  # enriched by caller
+        "username": comment.get("username"),  # enriched by caller
         "content_type": comment["content_type"],
         "content_id": comment["content_id"],
         "text": comment["text"],
         "parent_id": str(comment["parent_id"]) if comment.get("parent_id") else None,
         "is_public": comment.get("is_public", True),
         "is_spoiler": comment.get("is_spoiler", False),
-        "like_count": comment.get("like_count", len(likes)), # Aggregation pipeline populates like_count, otherwise use len
+        "like_count": comment.get(
+            "like_count", len(likes)
+        ),  # Aggregation pipeline populates like_count, otherwise use len
         "is_liked": is_liked,
         "created_at": comment["created_at"],
     }
 
 
-def _build_comment_tree(comments: list[dict], current_user_id: ObjectId | None = None) -> list[dict]:
+def _build_comment_tree(
+    comments: list[dict], current_user_id: ObjectId | None = None
+) -> list[dict]:
     by_id = {str(c["_id"]): _serialize_comment(c, current_user_id) for c in comments}
 
     for comment in by_id.values():
@@ -186,7 +206,14 @@ def _build_comment_tree(comments: list[dict], current_user_id: ObjectId | None =
     return roots
 
 
-async def add_comment(user_id: ObjectId, content_type: str, content_id: str, text: str, parent_id: str | None = None, is_spoiler: bool = False):
+async def add_comment(
+    user_id: ObjectId,
+    content_type: str,
+    content_id: str,
+    text: str,
+    parent_id: str | None = None,
+    is_spoiler: bool = False,
+):
     if not text or not text.strip():
         raise ContentError(400, "Comment text cannot be empty")
 
@@ -203,12 +230,16 @@ async def add_comment(user_id: ObjectId, content_type: str, content_id: str, tex
         if not parent_comment:
             raise ContentError(404, "Parent comment not found")
 
-    comment = await create_comment(user_id, content_type, content_id, text.strip(), parent_oid, is_spoiler)
+    comment = await create_comment(
+        user_id, content_type, content_id, text.strip(), parent_oid, is_spoiler
+    )
 
     return _serialize_comment(comment)
 
 
-async def fetch_comments(content_type: str, content_id: str, current_user_id: ObjectId | None = None):
+async def fetch_comments(
+    content_type: str, content_id: str, current_user_id: ObjectId | None = None
+):
     content_id = _validate(content_type, content_id)
 
     comments = await get_comments_for_content(content_type, content_id)
@@ -219,10 +250,11 @@ async def fetch_comments(content_type: str, content_id: str, current_user_id: Ob
     # Batch fetch user display names
     db = get_db()
     user_ids = list({c["user_id"] for c in comments if c.get("user_id")})
-    users = await db["users"].find(
-        {"_id": {"$in": user_ids}},
-        {"_id": 1, "display_name": 1, "username": 1}
-    ).to_list(None)
+    users = (
+        await db["users"]
+        .find({"_id": {"$in": user_ids}}, {"_id": 1, "display_name": 1, "username": 1})
+        .to_list(None)
+    )
     user_map = {u["_id"]: u for u in users}
 
     # Enrich comments with user info
@@ -249,18 +281,20 @@ async def remove_comment(user_id: ObjectId, comment_id: str):
     await delete_comment(comment_oid)
 
 
-async def toggle_like_comment(user_id: ObjectId, content_type: str, content_id: str, comment_id: str):
+async def toggle_like_comment(
+    user_id: ObjectId, content_type: str, content_id: str, comment_id: str
+):
     content_id = _validate(content_type, content_id)
     await _ensure_content_exists(content_type, content_id)
-    
+
     comment_oid = to_object_id(comment_id)
     if not comment_oid:
         raise ContentError(400, f"Invalid comment_id: {comment_id}")
-        
+
     result = await toggle_like_comment_repo(user_id, comment_oid)
     if not result:
         raise ContentError(404, "Comment not found")
-        
+
     new_count, is_liked = result
     return {"like_count": new_count, "is_liked": is_liked}
 
@@ -272,11 +306,11 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
 
     db = get_db()
     collection = CONTENT_COLLECTION_MAP[content_type]
-    
+
     doc = await db[collection].find_one({"_id": content_id})
     if not doc:
         raise ContentError(404, f"{content_type} not found")
-        
+
     # Extract trailers or fallback to legacy trailer formats
     trailers = doc.get("trailers", [])
     if not trailers:
@@ -291,10 +325,10 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
                     trailer_url = trailer.get("url", "")
             elif isinstance(trailer, str):
                 trailer_url = trailer
-                
+
         if not trailer_url:
             trailer_url = doc.get("youtube", "")
-            
+
         if trailer_url:
             trailers.append({"url": trailer_url, "label": "Trailer"})
 
@@ -318,32 +352,55 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
         "language": doc.get("language", []),
         "country": doc.get("country", []),
         "age_rating": doc.get("age_rating", ""),
-        "runtime_minutes": doc.get("runtime_minutes", doc.get("duration_minutes", doc.get("episode_runtime_minutes", 0))),
+        "runtime_minutes": doc.get(
+            "runtime_minutes",
+            doc.get("duration_minutes", doc.get("episode_runtime_minutes", 0)),
+        ),
     }
-    
+
     # Handle different title formats (e.g. dict for anime)
     if isinstance(response["title"], dict):
-        response["title"] = response["title"].get("english") or response["title"].get("romaji") or response["title"].get("japanese")
-        
+        response["title"] = (
+            response["title"].get("english")
+            or response["title"].get("romaji")
+            or response["title"].get("japanese")
+        )
+
     # Extract cast and crew
     if content_type in ["movie", "tv_series"]:
         # Cast
         cast_list = doc.get("cast", [])
         if isinstance(cast_list, list):
-            if cast_list and isinstance(cast_list[0], dict) and "actor_id" in cast_list[0]:
-                from app.services.cast_enrichment_service import enrich_cast, enrich_crew
+            if (
+                cast_list
+                and isinstance(cast_list[0], dict)
+                and "actor_id" in cast_list[0]
+            ):
+                from app.services.cast_enrichment_service import (
+                    enrich_cast,
+                    enrich_crew,
+                )
+
                 response["cast"] = await enrich_cast(cast_list)
             else:
                 for c in cast_list:
                     if isinstance(c, str):
-                        response["cast"].append({"name": c, "role": "Actor", "image": None})
+                        response["cast"].append(
+                            {"name": c, "role": "Actor", "image": None}
+                        )
                     elif isinstance(c, dict):
                         response["cast"].append(c)
-                    
+
         # Directors/Writers -> Crew
         directors = doc.get("director", [])
-        if isinstance(directors, list) and directors and isinstance(directors[0], dict) and "actor_id" in directors[0]:
+        if (
+            isinstance(directors, list)
+            and directors
+            and isinstance(directors[0], dict)
+            and "actor_id" in directors[0]
+        ):
             from app.services.cast_enrichment_service import enrich_crew
+
             enriched_directors = await enrich_crew(directors, default_role="Director")
             response["crew"].extend(enriched_directors)
             response["director"] = enriched_directors
@@ -351,11 +408,19 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
             for d in directors:
                 response["crew"].append({"name": d, "role": "Director", "image": None})
         elif isinstance(directors, str):
-            response["crew"].append({"name": directors, "role": "Director", "image": None})
-            
+            response["crew"].append(
+                {"name": directors, "role": "Director", "image": None}
+            )
+
         creators = doc.get("creators", [])
-        if isinstance(creators, list) and creators and isinstance(creators[0], dict) and "actor_id" in creators[0]:
+        if (
+            isinstance(creators, list)
+            and creators
+            and isinstance(creators[0], dict)
+            and "actor_id" in creators[0]
+        ):
             from app.services.cast_enrichment_service import enrich_crew
+
             enriched_creators = await enrich_crew(creators, default_role="Creator")
             response["crew"].extend(enriched_creators)
             response["creators"] = enriched_creators
@@ -363,23 +428,27 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
             for c in creators:
                 response["crew"].append({"name": c, "role": "Creator", "image": None})
         elif isinstance(creators, str):
-            response["crew"].append({"name": creators, "role": "Creator", "image": None})
-            
+            response["crew"].append(
+                {"name": creators, "role": "Creator", "image": None}
+            )
+
         writers = doc.get("writers", [])
         if isinstance(writers, list):
             for w in writers:
                 response["crew"].append({"name": w, "role": "Writer", "image": None})
-    
+
     elif content_type == "anime":
         # Voice Actors
         voice_actors = doc.get("voice_actors", [])
         if isinstance(voice_actors, list):
             for va in voice_actors:
                 if isinstance(va, str):
-                    response["cast"].append({"name": va, "role": "Voice Actor", "image": None})
+                    response["cast"].append(
+                        {"name": va, "role": "Voice Actor", "image": None}
+                    )
                 elif isinstance(va, dict):
                     response["cast"].append(va)
-                    
+
     # Batch fetch images for all cast, crew, actors, directors, producers
     all_names = set()
     for category in ["cast", "crew"]:
@@ -392,35 +461,34 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
                 all_names.add(item)
             elif isinstance(item, dict) and item.get("name"):
                 all_names.add(item["name"])
-                
+
     if all_names:
-        actors_docs = await db["actors"].find({"name": {"$in": list(all_names)}}).to_list(None)
+        actors_docs = (
+            await db["actors"].find({"name": {"$in": list(all_names)}}).to_list(None)
+        )
         actor_image_map = {}
         for a in actors_docs:
             profile = a.get("images", {}).get("profile")
             if profile:
                 actor_image_map[a["name"]] = profile
-                
+
         # Enrich the response
         for category in ["cast", "crew"]:
             for item in response[category]:
                 if isinstance(item, dict) and item.get("name") in actor_image_map:
                     item["image"] = actor_image_map[item["name"]]
-                    
+
         for category in ["actors", "director", "producers"]:
             enriched = []
             for item in response[category]:
                 name = item if isinstance(item, str) else item.get("name")
                 if name:
-                    enriched.append({
-                        "name": name,
-                        "image": actor_image_map.get(name)
-                    })
+                    enriched.append({"name": name, "image": actor_image_map.get(name)})
             response[category] = enriched
 
     return response
 
+
 # --- Weekly Suggestions ---
 async def get_weekly_watch_suggestions(picks_per_type: int = 2):
     return await get_weekly_suggestions(picks_per_type)
-

@@ -2,10 +2,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.services.tv_series_service import fetch_all_tv_series, fetch_tv_series
 
-router = APIRouter(
-    prefix="/tv-series",
-    tags=["TV Series"]
-)
+router = APIRouter(prefix="/tv-series", tags=["TV Series"])
 
 
 @router.get("")

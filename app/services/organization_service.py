@@ -7,6 +7,7 @@ from app.repositories.organization_repository import (
 from app.repositories.character_repository import get_character_basic
 from app.db.mongo import get_db
 
+
 def _serialize_basic_org(org: dict) -> dict:
     return {
         "id": str(org.get("_id")),
@@ -23,14 +24,20 @@ def _serialize_basic_org(org: dict) -> dict:
         "tags": org.get("tags", []),
     }
 
-async def fetch_all_organizations(type_filter: str | None = None, page: int = 1, limit: int = 20):
-    items, total = await get_all_organizations(type_filter=type_filter, page=page, limit=limit)
+
+async def fetch_all_organizations(
+    type_filter: str | None = None, page: int = 1, limit: int = 20
+):
+    items, total = await get_all_organizations(
+        type_filter=type_filter, page=page, limit=limit
+    )
     return {
         "items": [_serialize_basic_org(org) for org in items],
         "total": total,
         "page": page,
         "limit": limit,
     }
+
 
 async def fetch_organization_details(org_id: str):
     org = await get_organization_by_id(org_id)
@@ -46,7 +53,7 @@ async def fetch_organization_details(org_id: str):
             leader = {
                 "id": leader_char["_id"],
                 "name": leader_char["name"],
-                "image": leader_char.get("images", {}).get("profile", "")
+                "image": leader_char.get("images", {}).get("profile", ""),
             }
 
     # Resolve founded_by
@@ -58,7 +65,7 @@ async def fetch_organization_details(org_id: str):
             founded_by = {
                 "id": founded_char["_id"],
                 "name": founded_char["name"],
-                "image": founded_char.get("images", {}).get("profile", "")
+                "image": founded_char.get("images", {}).get("profile", ""),
             }
 
     # Resolve members
@@ -68,21 +75,23 @@ async def fetch_organization_details(org_id: str):
         char_basic = None
         if char_id:
             char_basic = await get_character_basic(char_id)
-        
+
         character_details = None
         if char_basic:
             character_details = {
                 "id": char_basic["_id"],
                 "name": char_basic["name"],
-                "image": char_basic.get("images", {}).get("profile", "")
+                "image": char_basic.get("images", {}).get("profile", ""),
             }
-        
-        members_list.append({
-            "char_id": char_id,
-            "title": member.get("title"),
-            "order": member.get("order"),
-            "character": character_details
-        })
+
+        members_list.append(
+            {
+                "char_id": char_id,
+                "title": member.get("title"),
+                "order": member.get("order"),
+                "character": character_details,
+            }
+        )
 
     # Resolve affiliated characters
     # 1. Start with explicitly specified affiliated characters in organization collection
@@ -96,17 +105,19 @@ async def fetch_organization_details(org_id: str):
                     "id": char_basic["_id"],
                     "name": char_basic["name"],
                     "image": char_basic.get("images", {}).get("profile", ""),
-                    "role": aff.get("role") or char_basic.get("role", "")
+                    "role": aff.get("role") or char_basic.get("role", ""),
                 }
 
     # 2. Add dynamic affiliations from characters who have this organization's name in their affiliations list
     org_name = org.get("name")
     if org_name:
         db = get_db()
-        cursor = db["characters"].find({
-            "affiliations": {"$regex": f"^{org_name}$", "$options": "i"},
-            "is_deleted": False
-        })
+        cursor = db["characters"].find(
+            {
+                "affiliations": {"$regex": f"^{org_name}$", "$options": "i"},
+                "is_deleted": False,
+            }
+        )
         async for char_doc in cursor:
             char_id = char_doc["_id"]
             if char_id not in affiliated_chars_map:
@@ -114,7 +125,7 @@ async def fetch_organization_details(org_id: str):
                     "id": char_id,
                     "name": char_doc["name"],
                     "image": char_doc.get("images", {}).get("profile", ""),
-                    "role": char_doc.get("role", "")
+                    "role": char_doc.get("role", ""),
                 }
 
     return {
@@ -131,8 +142,9 @@ async def fetch_organization_details(org_id: str):
         "images": org.get("images", {"logo": "", "banner": ""}),
         "tags": org.get("tags", []),
         "members": members_list,
-        "affiliated_characters": list(affiliated_chars_map.values())
+        "affiliated_characters": list(affiliated_chars_map.values()),
     }
+
 
 async def fetch_organization_search(query: str):
     orgs = await search_organizations(query)
@@ -148,6 +160,7 @@ async def fetch_organization_search(query: str):
         }
         for org in orgs
     ]
+
 
 async def fetch_organizations_by_anime(anime_id: str):
     orgs = await get_organizations_by_anime(anime_id)

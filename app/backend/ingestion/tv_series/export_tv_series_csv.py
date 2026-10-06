@@ -6,6 +6,7 @@ Run:
 
 Produces: tv_series_data_template.csv
 """
+
 import asyncio
 import csv
 import sys
@@ -13,8 +14,8 @@ import sys
 # Ensure Unicode support in Windows console
 if sys.platform == "win32":
     try:
-        sys.stdout.reconfigure(encoding='utf-8')
-        sys.stderr.reconfigure(encoding='utf-8')
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
     except Exception:
         pass
 
@@ -85,9 +86,12 @@ async def main():
     await connect_db()
     db = get_db()
 
-    tv_series = await db["tv_series"].find(
-        {"is_deleted": {"$ne": True}}
-    ).sort("title", 1).to_list(None)
+    tv_series = (
+        await db["tv_series"]
+        .find({"is_deleted": {"$ne": True}})
+        .sort("title", 1)
+        .to_list(None)
+    )
 
     await close_db()
 
@@ -101,25 +105,29 @@ async def main():
                 rating = tv.get("rating") or {}
                 source = tv.get("source_metadata") or {}
 
-                writer.writerow({
-                    "_id": tv["_id"],
-                    "title": _val(tv.get("title")),
-                    "year": _val(tv.get("year")),
-                    "first_air_date": _val(tv.get("first_air_date")),
-                    "episode_runtime_minutes": _val(tv.get("episode_runtime_minutes")),
-                    "genres": _join(tv.get("genres")),
-                    "creators": _join(tv.get("creators")),
-                    "cast": _join(tv.get("cast")),
-                    "plot": _val(tv.get("plot")),
-                    "language": _join(tv.get("language")),
-                    "country": _join(tv.get("country")),
-                    "total_seasons": _val(tv.get("total_seasons")),
-                    "imdb_rating": _val(rating.get("imdb")),
-                    "imdb_votes": _val(rating.get("imdb_votes")),
-                    "imdb_id": _val(source.get("imdb_id")),
-                    "image_poster": _val(images.get("poster")),
-                    "status": _val(tv.get("status")),
-                })
+                writer.writerow(
+                    {
+                        "_id": tv["_id"],
+                        "title": _val(tv.get("title")),
+                        "year": _val(tv.get("year")),
+                        "first_air_date": _val(tv.get("first_air_date")),
+                        "episode_runtime_minutes": _val(
+                            tv.get("episode_runtime_minutes")
+                        ),
+                        "genres": _join(tv.get("genres")),
+                        "creators": _join(tv.get("creators")),
+                        "cast": _join(tv.get("cast")),
+                        "plot": _val(tv.get("plot")),
+                        "language": _join(tv.get("language")),
+                        "country": _join(tv.get("country")),
+                        "total_seasons": _val(tv.get("total_seasons")),
+                        "imdb_rating": _val(rating.get("imdb")),
+                        "imdb_votes": _val(rating.get("imdb_votes")),
+                        "imdb_id": _val(source.get("imdb_id")),
+                        "image_poster": _val(images.get("poster")),
+                        "status": _val(tv.get("status")),
+                    }
+                )
         else:
             print("📝 No TV Series found — writing example rows as template")
             for row in EXAMPLE_ROWS:

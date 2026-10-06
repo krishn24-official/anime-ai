@@ -22,7 +22,6 @@ This matches the pattern already established in fetch_all.py.
 """
 
 import logging
-from datetime import datetime, timezone
 
 from pymongo.errors import DuplicateKeyError
 
@@ -37,6 +36,7 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────────────────────
 # Voice-Actor resolver
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 async def resolve_or_create_voice_actor(va_data: dict) -> str | None:
     """
@@ -97,7 +97,9 @@ async def resolve_or_create_voice_actor(va_data: dict) -> str | None:
         if existing:
             return str(existing["_id"])
         # Extremely unlikely second collision; fall through and return va_id anyway
-        logger.warning("DuplicateKeyError on voice actor %s — falling back to %s", name, va_id)
+        logger.warning(
+            "DuplicateKeyError on voice actor %s — falling back to %s", name, va_id
+        )
 
     return va_id
 
@@ -105,6 +107,7 @@ async def resolve_or_create_voice_actor(va_data: dict) -> str | None:
 # ─────────────────────────────────────────────────────────────────────────────
 # Character resolver
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 async def resolve_or_create_character(
     char_node: dict,
@@ -158,12 +161,16 @@ async def resolve_or_create_character(
             )
             await char_collection.update_one(
                 {"_id": existing_id},
-                {"$set": {
-                    "anime_ids": merged_anime_ids,
-                    "voice_actor_ids": merged_va_ids,
-                }}
+                {
+                    "$set": {
+                        "anime_ids": merged_anime_ids,
+                        "voice_actor_ids": merged_va_ids,
+                    }
+                },
             )
-            logger.debug("Updated existing character %s (anilist_id=%s)", name, anilist_char_id)
+            logger.debug(
+                "Updated existing character %s (anilist_id=%s)", name, anilist_char_id
+            )
             return existing_id
 
     # ── 2. Fallback dedup (manual-admin characters only) ──────────────────────
@@ -190,17 +197,22 @@ async def resolve_or_create_character(
                     # Match found — update
                     existing_id = candidate["_id"]
                     merged_anime_ids = list(
-                        set(candidate.get("anime_ids", []) + ([anime_id] if anime_id else []))
+                        set(
+                            candidate.get("anime_ids", [])
+                            + ([anime_id] if anime_id else [])
+                        )
                     )
                     merged_va_ids = list(
                         set(candidate.get("voice_actor_ids", []) + voice_actor_ids)
                     )
                     await char_collection.update_one(
                         {"_id": existing_id},
-                        {"$set": {
-                            "anime_ids": merged_anime_ids,
-                            "voice_actor_ids": merged_va_ids,
-                        }}
+                        {
+                            "$set": {
+                                "anime_ids": merged_anime_ids,
+                                "voice_actor_ids": merged_va_ids,
+                            }
+                        },
                     )
                     logger.debug(
                         "Fallback-matched manual character %s by name+birthday", name
@@ -244,6 +256,8 @@ async def resolve_or_create_character(
             )
             if existing:
                 return str(existing["_id"])
-        logger.warning("DuplicateKeyError creating character %s (%s)", name, candidate_id)
+        logger.warning(
+            "DuplicateKeyError creating character %s (%s)", name, candidate_id
+        )
 
     return candidate_id

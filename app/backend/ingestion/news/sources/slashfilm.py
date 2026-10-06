@@ -1,7 +1,11 @@
 import feedparser
 import httpx
 
-from app.services.news_date_utils import parse_published_entry, extract_image_url, DEFAULT_NEWS_HEADERS
+from app.services.news_date_utils import (
+    parse_published_entry,
+    extract_image_url,
+    DEFAULT_NEWS_HEADERS,
+)
 
 SLASHFILM_RSS = "https://www.slashfilm.com/feed/"
 
@@ -10,7 +14,9 @@ async def fetch_slashfilm_news():
     articles = []
 
     try:
-        async with httpx.AsyncClient(timeout=10.0, headers=DEFAULT_NEWS_HEADERS) as client:
+        async with httpx.AsyncClient(
+            timeout=10.0, headers=DEFAULT_NEWS_HEADERS
+        ) as client:
             response = await client.get(SLASHFILM_RSS, follow_redirects=True)
             feed = feedparser.parse(response.content)
 
@@ -21,13 +27,15 @@ async def fetch_slashfilm_news():
 
             image_url = extract_image_url(entry)
 
-            articles.append({
-                "title": entry.title,
-                "url": entry.link,
-                "source": "slashfilm",
-                "published_at": published_at,
-                "image_url": image_url
-            })
+            articles.append(
+                {
+                    "title": entry.title,
+                    "url": entry.link,
+                    "source": "slashfilm",
+                    "published_at": published_at,
+                    "image_url": image_url,
+                }
+            )
 
     except Exception as e:
         print("SlashFilm error:", e)

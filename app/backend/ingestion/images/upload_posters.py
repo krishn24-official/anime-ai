@@ -5,11 +5,11 @@ Cloudinary and update the `images.poster` field with the Cloudinary URL.
 Run:
     python -m app.backend.ingestion.images.upload_posters
 """
+
 import asyncio
 
 from app.db.mongo import connect_db, close_db, get_db
 from app.services.cloudinary_service import upload_image_from_url
-
 
 COLLECTIONS_CONFIG = [
     {
@@ -34,7 +34,7 @@ COLLECTIONS_CONFIG = [
         "collection": "characters",
         "folder": "entertainment_hub/characters",
         "id_prefix": "char",
-        "image_field": "images.profile",   # characters use profile, not poster
+        "image_field": "images.profile",  # characters use profile, not poster
     },
 ]
 
@@ -51,7 +51,7 @@ async def upload_posters_for_collection(
     # image_field is dot-notation e.g. "images.poster" or "images.profile"
     docs = await col.find(
         {image_field: {"$exists": True, "$ne": None}},
-        {"_id": 1, "images": 1, "title": 1, "name": 1}
+        {"_id": 1, "images": 1, "title": 1, "name": 1},
     ).to_list(None)
 
     print(f"\n📦 {collection_name} ({image_field}): {len(docs)} docs with image")
@@ -89,8 +89,7 @@ async def upload_posters_for_collection(
 
         if cloudinary_url:
             await col.update_one(
-                {"_id": doc_id},
-                {"$set": {image_field: cloudinary_url}}
+                {"_id": doc_id}, {"$set": {image_field: cloudinary_url}}
             )
             print(f"  ✅ Updated: {doc_id} → {cloudinary_url}")
         else:

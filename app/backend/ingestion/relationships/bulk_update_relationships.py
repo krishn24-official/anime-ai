@@ -10,21 +10,20 @@ Validates that source_id and target_id exist in the characters
 collection before creating anything, and warns about unknown
 relationship words (not blocking — relationship is free-form).
 """
+
 import asyncio
 import csv
-import re
 import sys
 
 # Ensure Unicode support in Windows console
 if sys.platform == "win32":
     try:
-        sys.stdout.reconfigure(encoding='utf-8')
-        sys.stderr.reconfigure(encoding='utf-8')
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
     except Exception:
         pass
 
 from app.db.mongo import connect_db, close_db, get_db
-from app.services.relationship_inverse_map import get_inverse_relationship, is_symmetric
 
 import os
 
@@ -33,6 +32,7 @@ INPUT_CSV = "relationship_data_template.csv"
 
 
 from app.services.relationship_admin_service import build_relationship_pair
+
 
 async def _validate_rows(rows: list[dict], known_ids: set[str]) -> list[str]:
     warnings = []
@@ -44,19 +44,28 @@ async def _validate_rows(rows: list[dict], known_ids: set[str]) -> list[str]:
 
         if not source_id or not target_id or not relationship:
             if source_id or target_id or relationship:
-                warnings.append(f"Row {i}: incomplete row, missing required field(s) — skipped")
+                warnings.append(
+                    f"Row {i}: incomplete row, missing required field(s) — skipped"
+                )
             continue
 
         if source_id not in known_ids:
-            warnings.append(f"Row {i}: source_id '{source_id}' not found in any entity collection")
+            warnings.append(
+                f"Row {i}: source_id '{source_id}' not found in any entity collection"
+            )
 
         if target_id not in known_ids:
-            warnings.append(f"Row {i}: target_id '{target_id}' not found in any entity collection")
+            warnings.append(
+                f"Row {i}: target_id '{target_id}' not found in any entity collection"
+            )
 
         if source_id == target_id:
-            warnings.append(f"Row {i}: source_id and target_id are the same ('{source_id}') — skipped")
+            warnings.append(
+                f"Row {i}: source_id and target_id are the same ('{source_id}') — skipped"
+            )
 
     return warnings
+
 
 async def main():
     print("🚀 Starting bulk relationship import...")
@@ -68,6 +77,7 @@ async def main():
         input_file_used = INPUT_XLSX
         try:
             import openpyxl
+
             wb = openpyxl.load_workbook(input_file_used, data_only=True)
             sheet = wb.active
             header_row = next(sheet.iter_rows(max_row=1, values_only=True), None)
@@ -79,7 +89,9 @@ async def main():
                     row_dict = {}
                     for i, val in enumerate(r):
                         if i < len(headers) and headers[i]:
-                            row_dict[headers[i]] = str(val).strip() if val is not None else ""
+                            row_dict[headers[i]] = (
+                                str(val).strip() if val is not None else ""
+                            )
                     rows.append(row_dict)
         except Exception as e:
             print(f"❌ Error reading {input_file_used}: {e}")
@@ -93,15 +105,20 @@ async def main():
             print(f"❌ Error reading {input_file_used}: {e}")
             return
     else:
-        print(f"❌ Neither {INPUT_XLSX} nor {INPUT_CSV} was found. Run export_relationship_csv.py first.")
+        print(
+            f"❌ Neither {INPUT_XLSX} nor {INPUT_CSV} was found. Run export_relationship_csv.py first."
+        )
         return
 
     # Drop the example/template row if present
     rows = [
-        r for r in rows
-        if not (r.get("source_id", "").strip() == "char_naruto_uzumaki"
-                and r.get("target_id", "").strip() == "char_sasuke_uchiha"
-                and "(example)" in r.get("source_name", ""))
+        r
+        for r in rows
+        if not (
+            r.get("source_id", "").strip() == "char_naruto_uzumaki"
+            and r.get("target_id", "").strip() == "char_sasuke_uchiha"
+            and "(example)" in r.get("source_name", "")
+        )
     ]
 
     print(f"📊 Read {len(rows)} rows from {input_file_used}\n")
@@ -110,7 +127,14 @@ async def main():
     db = get_db()
 
     # Validate source/target ids exist across all relevant collections
-    collections_to_check = ["characters", "organizations", "anime", "manga", "movies", "tv_series"]
+    collections_to_check = [
+        "characters",
+        "organizations",
+        "anime",
+        "manga",
+        "movies",
+        "tv_series",
+    ]
     known_ids = set()
     for coll_name in collections_to_check:
         docs = await db[coll_name].find({}, {"_id": 1}).to_list(None)
@@ -149,32 +173,38 @@ async def main():
             skipped += 1
             continue
 
-        docs = [d for d in build_relationship_pair(
-            source_id=row.get("source_id", ""),
-            target_id=row.get("target_id", ""),
-            relationship=row.get("relationship", ""),
-            rel_type=row.get("type", ""),
-            context=row.get("context", ""),
-            explicit_inverse=row.get("inverse_relationship", "")
-        ) if d is not None]
+        docs = [
+            d
+            for d in build_relationship_pair(
+                source_id=row.get("source_id", ""),
+                target_id=row.get("target_id", ""),
+                relationship=row.get("relationship", ""),
+                rel_type=row.get("type", ""),
+                context=row.get("context", ""),
+                explicit_inverse=row.get("inverse_relationship", ""),
+            )
+            if d is not None
+        ]
 
         for doc in docs:
-            await col.replace_one(
-                {"_id": doc["_id"]},
-                doc,
-                upsert=True
-            )
+            await col.replace_one({"_id": doc["_id"]}, doc, upsert=True)
             created += 1
 
         if len(docs) > 1:
-            print(f"  ✅ {docs[0]['source_id']} --{docs[0]['relationship']}--> {docs[0]['target_id']}  "
-                  f"(+ inverse: --{docs[1]['relationship']}-->)")
+            print(
+                f"  ✅ {docs[0]['source_id']} --{docs[0]['relationship']}--> {docs[0]['target_id']}  "
+                f"(+ inverse: --{docs[1]['relationship']}-->)"
+            )
         elif len(docs) == 1:
-            print(f"  ✅ {docs[0]['source_id']} --{docs[0]['relationship']}--> {docs[0]['target_id']}")
+            print(
+                f"  ✅ {docs[0]['source_id']} --{docs[0]['relationship']}--> {docs[0]['target_id']}"
+            )
 
     await close_db()
 
-    print(f"\n🏁 Done. Relationship documents created/updated: {created}, Rows skipped: {skipped}")
+    print(
+        f"\n🏁 Done. Relationship documents created/updated: {created}, Rows skipped: {skipped}"
+    )
 
 
 if __name__ == "__main__":

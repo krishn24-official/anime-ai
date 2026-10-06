@@ -3,15 +3,20 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.events import EVENT_JOB_ERROR
 
 from app.services.news_pipeline_service import run_news_pipeline
-from app.services.trending_service import recompute_search_trending, recompute_news_trending
+from app.services.trending_service import (
+    recompute_search_trending,
+    recompute_news_trending,
+)
 from app.services.release_status_sync import sync_all_release_statuses
 from app.services.daily_discovery_service import run_daily_discovery
 
 scheduler = AsyncIOScheduler()
 
+
 def _job_error_listener(event):
     if event.exception:
         print(f"[scheduler] Job {event.job_id} encountered error: {event.exception}")
+
 
 scheduler.add_listener(_job_error_listener, EVENT_JOB_ERROR)
 

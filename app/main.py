@@ -3,10 +3,7 @@ from app.db.mongo import connect_db, close_db
 from app.db.init_db import check_db
 from app.db.setup_collections import create_collections
 from app.db.indexes import create_indexes
-from app.api.routes.character import router
-from app.api.router import (
-    api_router
-)
+from app.api.router import api_router
 from app.services.news_scheduler import start_news_scheduler, stop_news_scheduler
 from app.services.websocket_manager import manager
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,9 +16,9 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:3000",
         "http://127.0.0.1:5173",
-        "https://localhost",       # Capacitor Android (androidScheme: 'https')
-        "capacitor://localhost",   # Capacitor iOS default scheme
-        "https://tauri.localhost", # Tauri desktop on Windows (WebView2)
+        "https://localhost",  # Capacitor Android (androidScheme: 'https')
+        "capacitor://localhost",  # Capacitor iOS default scheme
+        "https://tauri.localhost",  # Tauri desktop on Windows (WebView2)
         "https://anime-ai-fe.vercel.app",
     ],
     allow_origin_regex="https://.*\\.vercel\\.app",  # Matches any Vercel staging or production subdomains
@@ -30,9 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(
-    api_router
-)
+app.include_router(api_router)
 
 
 @app.websocket("/ws")
@@ -45,16 +40,20 @@ async def websocket_endpoint(websocket: WebSocket, last_checked: float | None = 
             from app.db.mongo import get_db
             from app.services.news_date_utils import normalize_datetime
             from app.services.news_service import _serialize
-            
+
             db = get_db()
             last_checked_dt = normalize_datetime(last_checked)
             if last_checked_dt:
-                cursor = db["news"].find({"published_at": {"$gt": last_checked_dt}}).sort("published_at", 1).limit(10)
+                cursor = (
+                    db["news"]
+                    .find({"published_at": {"$gt": last_checked_dt}})
+                    .sort("published_at", 1)
+                    .limit(10)
+                )
                 async for doc in cursor:
-                    await websocket.send_json({
-                        "type": "NEW_ARTICLE",
-                        "data": _serialize(doc)
-                    })
+                    await websocket.send_json(
+                        {"type": "NEW_ARTICLE", "data": _serialize(doc)}
+                    )
         except Exception as err:
             print("[ws] Error sending catch-up notifications:", err)
 
@@ -96,14 +95,13 @@ async def health():
     ok = await check_db()
     return {"db": "connected" if ok else "failed"}
 
+
 @app.get("/debug-db")
 async def debug_db():
     from app.db.mongo import get_db
+
     db = get_db()
 
     collections = await db.list_collection_names()
 
-    return {
-        "db_name": db.name,
-        "collections": collections
-    }
+    return {"db_name": db.name, "collections": collections}

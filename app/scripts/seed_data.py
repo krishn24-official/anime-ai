@@ -6,7 +6,6 @@ from app.db.mongo import connect_db, get_db
 
 
 def get_glob_files(folder_path: str):
-    import glob
     return glob.glob(os.path.join(folder_path, "*.json"))
 
 

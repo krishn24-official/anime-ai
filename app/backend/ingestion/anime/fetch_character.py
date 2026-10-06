@@ -13,7 +13,6 @@ from app.backend.ingestion.anime.anilist_resolvers import (
 
 from app.backend.utils.slug import create_slug
 
-
 ANILIST_URL = "https://graphql.anilist.co"
 
 
@@ -98,18 +97,10 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
         print(f"\n📄 Fetching page {page} for {anime_name}...")
 
-        variables = {
-            "anime": anime_name,
-            "page": page
-        }
+        variables = {"anime": anime_name, "page": page}
 
         response = await client.post(
-            ANILIST_URL,
-            json={
-                "query": query,
-                "variables": variables
-            },
-            timeout=30.0
+            ANILIST_URL, json={"query": query, "variables": variables}, timeout=30.0
         )
 
         response.raise_for_status()
@@ -127,10 +118,7 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
             print("❌ No media found")
             break
 
-        title = (
-            media["title"].get("english")
-            or media["title"].get("romaji")
-        )
+        title = media["title"].get("english") or media["title"].get("romaji")
 
         anime_slug = create_slug(title)
 
@@ -152,11 +140,7 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
             if not character.get("name", {}).get("full"):
                 continue
 
-            formatted_character = transform_character(
-                character,
-                anime_db_id,
-                role
-            )
+            formatted_character = transform_character(character, anime_db_id, role)
 
             # ── Resolve voice actors (id-based dedup via shared resolver) ──
             voice_actor_ids = []
@@ -182,18 +166,14 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
                 total_saved += 1
                 print(f"✅ Saved: {character['name']['full']} → {char_id}")
 
-        has_next_page = (
-            characters_data["pageInfo"]["hasNextPage"]
-        )
+        has_next_page = characters_data["pageInfo"]["hasNextPage"]
 
         if not has_next_page:
             break
 
         page += 1
 
-    print(
-        f"\n🎉 Total characters saved for {anime_name}: {total_saved}"
-    )
+    print(f"\n🎉 Total characters saved for {anime_name}: {total_saved}")
 
 
 async def main():
@@ -374,7 +354,10 @@ async def main():
         await fetch_and_save(client, "Bananya")
         await fetch_and_save(client, "Bananya: Fushigi na Nakamatachi")
         await fetch_and_save(client, "Eri")
-        await fetch_and_save(client, "Migawari Reijou wo Sukutta no wa Reikoku Mujihi na Koori no Ouji no Ai deshita")
+        await fetch_and_save(
+            client,
+            "Migawari Reijou wo Sukutta no wa Reikoku Mujihi na Koori no Ouji no Ai deshita",
+        )
         await fetch_and_save(client, "Gachiakuta")
         await fetch_and_save(client, "Kaoru Hana wa Rin to Saku")
         await fetch_and_save(client, "Kusuriya no Hitorigoto 2nd Season")

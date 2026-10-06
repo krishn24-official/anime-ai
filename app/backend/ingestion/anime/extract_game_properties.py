@@ -8,6 +8,7 @@ get game_properties automatically.
 Run:
     python -m app.backend.ingestion.anime.extract_game_properties
 """
+
 import asyncio
 
 from app.db.mongo import connect_db, close_db, get_db
@@ -41,8 +42,7 @@ async def process_character(col, character: dict) -> bool:
 
     if properties:
         await col.update_one(
-            {"_id": character["_id"]},
-            {"$set": {"game_properties": properties}}
+            {"_id": character["_id"]}, {"$set": {"game_properties": properties}}
         )
         print(f"  {name}: {properties}")
     else:
@@ -69,7 +69,7 @@ async def main():
             "gender": 1,
             "anime_ids": 1,
             "game_properties": 1,
-        }
+        },
     ).to_list(None)
 
     print(f"Found {len(characters)} characters\n")

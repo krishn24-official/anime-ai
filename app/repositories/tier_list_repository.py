@@ -35,10 +35,7 @@ async def get_tier_list_by_id(tier_list_id: str):
 async def get_user_tier_lists(user_id: ObjectId):
     db = get_db()
     return await (
-        db["tier_lists"]
-        .find({"user_id": user_id})
-        .sort("updated_at", -1)
-        .to_list(None)
+        db["tier_lists"].find({"user_id": user_id}).sort("updated_at", -1).to_list(None)
     )
 
 
@@ -76,7 +73,5 @@ async def delete_tier_list(tier_list_id: str, user_id: ObjectId) -> bool:
     oid = _to_oid(tier_list_id)
     if not oid:
         return False
-    result = await db["tier_lists"].delete_one(
-        {"_id": oid, "user_id": user_id}
-    )
+    result = await db["tier_lists"].delete_one({"_id": oid, "user_id": user_id})
     return result.deleted_count > 0

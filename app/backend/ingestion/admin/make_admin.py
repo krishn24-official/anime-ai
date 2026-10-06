@@ -4,6 +4,7 @@ One-time script to grant admin access to a user by email.
 Run:
     python -m app.backend.ingestion.admin.make_admin your_email@example.com
 """
+
 import asyncio
 import sys
 
@@ -21,8 +22,7 @@ async def main():
     db = get_db()
 
     result = await db["users"].update_one(
-        {"email": email},
-        {"$set": {"is_admin": True}}
+        {"email": email}, {"$set": {"is_admin": True}}
     )
 
     await close_db()

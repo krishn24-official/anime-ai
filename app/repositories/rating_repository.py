@@ -32,11 +32,13 @@ async def upsert_rating(user_id, content_type: str, content_id, rating: str):
 
 async def get_user_rating(user_id, content_type: str, content_id):
     db = get_db()
-    return await db["ratings"].find_one({
-        "user_id": user_id,
-        "content_type": content_type,
-        "content_id": content_id,
-    })
+    return await db["ratings"].find_one(
+        {
+            "user_id": user_id,
+            "content_type": content_type,
+            "content_id": content_id,
+        }
+    )
 
 
 async def get_rating_stats(content_type: str, content_id):
@@ -44,11 +46,13 @@ async def get_rating_stats(content_type: str, content_id):
 
     pipeline = [
         {"$match": {"content_type": content_type, "content_id": content_id}},
-        {"$group": {
-            "_id": None,
-            "average_weight": {"$avg": "$rating_weight"},
-            "count": {"$sum": 1},
-        }},
+        {
+            "$group": {
+                "_id": None,
+                "average_weight": {"$avg": "$rating_weight"},
+                "count": {"$sum": 1},
+            }
+        },
     ]
 
     cursor = await db["ratings"].aggregate(pipeline)
@@ -68,11 +72,13 @@ async def get_rating_stats(content_type: str, content_id):
 
 async def delete_rating(user_id, content_type: str, content_id):
     db = get_db()
-    await db["ratings"].delete_one({
-        "user_id": user_id,
-        "content_type": content_type,
-        "content_id": content_id,
-    })
+    await db["ratings"].delete_one(
+        {
+            "user_id": user_id,
+            "content_type": content_type,
+            "content_id": content_id,
+        }
+    )
 
 
 async def get_top_rated(content_type: str | None = None, limit: int = 10):
@@ -84,17 +90,19 @@ async def get_top_rated(content_type: str | None = None, limit: int = 10):
         match["content_type"] = content_type
 
     pipeline = [
-        *([ {"$match": match} ] if match else []),
-        {"$group": {
-            "_id": {
-                "content_type": "$content_type",
-                "content_id": "$content_id",
-            },
-            "average_weight": {"$avg": "$rating_weight"},
-            "count": {"$sum": 1},
-            # most common rating label for display
-            "top_rating": {"$max": "$rating"},
-        }},
+        *([{"$match": match}] if match else []),
+        {
+            "$group": {
+                "_id": {
+                    "content_type": "$content_type",
+                    "content_id": "$content_id",
+                },
+                "average_weight": {"$avg": "$rating_weight"},
+                "count": {"$sum": 1},
+                # most common rating label for display
+                "top_rating": {"$max": "$rating"},
+            }
+        },
         {"$sort": {"average_weight": -1, "count": -1}},
         {"$limit": limit},
     ]
@@ -113,14 +121,16 @@ async def get_watchlist_counts(content_type: str | None = None, limit: int = 10)
         match["content_type"] = content_type
 
     pipeline = [
-        *([ {"$match": match} ] if match else []),
-        {"$group": {
-            "_id": {
-                "content_type": "$content_type",
-                "content_id": "$content_id",
-            },
-            "count": {"$sum": 1},
-        }},
+        *([{"$match": match}] if match else []),
+        {
+            "$group": {
+                "_id": {
+                    "content_type": "$content_type",
+                    "content_id": "$content_id",
+                },
+                "count": {"$sum": 1},
+            }
+        },
         {"$sort": {"count": -1}},
         {"$limit": limit},
     ]

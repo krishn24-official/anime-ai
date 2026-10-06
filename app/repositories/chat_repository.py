@@ -91,23 +91,31 @@ async def find_character_candidates(name: str, limit: int = 5) -> list:
     db = get_db()
 
     # 1. Exact match
-    exact = await db["characters"].find(
-        {"name": {"$regex": f"^{re.escape(name_clean)}$", "$options": "i"}}
-    ).to_list(None)
+    exact = (
+        await db["characters"]
+        .find({"name": {"$regex": f"^{re.escape(name_clean)}$", "$options": "i"}})
+        .to_list(None)
+    )
     if exact:
         return exact[:limit]
 
     # 2. Starts-with match
-    starts = await db["characters"].find(
-        {"name": {"$regex": f"^{re.escape(name_clean)}", "$options": "i"}}
-    ).limit(limit).to_list(None)
+    starts = (
+        await db["characters"]
+        .find({"name": {"$regex": f"^{re.escape(name_clean)}", "$options": "i"}})
+        .limit(limit)
+        .to_list(None)
+    )
     if starts:
         return starts
 
     # 3. Contains match
-    contains = await db["characters"].find(
-        {"name": {"$regex": re.escape(name_clean), "$options": "i"}}
-    ).limit(limit).to_list(None)
+    contains = (
+        await db["characters"]
+        .find({"name": {"$regex": re.escape(name_clean), "$options": "i"}})
+        .limit(limit)
+        .to_list(None)
+    )
     if contains:
         return contains
 
@@ -126,7 +134,21 @@ async def find_character_candidates(name: str, limit: int = 5) -> list:
     clean_for_fuzzy = re.sub(r"['’]s\b", "", name_clean.lower())
     clean_for_fuzzy = re.sub(r"[^\w\s]", "", clean_for_fuzzy)
 
-    stop_words = {"the", "and", "for", "with", "about", "anime", "character", "who", "what", "is", "tell", "me", "show"}
+    stop_words = {
+        "the",
+        "and",
+        "for",
+        "with",
+        "about",
+        "anime",
+        "character",
+        "who",
+        "what",
+        "is",
+        "tell",
+        "me",
+        "show",
+    }
 
     for query_word in clean_for_fuzzy.split():
         if len(query_word) < 3 or query_word in stop_words:
@@ -160,7 +182,9 @@ async def find_character_candidates(name: str, limit: int = 5) -> list:
             else:
                 # Multi-word characters must have decent sequence similarity (e.g. 'sasue uchiha' -> 'sasuke uchiha')
                 # or cover a significant proportion of the query tokens
-                overlap = len(query_tokens.intersection(cand_tokens)) / max(len(query_tokens), len(cand_tokens))
+                overlap = len(query_tokens.intersection(cand_tokens)) / max(
+                    len(query_tokens), len(cand_tokens)
+                )
                 if ratio < 0.65 and overlap < 0.50:
                     continue
         else:

@@ -5,7 +5,14 @@ from bson import ObjectId
 from app.db.mongo import get_db
 
 
-async def create_comment(user_id, content_type: str, content_id, text: str, parent_id=None, is_spoiler: bool = False):
+async def create_comment(
+    user_id,
+    content_type: str,
+    content_id,
+    text: str,
+    parent_id=None,
+    is_spoiler: bool = False,
+):
     db = get_db()
 
     doc = {
@@ -14,7 +21,7 @@ async def create_comment(user_id, content_type: str, content_id, text: str, pare
         "content_id": content_id,
         "text": text,
         "parent_id": parent_id,
-        "is_public": True,     # all comments are public by default
+        "is_public": True,  # all comments are public by default
         "is_spoiler": is_spoiler,
         "likes": [],
         "created_at": datetime.now(timezone.utc),
@@ -30,21 +37,25 @@ async def get_comments_for_content(content_type: str, content_id):
     db = get_db()
 
     pipeline = [
-        {"$match": {
-            "content_type": content_type,
-            "content_id": content_id,
-            "is_public": True,
-        }},
-        {"$addFields": {
-            "like_count": {
-                "$cond": {
-                    "if": {"$isArray": "$likes"},
-                    "then": {"$size": "$likes"},
-                    "else": 0
+        {
+            "$match": {
+                "content_type": content_type,
+                "content_id": content_id,
+                "is_public": True,
+            }
+        },
+        {
+            "$addFields": {
+                "like_count": {
+                    "$cond": {
+                        "if": {"$isArray": "$likes"},
+                        "then": {"$size": "$likes"},
+                        "else": 0,
+                    }
                 }
             }
-        }},
-        {"$sort": {"like_count": -1, "created_at": -1}}
+        },
+        {"$sort": {"like_count": -1, "created_at": -1}},
     ]
 
     cursor = await db["comments"].aggregate(pipeline)
@@ -61,29 +72,23 @@ async def toggle_like_comment(user_id: ObjectId, comment_id: ObjectId):
     likes = comment.get("likes", [])
     if not isinstance(likes, list):
         likes = []
-    
+
     # Check if user already liked
     is_liked = False
     for uid in likes:
         if str(uid) == str(user_id):
             is_liked = True
             break
-            
+
     if is_liked:
         # Unlike
         likes = [u for u in likes if str(u) != str(user_id)]
-        await db["comments"].update_one(
-            {"_id": comment_id},
-            {"$set": {"likes": likes}}
-        )
+        await db["comments"].update_one({"_id": comment_id}, {"$set": {"likes": likes}})
         return len(likes), False
     else:
         # Like
         likes.append(user_id)
-        await db["comments"].update_one(
-            {"_id": comment_id},
-            {"$set": {"likes": likes}}
-        )
+        await db["comments"].update_one({"_id": comment_id}, {"$set": {"likes": likes}})
         return len(likes), True
 
 

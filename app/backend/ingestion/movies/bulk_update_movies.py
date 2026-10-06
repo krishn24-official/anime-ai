@@ -5,6 +5,7 @@ Auto-generates _id (e.g. movie_inception) using the title if the _id field is le
 Run:
     python -m app.backend.ingestion.movies.bulk_update_movies
 """
+
 import asyncio
 import csv
 import re
@@ -17,8 +18,8 @@ from app.backend.utils.slug import create_slug
 # Ensure Unicode support in Windows console
 if sys.platform == "win32":
     try:
-        sys.stdout.reconfigure(encoding='utf-8')
-        sys.stderr.reconfigure(encoding='utf-8')
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
     except Exception:
         pass
 
@@ -53,7 +54,9 @@ def _validate_row(row: dict, row_num: int) -> list[str]:
     warnings = []
     title = row.get("title", "").strip()
     if not title:
-        warnings.append(f"Row {row_num}: missing REQUIRED field 'title' — row will be skipped")
+        warnings.append(
+            f"Row {row_num}: missing REQUIRED field 'title' — row will be skipped"
+        )
     return warnings
 
 
@@ -137,7 +140,8 @@ async def main():
 
     # Filter out template example row
     rows = [
-        r for r in rows
+        r
+        for r in rows
         if not (
             r.get("_id") == "movie_inception"
             and r.get("title") == "Inception"
@@ -197,9 +201,9 @@ async def main():
                     "is_deleted": False,
                     "deleted_at": None,
                     "content_type": "movie",
-                }
+                },
             },
-            upsert=True
+            upsert=True,
         )
         updated += 1
         print(f"  ✅ Upserted movie: {movie_id} ({title})")

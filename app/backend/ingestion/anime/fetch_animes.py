@@ -1,16 +1,9 @@
 import asyncio
 import httpx
 
-from app.db.mongo import (
-    connect_db,
-    close_db,
-    get_db
-)
+from app.db.mongo import connect_db, close_db, get_db
 
-from app.backend.transformers.anime_transformer import (
-    transform_anime
-)
-
+from app.backend.transformers.anime_transformer import transform_anime
 
 ANILIST_URL = "https://graphql.anilist.co"
 
@@ -90,13 +83,8 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
     response = await client.post(
         ANILIST_URL,
-        json={
-            "query": QUERY,
-            "variables": {
-                "anime": anime_name
-            }
-        },
-        timeout=30.0
+        json={"query": QUERY, "variables": {"anime": anime_name}},
+        timeout=30.0,
     )
 
     response.raise_for_status()
@@ -104,55 +92,45 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
     if "errors" in data:
 
-        print(
-            f"❌ AniList Error: {anime_name}"
-        )
+        print(f"❌ AniList Error: {anime_name}")
 
         print(data["errors"])
 
         return
 
-    media = (
-        data
-        .get("data", {})
-        .get("Media")
-    )
+    media = data.get("data", {}).get("Media")
 
     if not media:
 
-        print(
-            f"❌ Anime not found: {anime_name}"
-        )
+        print(f"❌ Anime not found: {anime_name}")
 
         return
 
     if "Hentai" in (media.get("genres") or []):
-        print(
-            f"🔞 Skipping adult anime: {anime_name}"
-        )
+        print(f"🔞 Skipping adult anime: {anime_name}")
         return
 
-    formatted_anime = transform_anime(
-        media
-    )
+    formatted_anime = transform_anime(media)
 
     # Check for cross-collection duplicates before insert
-    from app.services.duplicate_detection_service import check_for_duplicate, apply_reciprocal_duplicate_flag
+    from app.services.duplicate_detection_service import (
+        check_for_duplicate,
+        apply_reciprocal_duplicate_flag,
+    )
+
     dup = await check_for_duplicate(formatted_anime, "anime")
     if dup:
         formatted_anime["possible_duplicate_of"] = dup
         await apply_reciprocal_duplicate_flag(formatted_anime["_id"], "anime", dup)
-        print(f"⚠️ Possible duplicate detected: '{formatted_anime.get('title', {}).get('english') or formatted_anime.get('title', {}).get('romaji')}' ({formatted_anime['_id']}) may duplicate {dup['content_type']}_{dup['content_id']} -- flagged, not skipped")
+        print(
+            f"⚠️ Possible duplicate detected: '{formatted_anime.get('title', {}).get('english') or formatted_anime.get('title', {}).get('romaji')}' ({formatted_anime['_id']}) may duplicate {dup['content_type']}_{dup['content_id']} -- flagged, not skipped"
+        )
 
     await anime_collection.replace_one(
-        {"_id": formatted_anime["_id"]},
-        formatted_anime,
-        upsert=True
+        {"_id": formatted_anime["_id"]}, formatted_anime, upsert=True
     )
 
-    print(
-        f"✅ Saved: {formatted_anime['_id']}"
-    )
+    print(f"✅ Saved: {formatted_anime['_id']}")
 
 
 async def main():

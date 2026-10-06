@@ -43,9 +43,7 @@ async def vector_search(
             ]
         }
     else:
-        filter_doc = {
-            "series_id": {"$eq": series_id}
-        }
+        filter_doc = {"series_id": {"$eq": series_id}}
 
     # Ensure numCandidates is sufficiently larger than top_k for accurate ANN recall
     num_candidates = max(top_k * 10, 50)
@@ -94,10 +92,11 @@ async def get_series_lore_status(series_id: str) -> dict:
     """Returns chunk count and list of distinct source files for a given series_id."""
     db = get_db()
     count = await db["lore_chunks"].count_documents({"series_id": series_id})
-    distinct_files = await db["lore_chunks"].distinct("source_file", {"series_id": series_id})
+    distinct_files = await db["lore_chunks"].distinct(
+        "source_file", {"series_id": series_id}
+    )
     return {
         "series_id": series_id,
         "chunks_count": count,
         "source_files": distinct_files,
     }
-

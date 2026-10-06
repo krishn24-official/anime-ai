@@ -11,10 +11,17 @@ from app.backend.ingestion.tmdb_client import (
 from app.backend.ingestion.tmdb_mapper import map_movie, map_tv_series
 from app.repositories.movie_repository import upsert_movie
 from app.repositories.tv_series_repository import upsert_tv_series
-from app.services.cast_reconciliation_service import reconcile_cast, reconcile_directors, reconcile_creators, reconcile_writers
+from app.services.cast_reconciliation_service import (
+    reconcile_cast,
+    reconcile_directors,
+    reconcile_creators,
+    reconcile_writers,
+)
 
 
-async def sync_discover_movies(pages: int = 5, max_cast: int = 10, sort_by: str = "popularity.desc", **filters) -> dict:
+async def sync_discover_movies(
+    pages: int = 5, max_cast: int = 10, sort_by: str = "popularity.desc", **filters
+) -> dict:
     saved = 0
     failed = 0
 
@@ -46,7 +53,9 @@ async def sync_discover_movies(pages: int = 5, max_cast: int = 10, sort_by: str 
     return {"saved": saved, "failed": failed}
 
 
-async def sync_discover_tv(pages: int = 5, max_cast: int = 10, sort_by: str = "popularity.desc", **filters) -> dict:
+async def sync_discover_tv(
+    pages: int = 5, max_cast: int = 10, sort_by: str = "popularity.desc", **filters
+) -> dict:
     saved = 0
     failed = 0
 

@@ -7,7 +7,7 @@ STATUS_MAPPING = {
     "RELEASING": "ongoing",
     "NOT_YET_RELEASED": "upcoming",
     "CANCELLED": "cancelled",
-    "HIATUS": "hiatus"
+    "HIATUS": "hiatus",
 }
 
 
@@ -22,7 +22,7 @@ TYPE_MAPPING = {
     "SPECIAL": "special",
     "OVA": "ova",
     "ONA": "ona",
-    "MUSIC": "music"
+    "MUSIC": "music",
 }
 
 
@@ -42,7 +42,7 @@ SOURCE_MAPPING = {
     "COMIC": "comic",
     "LIVE_ACTION": "live_action",
     "MULTIMEDIA_PROJECT": "multimedia_project",
-    "OTHER": "other"
+    "OTHER": "other",
 }
 
 
@@ -62,24 +62,17 @@ RELATIONSHIP_TYPES = [
     "organization",
     "political",
     "media",
-    "other"
+    "other",
 ]
 
 EVENT_TYPES = [
-
     "anime_release",
-
     "anime_milestone",
-
     "manga_release",
-
     "manga_milestone",
-
     "movie_release",
-
     "character_debut",
-
-    "special"
+    "special",
 ]
 
 ENTITY_CATEGORIES = [
@@ -93,7 +86,6 @@ ENTITY_CATEGORIES = [
     "continent",
     "realm",
     "dimension",
-
     # Organizations
     "organization",
     "military",
@@ -104,57 +96,40 @@ ENTITY_CATEGORIES = [
     "crime_organization",
     "mercenary_group",
     "religious_group",
-
     # Family / Social
     "clan",
     "family",
     "tribe",
     "house",
-
     # Military Divisions
     "division",
     "squad",
     "corps",
     "unit",
-
     # Species / Race
     "species",
     "species_group",
     "race",
-
     # Schools
     "school",
     "college",
-
     # Misc
-    "other"
+    "other",
 ]
 
 ENTITY_RELATIONSHIPS = [
-
     "parent",
-
     "subdivision",
-
     "branch",
-
     "allied_with",
-
     "enemy_of",
-
     "merged_into",
-
     "successor_of",
-
     "predecessor_of",
-
     "located_in",
-
     "governs",
-
     "protected_by",
-
-    "controlled_by"
+    "controlled_by",
 ]
 
 
@@ -164,11 +139,9 @@ ENTITY_RELATIONSHIPS = [
 # =========================
 
 RELATIONSHIPS = {
-
     # =====================
     # FAMILY
     # =====================
-
     "family": [
         "father",
         "mother",
@@ -193,91 +166,42 @@ RELATIONSHIPS = {
         "sister_in_law",
         "niece",
     ],
-
-
     # =====================
     # ROMANCE
     # =====================
-
-    "romance": [
-        "crush",
-        "love_interest",
-        "fiance",
-        "partner",
-        "ex_partner"
-    ],
-
-
+    "romance": ["crush", "love_interest", "fiance", "partner", "ex_partner"],
     # =====================
     # FRIENDSHIP
     # =====================
-
-    "friendship": [
-        "friend",
-        "best_friend",
-        "childhood_friend",
-        "ally"
-    ],
-
-
+    "friendship": ["friend", "best_friend", "childhood_friend", "ally"],
     # =====================
     # ACADEMY
     # =====================
-
-    "academy": [
-        "classmate",
-        "senior",
-        "junior"
-    ],
-
-
+    "academy": ["classmate", "senior", "junior"],
     # =====================
     # TEAM
     # =====================
-
-    "team": [
-        "teammate",
-        "leader",
-        "captain",
-        "member"
-    ],
-
-
+    "team": ["teammate", "leader", "captain", "member"],
     # =====================
     # MENTOR
     # =====================
-
     "mentor": [
         "student",
         "sensei",
         "mentor",
         "teacher",
     ],
-
-
     # =====================
     # COMBAT
     # =====================
-
-    "combat": [
-        "rival",
-        "enemy",
-        "killer",
-        "target",
-        "assassin"
-    ],
-
-
+    "combat": ["rival", "enemy", "killer", "target", "assassin"],
     # =====================
     # ORGANIZATION
     # =====================
-
     "organization": [
-
         # Membership
         "member",
         "former_member",
-
         # Leadership
         "leader",
         "former_leader",
@@ -287,63 +211,100 @@ RELATIONSHIPS = {
         "chief",
         "chairman",
         "elder",
-
         # Administrative
         "founder",
         "co_founder",
         "successor",
         "advisor",
         "representative",
-
         # Educational
         "teacher",
         "student",
         "principal",
         "instructor",
-
         # Military
         "soldier",
         "officer",
         "general",
-
         # Special
         "guardian",
         "bodyguard",
-        "ambassador"
+        "ambassador",
     ],
-
-
     # =====================
     # POLITICAL
     # =====================
-
-    "political": [
-        "kage",
-        "advisor",
-        "bodyguard"
-    ]
+    "political": ["kage", "advisor", "bodyguard"],
 }
 
-RELATIONSHIP_WORDS = sorted({
-    # Family
-    "father", "mother", "son", "daughter", "parent", "child",
-    "grandfather", "grandmother", "grandson", "granddaughter",
-    "uncle", "aunt", "nephew", "niece",
-    "brother", "sister", "sibling", "cousin", "twin",
-    "stepfather", "stepmother", "stepson", "stepdaughter", "stepbrother", "stepsister",
-    # In-laws
-    "father_in_law", "mother_in_law", "son_in_law", "daughter_in_law",
-    "parent_in_law", "child_in_law", "brother_in_law", "sister_in_law",
-    "uncle_in_law", "aunt_in_law", "nephew_in_law", "niece_in_law",
-    # Marriage / romance
-    "husband", "wife", "spouse", "crush",
-    # Mentorship
-    "mentor", "sensei", "teacher", "student",
-    # Social / team
-    "friend", "best_friend", "rival", "enemy", "ally",
-    "teammate", "classmate", "leader", "subordinate",
-    # Organization roles (added from real usage, not previously in relationship_inverse_map.py)
-    "captain", "vice_captain", "commander", "member",
-    # Media / content
-    "appears_in", "features",
-})
+RELATIONSHIP_WORDS = sorted(
+    {
+        # Family
+        "father",
+        "mother",
+        "son",
+        "daughter",
+        "parent",
+        "child",
+        "grandfather",
+        "grandmother",
+        "grandson",
+        "granddaughter",
+        "uncle",
+        "aunt",
+        "nephew",
+        "niece",
+        "brother",
+        "sister",
+        "sibling",
+        "cousin",
+        "twin",
+        "stepfather",
+        "stepmother",
+        "stepson",
+        "stepdaughter",
+        "stepbrother",
+        "stepsister",
+        # In-laws
+        "father_in_law",
+        "mother_in_law",
+        "son_in_law",
+        "daughter_in_law",
+        "parent_in_law",
+        "child_in_law",
+        "brother_in_law",
+        "sister_in_law",
+        "uncle_in_law",
+        "aunt_in_law",
+        "nephew_in_law",
+        "niece_in_law",
+        # Marriage / romance
+        "husband",
+        "wife",
+        "spouse",
+        "crush",
+        # Mentorship
+        "mentor",
+        "sensei",
+        "teacher",
+        "student",
+        # Social / team
+        "friend",
+        "best_friend",
+        "rival",
+        "enemy",
+        "ally",
+        "teammate",
+        "classmate",
+        "leader",
+        "subordinate",
+        # Organization roles (added from real usage, not previously in relationship_inverse_map.py)
+        "captain",
+        "vice_captain",
+        "commander",
+        "member",
+        # Media / content
+        "appears_in",
+        "features",
+    }
+)

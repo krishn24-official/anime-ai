@@ -31,28 +31,13 @@ async def connect_db():
     await create_index_safely(db["relationships"], "target_id")
     await create_index_safely(db["relationships"], "relationship")
     await create_index_safely(db["relationships"], "type")
-    await create_index_safely(
-        db["events"],
-        [
-            ("month", 1),
-            ("day", 1)
-        ]
-    )
+    await create_index_safely(db["events"], [("month", 1), ("day", 1)])
 
-    await create_index_safely(
-        db["events"],
-        "event_type"
-    )
+    await create_index_safely(db["events"], "event_type")
 
-    await create_index_safely(
-        db["events"],
-        "anime_id"
-    )
+    await create_index_safely(db["events"], "anime_id")
 
-    await create_index_safely(
-        db["events"],
-        "manga_id"
-    )
+    await create_index_safely(db["events"], "manga_id")
 
     # News pipeline indexes
     await create_index_safely(db["news"], "url", unique=True, sparse=True)
@@ -80,6 +65,7 @@ def get_db():
 def get_anime_collection():
     db = get_db()
     return db["anime"]
+
 
 def get_relationship_collection():
     db = get_db()

@@ -20,12 +20,14 @@ async def get_user_by_email_or_username(identifier: str):
     """Login by email or username."""
     db = get_db()
     identifier = identifier.lower()
-    return await db["users"].find_one({
-        "$or": [
-            {"email": identifier},
-            {"username": identifier},
-        ]
-    })
+    return await db["users"].find_one(
+        {
+            "$or": [
+                {"email": identifier},
+                {"username": identifier},
+            ]
+        }
+    )
 
 
 async def get_user_by_id(user_id: str):
@@ -44,7 +46,7 @@ async def create_user(email: str, hashed_password: str, username: str):
         "email": email.lower(),
         "username": username.lower(),
         "password_hash": hashed_password,
-        "display_name": username,   # defaults to username
+        "display_name": username,  # defaults to username
         "created_at": datetime.now(timezone.utc),
         "is_active": True,
         "is_admin": False,
@@ -59,24 +61,24 @@ async def set_otp(email: str, otp_hash: str, expires_at: datetime):
     db = get_db()
     await db["users"].update_one(
         {"email": email.lower()},
-        {"$set": {
-            "otp_hash": otp_hash,
-            "otp_expires_at": expires_at,
-        }}
+        {
+            "$set": {
+                "otp_hash": otp_hash,
+                "otp_expires_at": expires_at,
+            }
+        },
     )
 
 
 async def clear_otp(email: str):
     db = get_db()
     await db["users"].update_one(
-        {"email": email.lower()},
-        {"$unset": {"otp_hash": "", "otp_expires_at": ""}}
+        {"email": email.lower()}, {"$unset": {"otp_hash": "", "otp_expires_at": ""}}
     )
 
 
 async def update_password(email: str, hashed_password: str):
     db = get_db()
     await db["users"].update_one(
-        {"email": email.lower()},
-        {"$set": {"password_hash": hashed_password}}
+        {"email": email.lower()}, {"$set": {"password_hash": hashed_password}}
     )

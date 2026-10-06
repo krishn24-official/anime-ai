@@ -48,6 +48,7 @@ async def close_client():
 
 # ── Helpers ──────────────────────────────────────────────
 
+
 def image_url(path: str | None, size: str = "w500") -> str | None:
     if not path:
         return None
@@ -76,13 +77,19 @@ async def _get(path: str, params: dict | None = None) -> dict | None:
         except (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
             if attempt < MAX_RETRIES:
                 wait = RETRY_DELAY * attempt
-                print(f"[tmdb_client] retry {attempt}/{MAX_RETRIES} for {path} ({type(e).__name__}), waiting {wait}s...")
+                print(
+                    f"[tmdb_client] retry {attempt}/{MAX_RETRIES} for {path} ({type(e).__name__}), waiting {wait}s..."
+                )
                 await asyncio.sleep(wait)
             else:
-                print(f"[tmdb_client] failed after {MAX_RETRIES} retries for {path}: {type(e).__name__}")
+                print(
+                    f"[tmdb_client] failed after {MAX_RETRIES} retries for {path}: {type(e).__name__}"
+                )
                 return None
         except httpx.HTTPStatusError as e:
-            print(f"[tmdb_client] HTTP error for {path}: {e.response.status_code} - {e.response.text[:200]}")
+            print(
+                f"[tmdb_client] HTTP error for {path}: {e.response.status_code} - {e.response.text[:200]}"
+            )
             return None
         except Exception as e:
             print(f"[tmdb_client] error for {path}: {type(e).__name__}: {e!r}")
@@ -92,6 +99,7 @@ async def _get(path: str, params: dict | None = None) -> dict | None:
 
 
 # --- Lists ---
+
 
 async def get_trending_movies(page: int = 1) -> list[dict]:
     data = await _get("/trending/movie/week", {"page": page})
@@ -115,45 +123,65 @@ async def search_tv(query: str) -> list[dict]:
 
 # --- Discovery (bulk) ---
 
-async def discover_movies(page: int = 1, sort_by: str = "popularity.desc", **filters) -> dict:
+
+async def discover_movies(
+    page: int = 1, sort_by: str = "popularity.desc", **filters
+) -> dict:
     """Discover movies with filtering. Returns full paginated response."""
     params = {"page": page, "sort_by": sort_by, **filters}
-    return await _get("/discover/movie", params) or {"results": [], "total_pages": 0, "total_results": 0}
+    return await _get("/discover/movie", params) or {
+        "results": [],
+        "total_pages": 0,
+        "total_results": 0,
+    }
 
 
-async def discover_tv(page: int = 1, sort_by: str = "popularity.desc", **filters) -> dict:
+async def discover_tv(
+    page: int = 1, sort_by: str = "popularity.desc", **filters
+) -> dict:
     """Discover TV series with filtering. Returns full paginated response."""
     params = {"page": page, "sort_by": sort_by, **filters}
-    return await _get("/discover/tv", params) or {"results": [], "total_pages": 0, "total_results": 0}
+    return await _get("/discover/tv", params) or {
+        "results": [],
+        "total_pages": 0,
+        "total_results": 0,
+    }
 
 
 # --- Changes ---
 
+
 async def get_movie_changes(start_date: str, end_date: str, page: int = 1) -> dict:
     """Fetch movie IDs that changed in the given date window. Dates in YYYY-MM-DD."""
     params = {"start_date": start_date, "end_date": end_date, "page": page}
-    return await _get("/movie/changes", params) or {"results": [], "total_pages": 0, "total_results": 0}
+    return await _get("/movie/changes", params) or {
+        "results": [],
+        "total_pages": 0,
+        "total_results": 0,
+    }
+
 
 async def get_tv_changes(start_date: str, end_date: str, page: int = 1) -> dict:
     """Fetch TV series IDs that changed in the given date window. Dates in YYYY-MM-DD."""
     params = {"start_date": start_date, "end_date": end_date, "page": page}
-    return await _get("/tv/changes", params) or {"results": [], "total_pages": 0, "total_results": 0}
+    return await _get("/tv/changes", params) or {
+        "results": [],
+        "total_pages": 0,
+        "total_results": 0,
+    }
 
 
 # --- Details ---
 
+
 async def get_movie_details(tmdb_id: int) -> dict | None:
     return await _get(
-        f"/movie/{tmdb_id}",
-        {"append_to_response": "credits,videos,release_dates"}
+        f"/movie/{tmdb_id}", {"append_to_response": "credits,videos,release_dates"}
     )
 
 
 async def get_tv_details(tmdb_id: int) -> dict | None:
-    return await _get(
-        f"/tv/{tmdb_id}",
-        {"append_to_response": "credits,videos"}
-    )
+    return await _get(f"/tv/{tmdb_id}", {"append_to_response": "credits,videos"})
 
 
 async def get_person_details(tmdb_id: int) -> dict | None:

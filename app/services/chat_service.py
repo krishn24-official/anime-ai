@@ -11,19 +11,13 @@ from app.repositories.chat_repository import (
 )
 
 from app.repositories.relationship_repository import (
-    get_relationships_by_type,
     get_relationships_by_target,
-    get_relationship_between
+    get_relationship_between,
 )
 
-from app.services.character_service import (
-    enrich_relationships_by_source,
-    enrich_relationships
-)
+from app.services.character_service import enrich_relationships_by_source
 
-from app.services.chat_context_service import (
-    build_character_context
-)
+from app.services.chat_context_service import build_character_context
 
 from app.services.gemini_service import (
     ask_gemini_with_context,
@@ -31,7 +25,6 @@ from app.services.gemini_service import (
     identify_image,
 )
 from app.services import lore_service
-
 
 # Map of intent keywords -> relationship name(s) to query.
 # sensei/teacher/mentor map to DIFFERENT relationship words in the DB
@@ -45,7 +38,7 @@ TARGET_RELATIONSHIP_INTENTS = {
     "mom": ["mother"],
     "sensei": ["sensei"],
     "teacher": ["teacher"],
-    "mentor": ["sensei", "teacher", "mentor"],   # generic -> check all 3
+    "mentor": ["sensei", "teacher", "mentor"],  # generic -> check all 3
     "wife": ["wife"],
     "husband": ["husband"],
     "son": ["son"],
@@ -64,7 +57,6 @@ TARGET_RELATIONSHIP_INTENTS = {
     "crush": ["crush"],
     "classmate": ["classmate"],
     "teammate": ["teammate"],
-
     # In-laws
     "father_in_law": ["father_in_law"],
     "mother_in_law": ["mother_in_law"],
@@ -76,7 +68,6 @@ TARGET_RELATIONSHIP_INTENTS = {
     "aunt_in_law": ["aunt_in_law"],
     "nephew_in_law": ["nephew_in_law"],
     "niece_in_law": ["niece_in_law"],
-
     # Step-family
     "stepfather": ["stepfather"],
     "stepmother": ["stepmother"],
@@ -90,14 +81,42 @@ TARGET_RELATIONSHIP_INTENTS = {
 # 3-letter intents (son, mom, dad) are excluded from fuzzy matching to prevent
 # catastrophic collisions with 2-letter prepositions like 'on' -> 'son'.
 _FUZZY_INTENT_KEYWORDS = [
-    k for k in (list(TARGET_RELATIONSHIP_INTENTS.keys()) + ["family", "team"])
+    k
+    for k in (list(TARGET_RELATIONSHIP_INTENTS.keys()) + ["family", "team"])
     if len(k) >= 4
 ]
 
 _STOP_WORDS = {
-    "on", "in", "to", "at", "by", "of", "or", "an", "is", "we", "he", "so",
-    "do", "no", "the", "and", "for", "with", "about", "from", "this", "that",
-    "what", "when", "where", "which", "who", "how", "into", "from"
+    "on",
+    "in",
+    "to",
+    "at",
+    "by",
+    "of",
+    "or",
+    "an",
+    "is",
+    "we",
+    "he",
+    "so",
+    "do",
+    "no",
+    "the",
+    "and",
+    "for",
+    "with",
+    "about",
+    "from",
+    "this",
+    "that",
+    "what",
+    "when",
+    "where",
+    "which",
+    "who",
+    "how",
+    "into",
+    "from",
 }
 
 
@@ -120,16 +139,16 @@ def extract_character_query(message: str) -> str:
     text = text.replace("\u2019", "'").replace("\u2018", "'")
 
     text = re.sub(
-        r"^(who is|who's|whos|what is|whats|tell me about|show me|get)\s+",
-        "",
-        text
+        r"^(who is|who's|whos|what is|whats|tell me about|show me|get)\s+", "", text
     )
 
     text = re.sub(r"^(character|actor|movie|anime|tv series):\s*", "", text)
-    
+
     # Strip media keywords to leave just the title
-    text = re.sub(r"\b(the |a |an )?(anime|movie|tv show|tv series|series)s?\b", "", text)
-    
+    text = re.sub(
+        r"\b(the |a |an )?(anime|movie|tv show|tv series|series)s?\b", "", text
+    )
+
     text = text.strip("? :").strip()
 
     # Pattern 1: [relationship] of [character] or [relationship] members of [character]
@@ -140,38 +159,54 @@ def extract_character_query(message: str) -> str:
         r"crush|classmate|teammate|family|team)"
     )
 
-    match = re.match(
-        rf"^{rel_words_pattern}s?(\s+member)?s?\s+of\s+(.+)$",
-        text
-    )
+    match = re.match(rf"^{rel_words_pattern}s?(\s+member)?s?\s+of\s+(.+)$", text)
 
     if match:
         return match.group(3).strip()
 
-    match = re.match(
-        r"^does\s+(.+?)\s+have\s+(?:a|an)?\s*\w+$",
-        text
-    )
+    match = re.match(r"^does\s+(.+?)\s+have\s+(?:a|an)?\s*\w+$", text)
 
     if match:
         return match.group(1).strip()
 
-    match = re.match(
-        r"^does\s+(.+?)\s+have\s+\w+$",
-        text
-    )
+    match = re.match(r"^does\s+(.+?)\s+have\s+\w+$", text)
 
     if match:
         return match.group(1).strip()
 
     # Pattern 2: [character]'s [relationship] or [character]'a [relationship] [member(s)]
     words_to_strip = [
-        "family members", "family member", "family",
-        "team members", "team member", "team",
-        "father", "dad", "mother", "mom", "sensei", "teacher", "mentor",
-        "wife", "husband", "son", "daughter", "brother", "sister",
-        "grandfather", "grandmother", "grandson", "granddaughter",
-        "uncle", "aunt", "nephew", "niece", "cousin", "crush", "classmate", "teammate"
+        "family members",
+        "family member",
+        "family",
+        "team members",
+        "team member",
+        "team",
+        "father",
+        "dad",
+        "mother",
+        "mom",
+        "sensei",
+        "teacher",
+        "mentor",
+        "wife",
+        "husband",
+        "son",
+        "daughter",
+        "brother",
+        "sister",
+        "grandfather",
+        "grandmother",
+        "grandson",
+        "granddaughter",
+        "uncle",
+        "aunt",
+        "nephew",
+        "niece",
+        "cousin",
+        "crush",
+        "classmate",
+        "teammate",
     ]
 
     cleaned = text
@@ -194,24 +229,18 @@ def extract_two_character_query(message: str):
     text = text.replace("\u2019", "'").replace("\u2018", "'")
     text = text.strip("? ").strip()
 
-    match = re.search(
-        r"relationship between\s+(.+?)\s+and\s+(.+)$",
-        text
-    )
+    match = re.search(r"relationship between\s+(.+?)\s+and\s+(.+)$", text)
     if match:
         return match.group(1).strip(), match.group(2).strip()
 
     match = re.search(
         r"^(?:how are|how is|are|is)\s+(.+?)\s+and\s+(.+?)\s+(?:related|related to each other|connected|friends|enemies|family|brothers|sisters|rivals|\w+)$",
-        text
+        text,
     )
     if match:
         return match.group(1).strip(), match.group(2).strip()
 
-    match = re.search(
-        r"^is\s+(.+?)\s+(.+?)'s\s+\w+$",
-        text
-    )
+    match = re.search(r"^is\s+(.+?)\s+(.+?)'s\s+\w+$", text)
     if match:
         return match.group(1).strip(), match.group(2).strip()
 
@@ -219,9 +248,17 @@ def extract_two_character_query(message: str):
 
 
 SYMMETRIC_RELATIONS = {
-    "teammate", "classmate", "friend", "best_friend",
-    "rival", "cousin", "sibling", "brother", "sister",
-    "brother_in_law", "sister_in_law"
+    "teammate",
+    "classmate",
+    "friend",
+    "best_friend",
+    "rival",
+    "cousin",
+    "sibling",
+    "brother",
+    "sister",
+    "brother_in_law",
+    "sister_in_law",
 }
 
 
@@ -251,10 +288,10 @@ async def _extract_candidate_series_ids(
             return []
         # Priority order: anime -> movies -> tv -> manga
         return (
-            (char.get("anime_ids") or []) +
-            (char.get("movie_ids") or []) +
-            (char.get("tv_series_ids") or []) +
-            (char.get("manga_ids") or [])
+            (char.get("anime_ids") or [])
+            + (char.get("movie_ids") or [])
+            + (char.get("tv_series_ids") or [])
+            + (char.get("manga_ids") or [])
         )
 
     # 1. If two characters share an anime/manga/movie, that common ID is top priority
@@ -285,16 +322,30 @@ async def _extract_candidate_series_ids(
         q_lower = query.lower()
         q_tokens = set(re.sub(r"[^\w\s]", "", q_lower).split())
         for s_id in indexed_series:
-            raw_slug = re.sub(r"^(anime|movie|tv_series|tv|manga)_", "", s_id).replace("_", " ")
+            raw_slug = re.sub(r"^(anime|movie|tv_series|tv|manga)_", "", s_id).replace(
+                "_", " "
+            )
             if raw_slug in q_lower:
                 return [s_id]
             # Match significant words of series title (e.g. 'attack' and 'titan' in 'attack on titan')
-            slug_words = set(raw_slug.split()) - {"on", "no", "the", "a", "an", "of", "in", "to", "for"}
+            slug_words = set(raw_slug.split()) - {
+                "on",
+                "no",
+                "the",
+                "a",
+                "an",
+                "of",
+                "in",
+                "to",
+                "for",
+            }
             if len(slug_words) >= 2 and slug_words.issubset(q_tokens):
                 return [s_id]
 
         # Check explicit preposition phrase: "in <Series>", "from <Series>"
-        match = re.search(r"\b(?:in|from|of|for)\s+([A-Za-z0-9\s:_-]{3,35})(?:\?|$)", query, re.I)
+        match = re.search(
+            r"\b(?:in|from|of|for)\s+([A-Za-z0-9\s:_-]{3,35})(?:\?|$)", query, re.I
+        )
         if match:
             candidate_phrase = match.group(1).strip()
             try:
@@ -307,6 +358,7 @@ async def _extract_candidate_series_ids(
         # 4. If query mentions any character by name, find that character's indexed series
         try:
             from app.repositories.character_repository import search_characters
+
             matched_chars = await search_characters(query, limit=3)
             for mc in matched_chars:
                 for s in get_all_char_series(mc):
@@ -356,19 +408,27 @@ async def _fetch_lore_for_query(
 
 async def describe_relationship_between(char_a, char_b, original_message: str = ""):
 
-    relationships = await get_relationship_between(
-        char_a["_id"],
-        char_b["_id"]
-    )
+    relationships = await get_relationship_between(char_a["_id"], char_b["_id"])
 
     if not relationships:
         # RAG Fallback: Check if relation is explained in series lore PDF
-        rag_query = original_message or f"How are {char_a['name']} and {char_b['name']} related? What is the relationship between {char_a['name']} and {char_b['name']}?"
-        lore_context, _ = await _fetch_lore_for_query(rag_query, char_a=char_a, char_b=char_b)
+        rag_query = (
+            original_message
+            or f"How are {char_a['name']} and {char_b['name']} related? What is the relationship between {char_a['name']} and {char_b['name']}?"
+        )
+        lore_context, _ = await _fetch_lore_for_query(
+            rag_query, char_a=char_a, char_b=char_b
+        )
         if lore_context:
             char_context = {
-                "character_a": {"name": char_a.get("name"), "description": char_a.get("description")},
-                "character_b": {"name": char_b.get("name"), "description": char_b.get("description")},
+                "character_a": {
+                    "name": char_a.get("name"),
+                    "description": char_a.get("description"),
+                },
+                "character_b": {
+                    "name": char_b.get("name"),
+                    "description": char_b.get("description"),
+                },
             }
             answer = await ask_gemini_with_lore(
                 question=rag_query,
@@ -379,8 +439,7 @@ async def describe_relationship_between(char_a, char_b, original_message: str = 
                 return {"answer": answer}
 
         return {
-            "answer":
-            f"I couldn't find any known relationship between "
+            "answer": f"I couldn't find any known relationship between "
             f"{char_a['name']} and {char_b['name']}."
         }
 
@@ -410,13 +469,9 @@ async def describe_relationship_between(char_a, char_b, original_message: str = 
         else:
             subject, other = char_b["name"], char_a["name"]
 
-        sentences.append(
-            f"{subject} is {other}'s {relation_word.replace('_', ' ')}"
-        )
+        sentences.append(f"{subject} is {other}'s {relation_word.replace('_', ' ')}")
 
-    return {
-        "answer": ". ".join(sentences) + "."
-    }
+    return {"answer": ". ".join(sentences) + "."}
 
 
 def detect_intent(message: str):
@@ -429,7 +484,7 @@ def detect_intent(message: str):
         r"\b(father|mother|son|daughter|brother|sister|uncle|aunt|nephew|niece)"
         r"[\s-]+in[\s-]+law\b",
         r"\1_in_law",
-        message
+        message,
     )
 
     # Check whole-word matches, prioritizing longest keywords first
@@ -466,13 +521,17 @@ async def process_chat_message(
     if "news" in msg_lower and "birthday" in msg_lower:
         birthdays = await get_today_birthdays()
         if not birthdays:
-            return {"answer": "There are no character birthdays today, so there's no news about them!"}
+            return {
+                "answer": "There are no character birthdays today, so there's no news about them!"
+            }
 
         bday_names = [b.get("name") for b in birthdays if b.get("name")]
         news_articles = await get_latest_news(limit=20)
         relevant_news = []
         for article in news_articles:
-            text_to_search = (article.get("title", "") + " " + article.get("summary", "")).lower()
+            text_to_search = (
+                article.get("title", "") + " " + article.get("summary", "")
+            ).lower()
             if any(name.lower() in text_to_search for name in bday_names):
                 relevant_news.append(article)
 
@@ -481,32 +540,47 @@ async def process_chat_message(
                 "answer": f"Today's birthdays are: {', '.join(bday_names)}! But I couldn't find any recent news specifically about them."
             }
 
-        news_text = "\n\n".join([f"**{a.get('title')}**\n{a.get('summary', '')}" for a in relevant_news[:3]])
+        news_text = "\n\n".join(
+            [f"**{a.get('title')}**\n{a.get('summary', '')}" for a in relevant_news[:3]]
+        )
         return {
             "answer": f"Yes! Here is the latest news for today's birthday characters ({', '.join(bday_names)}):\n\n{news_text}"
         }
 
     # 1.5. Attribute QA Engine
     from app.services.attribute_query_service import detect_attribute_intent
+
     attr_intent = detect_attribute_intent(message)
     if attr_intent and not image_base64:
         ent_name, attr_key, explicit_type = attr_intent
-        types_list = [explicit_type] if explicit_type else ["character", "anime", "movie", "tv_series"]
-        
-        from app.repositories.relationship_repository import search_relationship_entities
-        candidates = await search_relationship_entities(ent_name, limit=5, types_list=types_list)
-        
+        types_list = (
+            [explicit_type]
+            if explicit_type
+            else ["character", "anime", "movie", "tv_series"]
+        )
+
+        from app.repositories.relationship_repository import (
+            search_relationship_entities,
+        )
+
+        candidates = await search_relationship_entities(
+            ent_name, limit=5, types_list=types_list
+        )
+
         if not candidates:
-            return {"answer": f"I couldn't find anything matching '{ent_name}' to look up '{attr_key.replace('_', ' ')}'."}
-            
+            return {
+                "answer": f"I couldn't find anything matching '{ent_name}' to look up '{attr_key.replace('_', ' ')}'."
+            }
+
         if len(candidates) == 1:
             m = candidates[0]
             m_type = m["entity_type"]
             from app.services.attribute_formatter import format_attribute_response
-            
+
             from app.db.mongo import get_db
+
             db = get_db()
-            
+
             full_doc = None
             if m_type == "anime":
                 full_doc = await db["anime"].find_one({"_id": m["id"]})
@@ -516,14 +590,16 @@ async def process_chat_message(
                 full_doc = await db["tv_series"].find_one({"_id": m["id"]})
             elif m_type == "character":
                 full_doc = await db["characters"].find_one({"_id": m["id"]})
-                
+
             if full_doc:
                 return {"answer": format_attribute_response(full_doc, m_type, attr_key)}
             else:
                 return {"answer": f"Could not retrieve full details for {m['name']}."}
         else:
+
             def format_media_type(t: str):
-                if t == "tv_series": return "TV Series"
+                if t == "tv_series":
+                    return "TV Series"
                 return t.title()
 
             disambiguation_options = []
@@ -531,7 +607,7 @@ async def process_chat_message(
                 disambig_str = f"{format_media_type(c['entity_type'])}: {c['name']}"
                 disambig_str += f" - {attr_key.replace('_', ' ')}"
                 disambiguation_options.append(disambig_str)
-                
+
             return {
                 "answer": (
                     f"I found multiple matches for '{ent_name}'. "
@@ -545,24 +621,29 @@ async def process_chat_message(
     # 2. Birthdays
     if "birthday" in msg_lower:
         birthdays = await get_today_birthdays()
-        
+
         from app.repositories.actors_repository import get_birthdays_by_date_range
         from datetime import datetime
+
         today_str = datetime.utcnow().strftime("%Y-%m-%d")
         actor_birthdays = await get_birthdays_by_date_range(today_str, today_str)
 
         if not birthdays and not actor_birthdays:
             return {"answer": "There are no character or actor birthdays today."}
-        
+
         names = [b.get("name") for b in birthdays if b.get("name")]
         actor_names = [a.get("name") for a in actor_birthdays if a.get("name")]
-        
+
         answer_parts = []
         if names:
-            answer_parts.append(f"The following characters are celebrating their birthday today: **{', '.join(names)}**!")
+            answer_parts.append(
+                f"The following characters are celebrating their birthday today: **{', '.join(names)}**!"
+            )
         if actor_names:
-            answer_parts.append(f"The following actors are celebrating their birthday today: **{', '.join(actor_names)}**!")
-            
+            answer_parts.append(
+                f"The following actors are celebrating their birthday today: **{', '.join(actor_names)}**!"
+            )
+
         return {"answer": "\n\n".join(answer_parts)}
 
     # 3. Latest News
@@ -570,7 +651,9 @@ async def process_chat_message(
         articles = await get_latest_news(limit=3)
         if not articles:
             return {"answer": "I couldn't find any recent anime news."}
-        news_text = "\n\n".join([f"**{a.get('title')}**\n{a.get('summary', '')[:150]}..." for a in articles])
+        news_text = "\n\n".join(
+            [f"**{a.get('title')}**\n{a.get('summary', '')[:150]}..." for a in articles]
+        )
         return {"answer": f"Here is the latest anime news:\n\n{news_text}"}
 
     # 4. Recommendations
@@ -578,9 +661,15 @@ async def process_chat_message(
         top = await get_top_rated("anime", limit=3)
         if not top:
             return {"answer": "I don't have any anime recommendations right now."}
-        recs = "\n".join([f"• **{a.get('title', {}).get('english') or a.get('title', {}).get('romaji')}**" for a in top])
-        return {"answer": f"Here are some highly-rated anime I recommend watching:\n\n{recs}"}
-
+        recs = "\n".join(
+            [
+                f"• **{a.get('title', {}).get('english') or a.get('title', {}).get('romaji')}**"
+                for a in top
+            ]
+        )
+        return {
+            "answer": f"Here are some highly-rated anime I recommend watching:\n\n{recs}"
+        }
 
     # --- Image recognition mode ---
     # --- Image recognition mode ---
@@ -613,38 +702,47 @@ async def process_chat_message(
         char_b = await find_character(name_b)
 
         if char_a and char_b:
-            return await describe_relationship_between(char_a, char_b, original_message=message)
+            return await describe_relationship_between(
+                char_a, char_b, original_message=message
+            )
 
     # Detect if user clicked a disambiguation chip (e.g. "Actor: Hrithik Roshan")
     temp_text = re.sub(
         r"^(who is|who's|whos|what is|whats|tell me about|show me|get)\s+",
         "",
-        message.lower().strip()
+        message.lower().strip(),
     )
-    
+
     forced_scope = None
-    if temp_text.startswith("character:"): forced_scope = "character"
-    elif temp_text.startswith("actor:"): forced_scope = "actor"
-    elif temp_text.startswith("movie:"): forced_scope = "movie"
-    elif temp_text.startswith("tv series:"): forced_scope = "tv_series"
-    elif temp_text.startswith("anime:"): forced_scope = "anime"
+    if temp_text.startswith("character:"):
+        forced_scope = "character"
+    elif temp_text.startswith("actor:"):
+        forced_scope = "actor"
+    elif temp_text.startswith("movie:"):
+        forced_scope = "movie"
+    elif temp_text.startswith("tv series:"):
+        forced_scope = "tv_series"
+    elif temp_text.startswith("anime:"):
+        forced_scope = "anime"
     else:
         # Detect scope from natural language
-        if re.search(r"\b(movie|film)s?\b", temp_text): forced_scope = "movie"
-        elif re.search(r"\b(anime)s?\b", temp_text): forced_scope = "anime"
-        elif re.search(r"\b(tv show|tv series|series)\b", temp_text): forced_scope = "tv_series"
-        elif re.search(r"\b(actor|actress|director|producer|writer)\b", temp_text): forced_scope = "actor"
-
+        if re.search(r"\b(movie|film)s?\b", temp_text):
+            forced_scope = "movie"
+        elif re.search(r"\b(anime)s?\b", temp_text):
+            forced_scope = "anime"
+        elif re.search(r"\b(tv show|tv series|series)\b", temp_text):
+            forced_scope = "tv_series"
+        elif re.search(r"\b(actor|actress|director|producer|writer)\b", temp_text):
+            forced_scope = "actor"
 
     name_query = extract_character_query(message)
 
-    print(f"[chat] message={message!r} name_query={name_query!r} scope={forced_scope!r}")
+    print(
+        f"[chat] message={message!r} name_query={name_query!r} scope={forced_scope!r}"
+    )
 
     if not name_query:
-        return {
-            "answer":
-            "I couldn't understand which character you're asking about."
-        }
+        return {"answer": "I couldn't understand which character you're asking about."}
 
     candidates = []
     if forced_scope in (None, "character"):
@@ -667,7 +765,9 @@ async def process_chat_message(
                     if is_exact or ratio >= 0.75:
                         candidates.append(c)
                 elif len(q_tokens) >= 3:
-                    overlap = len(q_tokens.intersection(c_tokens)) / max(len(q_tokens), len(c_tokens))
+                    overlap = len(q_tokens.intersection(c_tokens)) / max(
+                        len(q_tokens), len(c_tokens)
+                    )
                     if is_exact or ratio >= 0.60 or overlap >= 0.50:
                         candidates.append(c)
                 else:
@@ -675,13 +775,19 @@ async def process_chat_message(
 
     media_candidates = []
     if forced_scope in (None, "anime", "movie", "tv_series"):
-        from app.repositories.relationship_repository import search_relationship_entities
+        from app.repositories.relationship_repository import (
+            search_relationship_entities,
+        )
+
         types_list = [forced_scope] if forced_scope else ["anime", "movie", "tv_series"]
-        media_candidates = await search_relationship_entities(name_query, limit=15, types_list=types_list)
+        media_candidates = await search_relationship_entities(
+            name_query, limit=15, types_list=types_list
+        )
 
     actor_candidates = []
     if forced_scope in (None, "actor"):
         from app.repositories.actors_repository import find_actor_candidates
+
         raw_actors = await find_actor_candidates(name_query)
         if forced_scope == "actor":
             actor_candidates = raw_actors
@@ -697,7 +803,9 @@ async def process_chat_message(
                     if is_exact or ratio >= 0.75:
                         actor_candidates.append(a)
                 elif len(q_tokens) >= 3:
-                    overlap = len(q_tokens.intersection(a_tokens)) / max(len(q_tokens), len(a_tokens))
+                    overlap = len(q_tokens.intersection(a_tokens)) / max(
+                        len(q_tokens), len(a_tokens)
+                    )
                     if is_exact or ratio >= 0.60 or overlap >= 0.50:
                         actor_candidates.append(a)
                 else:
@@ -717,24 +825,32 @@ async def process_chat_message(
         gemini_answer = await ask_gemini_with_context(message, {})
         if gemini_answer:
             return {"answer": gemini_answer}
-        return {
-            "answer":
-            f"I couldn't find anything matching '{name_query}'."
-        }
+        return {"answer": f"I couldn't find anything matching '{name_query}'."}
 
     if total_candidates > 1:
-        exact_character_matches = [c for c in candidates if c["name"].lower() == name_query.lower()]
-        exact_media_matches = [m for m in media_candidates if m["name"].lower() == name_query.lower()]
-        exact_actor_matches = [a for a in actor_candidates if a["name"].lower() == name_query.lower()]
+        exact_character_matches = [
+            c for c in candidates if c["name"].lower() == name_query.lower()
+        ]
+        exact_media_matches = [
+            m for m in media_candidates if m["name"].lower() == name_query.lower()
+        ]
+        exact_actor_matches = [
+            a for a in actor_candidates if a["name"].lower() == name_query.lower()
+        ]
 
-        # If the user explicitly forced a scope (like from clicking a disambiguation chip) 
+        # If the user explicitly forced a scope (like from clicking a disambiguation chip)
         # and there is an exact match for that scope, bypass disambiguation and select it immediately.
         if forced_scope == "character" and len(exact_character_matches) >= 1:
             candidates = [exact_character_matches[0]]
             media_candidates, actor_candidates = [], []
             total_candidates = 1
-        elif forced_scope in ("anime", "movie", "tv_series") and len(exact_media_matches) >= 1:
-            type_matches = [m for m in exact_media_matches if m["entity_type"] == forced_scope]
+        elif (
+            forced_scope in ("anime", "movie", "tv_series")
+            and len(exact_media_matches) >= 1
+        ):
+            type_matches = [
+                m for m in exact_media_matches if m["entity_type"] == forced_scope
+            ]
             if type_matches:
                 media_candidates = [type_matches[0]]
                 candidates, actor_candidates = [], []
@@ -743,7 +859,7 @@ async def process_chat_message(
             actor_candidates = [exact_actor_matches[0]]
             candidates, media_candidates = [], []
             total_candidates = 1
-            
+
     if total_candidates > 1:
         # Score character candidates
         best_candidate = None
@@ -758,15 +874,24 @@ async def process_chat_message(
                 if cand_lower == name_query.lower().strip():
                     cand_score = 1.0
                 else:
-                    overlap = len(query_words.intersection(cand_words)) / max(len(query_words), len(cand_words))
-                    ratio = difflib.SequenceMatcher(None, name_query.lower(), cand_lower).ratio()
+                    overlap = len(query_words.intersection(cand_words)) / max(
+                        len(query_words), len(cand_words)
+                    )
+                    ratio = difflib.SequenceMatcher(
+                        None, name_query.lower(), cand_lower
+                    ).ratio()
                     cand_score = max(overlap, ratio)
 
                 if cand_score > highest_score:
                     highest_score = cand_score
                     best_candidate = c
 
-        if not exact_character_matches and not exact_media_matches and not exact_actor_matches and len(name_query.split()) >= 3:
+        if (
+            not exact_character_matches
+            and not exact_media_matches
+            and not exact_actor_matches
+            and len(name_query.split()) >= 3
+        ):
             # RAG Fallback: Check if message matches narrative lore in any series
             lore_context, _ = await _fetch_lore_for_query(message)
             if lore_context:
@@ -778,17 +903,28 @@ async def process_chat_message(
             if gemini_answer:
                 return {"answer": gemini_answer}
 
-        if highest_score > 0.90 and best_candidate and not exact_media_matches and not exact_actor_matches and not (actor_candidates and highest_score < 1.0):
+        if (
+            highest_score > 0.90
+            and best_candidate
+            and not exact_media_matches
+            and not exact_actor_matches
+            and not (actor_candidates and highest_score < 1.0)
+        ):
             character = best_candidate
         else:
+
             def format_media_type(t: str):
-                if t == "tv_series": return "TV Series"
+                if t == "tv_series":
+                    return "TV Series"
                 return t.title()
 
-            media_options = [f"{format_media_type(m['entity_type'])}: {m['name']}" for m in media_candidates]
+            media_options = [
+                f"{format_media_type(m['entity_type'])}: {m['name']}"
+                for m in media_candidates
+            ]
             char_options = [f"Character: {c['name']}" for c in candidates]
             actor_options = [f"Actor: {a['name']}" for a in actor_candidates]
-            
+
             return {
                 "answer": (
                     f"I found multiple matches for '{name_query}'. "
@@ -805,6 +941,7 @@ async def process_chat_message(
         elif actor_candidates:
             from app.services.actors_service import fetch_actor_filmography
             from app.services.actor_profile_formatter import format_actor_profile
+
             actor = actor_candidates[0]
             kf = await fetch_actor_filmography(actor)
             return {"answer": format_actor_profile(actor, kf)}
@@ -813,20 +950,27 @@ async def process_chat_message(
             m = media_candidates[0]
             m_type = m["entity_type"]
             from app.services.content_profile_formatter import format_content_profile
+
             if m_type == "anime":
                 from app.repositories.search_repository import search_anime
+
                 res = await search_anime(m["name"])
-                if res: return {"answer": await format_content_profile(res[0], "anime")}
+                if res:
+                    return {"answer": await format_content_profile(res[0], "anime")}
             elif m_type == "movie":
                 from app.db.mongo import get_db
+
                 db = get_db()
                 doc = await db["movies"].find_one({"_id": m["id"]})
-                if doc: return {"answer": await format_content_profile(doc, "movie")}
+                if doc:
+                    return {"answer": await format_content_profile(doc, "movie")}
             elif m_type == "tv_series":
                 from app.repositories.search_repository import search_tv_series
+
                 res = await search_tv_series(m["name"])
-                if res: return {"answer": await format_content_profile(res[0], "tv_series")}
-            
+                if res:
+                    return {"answer": await format_content_profile(res[0], "tv_series")}
+
             return {"answer": f"I couldn't find media details for {m['name']}."}
 
     intent = detect_intent(message)
@@ -838,8 +982,7 @@ async def process_chat_message(
         all_results = []
         for relationship_name in relationship_names:
             results = await get_relationships_by_target(
-                character["_id"],
-                relationship=relationship_name
+                character["_id"], relationship=relationship_name
             )
             all_results.extend(results)
 
@@ -849,7 +992,10 @@ async def process_chat_message(
             lore_context, _ = await _fetch_lore_for_query(rag_query, char_a=character)
             if lore_context:
                 char_context = {
-                    "character": {"name": character.get("name"), "description": character.get("description")}
+                    "character": {
+                        "name": character.get("name"),
+                        "description": character.get("description"),
+                    }
                 }
                 answer = await ask_gemini_with_lore(
                     question=message,
@@ -859,10 +1005,7 @@ async def process_chat_message(
                 if answer:
                     return {"answer": answer}
 
-            return {
-                "answer":
-                f"I couldn't find a {intent} for {character['name']}."
-            }
+            return {"answer": f"I couldn't find a {intent} for {character['name']}."}
 
         enriched = await enrich_relationships_by_source(all_results)
 
@@ -877,15 +1020,15 @@ async def process_chat_message(
         # (sensei vs teacher vs mentor), so the answer is precise
         # even when multiple words were searched.
         labeled = [
-            f"{r['target']['name']} ({r['relationship']})"
-            if len(relationship_names) > 1 else r["target"]["name"]
+            (
+                f"{r['target']['name']} ({r['relationship']})"
+                if len(relationship_names) > 1
+                else r["target"]["name"]
+            )
             for r in unique_enriched
         ]
 
-        return {
-            "answer":
-            f"{character['name']}'s {intent} is {', '.join(labeled)}."
-        }
+        return {"answer": f"{character['name']}'s {intent} is {', '.join(labeled)}."}
 
     if intent == "family":
 
@@ -910,14 +1053,10 @@ async def process_chat_message(
                 if answer:
                     return {"answer": answer}
 
-            return {
-                "answer":
-                f"No family members found for {character['name']}."
-            }
+            return {"answer": f"No family members found for {character['name']}."}
 
         return {
-            "answer":
-            f"Family members of {character['name']}: "
+            "answer": f"Family members of {character['name']}: "
             f"{', '.join(family_names)}"
         }
 
@@ -933,7 +1072,9 @@ async def process_chat_message(
 
         if not team_names:
             # RAG Fallback: Search series lore PDF for team/squad members
-            rag_query = f"Who are the team members or squad of {character['name']}? {message}"
+            rag_query = (
+                f"Who are the team members or squad of {character['name']}? {message}"
+            )
             lore_context, _ = await _fetch_lore_for_query(rag_query, char_a=character)
             if lore_context:
                 answer = await ask_gemini_with_lore(
@@ -944,31 +1085,60 @@ async def process_chat_message(
                 if answer:
                     return {"answer": answer}
 
-            return {
-                "answer":
-                f"No team members found for {character['name']}."
-            }
+            return {"answer": f"No team members found for {character['name']}."}
 
         return {
-            "answer":
-            f"Team members of {character['name']}: "
+            "answer": f"Team members of {character['name']}: "
             f"{', '.join(team_names)}"
         }
 
     # Narrative query fallback: if the user asked an explanatory question about the character
     narrative_keywords = {
-        "why", "how", "what", "when", "did", "does", "explain", "story", "lore",
-        "secret", "betray", "death", "die", "kill", "past", "backstory", "twist",
-        "characteristic", "characteristics", "ability", "abilities", "power", "powers",
-        "trait", "traits", "overview", "origin", "relic", "relics", "titan", "titans",
-        "rumbling", "history", "timeline", "meaning"
+        "why",
+        "how",
+        "what",
+        "when",
+        "did",
+        "does",
+        "explain",
+        "story",
+        "lore",
+        "secret",
+        "betray",
+        "death",
+        "die",
+        "kill",
+        "past",
+        "backstory",
+        "twist",
+        "characteristic",
+        "characteristics",
+        "ability",
+        "abilities",
+        "power",
+        "powers",
+        "trait",
+        "traits",
+        "overview",
+        "origin",
+        "relic",
+        "relics",
+        "titan",
+        "titans",
+        "rumbling",
+        "history",
+        "timeline",
+        "meaning",
     }
     msg_words = set(re.sub(r"[^\w\s]", "", message.lower()).split())
     if msg_words.intersection(narrative_keywords):
         lore_context, _ = await _fetch_lore_for_query(message, char_a=character)
         if lore_context:
             char_context = {
-                "character": {"name": character.get("name"), "description": character.get("description")}
+                "character": {
+                    "name": character.get("name"),
+                    "description": character.get("description"),
+                }
             }
             answer = await ask_gemini_with_lore(
                 question=message,
@@ -979,6 +1149,7 @@ async def process_chat_message(
                 return {"answer": answer}
 
     from app.services.character_profile_formatter import format_character_profile
+
     details = await build_character_context(character) or {}
     profile_text = format_character_profile(character, details)
     return {"answer": profile_text}

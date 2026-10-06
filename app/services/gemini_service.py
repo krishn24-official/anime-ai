@@ -8,6 +8,7 @@ from app.config import GEMINI_API_KEY, GEMINI_MODEL_NAME
 try:
     from google import genai
     from google.genai import types
+
     _client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 except Exception as _e:
     print(f"[gemini_service] Warning: Failed to initialize genai: {_e}")
@@ -80,11 +81,7 @@ def _can_call_gemini_news() -> bool:
 def get_gemini_usage() -> dict:
 
     with _lock:
-        return {
-            "date": _usage["date"],
-            "count": _usage["count"],
-            "limit": DAILY_LIMIT
-        }
+        return {"date": _usage["date"], "count": _usage["count"], "limit": DAILY_LIMIT}
 
 
 def get_gemini_news_usage() -> dict:
@@ -93,7 +90,7 @@ def get_gemini_news_usage() -> dict:
         return {
             "date": _news_usage["date"],
             "count": _news_usage["count"],
-            "limit": NEWS_DAILY_LIMIT
+            "limit": NEWS_DAILY_LIMIT,
         }
 
 
@@ -115,10 +112,7 @@ async def ask_gemini_with_context(question: str, character_context: dict):
 
     context_json = json.dumps(character_context, default=str, indent=2)
 
-    prompt = (
-        f"DATABASE DATA:\n{context_json}\n\n"
-        f"USER QUESTION: {question}"
-    )
+    prompt = f"DATABASE DATA:\n{context_json}\n\n" f"USER QUESTION: {question}"
 
     return await _generate_with_fallback(prompt, SYSTEM_PROMPT)
 
@@ -155,7 +149,7 @@ async def _generate_with_fallback(prompt: str, system_instruction: str) -> str |
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=system_instruction,
-                )
+                ),
             )
             if response and response.text:
                 return response.text.strip()
@@ -201,7 +195,9 @@ IMAGE_SYSTEM_PROMPT = (
 )
 
 
-async def identify_image(message: str, image_base64: str, image_media_type: str | None = None) -> str | None:
+async def identify_image(
+    message: str, image_base64: str, image_media_type: str | None = None
+) -> str | None:
     """
     Returns the image analysis from Gemini, or None if limits or keys prevent it.
     """
@@ -215,11 +211,11 @@ async def identify_image(message: str, image_base64: str, image_media_type: str 
         return None
 
     import base64
+
     try:
         image_bytes = base64.b64decode(image_base64)
         image_part = types.Part.from_bytes(
-            data=image_bytes,
-            mime_type=image_media_type or "image/jpeg"
+            data=image_bytes, mime_type=image_media_type or "image/jpeg"
         )
 
         prompt = message or "Identify this anime character and describe them."
@@ -228,7 +224,7 @@ async def identify_image(message: str, image_base64: str, image_media_type: str 
             contents=[prompt, image_part],
             config=types.GenerateContentConfig(
                 system_instruction=IMAGE_SYSTEM_PROMPT,
-            )
+            ),
         )
         return response.text.strip()
     except Exception as e:
@@ -246,7 +242,7 @@ NEWS_SYSTEM_PROMPT = (
     '  "summary": a clean, neutral 1-2 sentence summary (max 240 characters) '
     "for a news card, written in your own words.\n"
     "If the article is not relevant to anime, games, movies, or TV series "
-    "entertainment news, set category to \"Other\"."
+    'entertainment news, set category to "Other".'
 )
 
 
@@ -266,10 +262,7 @@ async def categorize_and_summarize_news(title: str, description: str = ""):
     if not _client:
         return None
 
-    prompt = (
-        f"TITLE: {title}\n"
-        f"DESCRIPTION: {description or '(none)'}"
-    )
+    prompt = f"TITLE: {title}\n" f"DESCRIPTION: {description or '(none)'}"
 
     try:
         response = await _client.aio.models.generate_content(
@@ -277,7 +270,7 @@ async def categorize_and_summarize_news(title: str, description: str = ""):
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=NEWS_SYSTEM_PROMPT,
-            )
+            ),
         )
         text = response.text.strip()
 
@@ -310,7 +303,9 @@ LISTICLE_SYSTEM_PROMPT = (
 )
 
 
-async def generate_listicle_article_body(title: str, list_items: list[str], full_content: str = "") -> str:
+async def generate_listicle_article_body(
+    title: str, list_items: list[str], full_content: str = ""
+) -> str:
     """
     Intro paragraph + the full ordered list of items,
     formatted for a webpage article body.
@@ -321,7 +316,7 @@ async def generate_listicle_article_body(title: str, list_items: list[str], full
     prompt = f"TITLE: {title}\n\nEXTRACTED ITEMS:\n"
     for idx, item in enumerate(list_items, 1):
         prompt += f"{idx}. {item}\n"
-        
+
     if full_content:
         # Pass a truncated version of the full content for context
         prompt += f"\n\nPAGE CONTEXT (TRUNCATED):\n{full_content[:2000]}"
@@ -332,7 +327,7 @@ async def generate_listicle_article_body(title: str, list_items: list[str], full
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=LISTICLE_SYSTEM_PROMPT,
-            )
+            ),
         )
         return response.text.strip()
     except Exception as e:

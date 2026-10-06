@@ -5,31 +5,122 @@ At current scale (few thousand titles, few dozen articles per run), a straightfo
 regex scan is sufficient. If title counts grow significantly, this is the place to
 swap in an Aho-Corasick multi-pattern matcher.
 """
+
 import re
 from app.db.mongo import get_db
 
 MIN_ALIAS_LENGTH = 4
 IGNORED_ALIASES = {
-    "that", "this", "time", "when", "some", "what", "where", "your", "with",
-    "will", "have", "they", "from", "more", "about", "after", "together",
-    "days", "another", "home", "house", "cross", "strong", "city", "life",
-    "love", "live", "dead", "best", "good", "last", "next", "back", "down",
-    "look", "come", "make", "know", "take", "film", "show", "game", "play",
-    "star", "fire", "hero", "king", "dark", "free", "real", "true", "full",
-    "high", "open", "stop", "walk", "fall", "drop", "lost", "fast", "hard",
-    "late", "once", "soon", "here", "away", "over", "into", "then", "also",
-    "even", "only", "very", "just", "much", "well", "such", "each", "both",
-    "most", "many", "same", "like", "than", "them", "their", "there", "could",
-    "would", "should", "battleship", "friends", "trying", "judge", "beast",
-    "order", "water", "brother", "brothers", "producer"
+    "that",
+    "this",
+    "time",
+    "when",
+    "some",
+    "what",
+    "where",
+    "your",
+    "with",
+    "will",
+    "have",
+    "they",
+    "from",
+    "more",
+    "about",
+    "after",
+    "together",
+    "days",
+    "another",
+    "home",
+    "house",
+    "cross",
+    "strong",
+    "city",
+    "life",
+    "love",
+    "live",
+    "dead",
+    "best",
+    "good",
+    "last",
+    "next",
+    "back",
+    "down",
+    "look",
+    "come",
+    "make",
+    "know",
+    "take",
+    "film",
+    "show",
+    "game",
+    "play",
+    "star",
+    "fire",
+    "hero",
+    "king",
+    "dark",
+    "free",
+    "real",
+    "true",
+    "full",
+    "high",
+    "open",
+    "stop",
+    "walk",
+    "fall",
+    "drop",
+    "lost",
+    "fast",
+    "hard",
+    "late",
+    "once",
+    "soon",
+    "here",
+    "away",
+    "over",
+    "into",
+    "then",
+    "also",
+    "even",
+    "only",
+    "very",
+    "just",
+    "much",
+    "well",
+    "such",
+    "each",
+    "both",
+    "most",
+    "many",
+    "same",
+    "like",
+    "than",
+    "them",
+    "their",
+    "there",
+    "could",
+    "would",
+    "should",
+    "battleship",
+    "friends",
+    "trying",
+    "judge",
+    "beast",
+    "order",
+    "water",
+    "brother",
+    "brothers",
+    "producer",
 }
+
 
 def normalize_alias(text: str) -> str:
     """Lowercase, strip, and collapse internal whitespace."""
     if not text:
         return ""
     text = text.lower().strip()
-    return re.sub(r'\s+', ' ', text)
+    return re.sub(r"\s+", " ", text)
+
 
 async def build_alias_index() -> list[tuple[str, str, str]]:
     """
@@ -70,10 +161,7 @@ async def build_alias_index() -> list[tuple[str, str, str]]:
     # Manga — no numeric score stored; insertion order already reflects
     # AniList popularity ranking from the bulk fetch, so sort by _id asc.
     async for doc in (
-        db["manga"]
-        .find({}, {"_id": 1, "name": 1})
-        .sort("_id", 1)
-        .limit(2000)
+        db["manga"].find({}, {"_id": 1, "name": 1}).sort("_id", 1).limit(2000)
     ):
         add_alias(doc.get("name", ""), "manga", str(doc["_id"]))
 
@@ -103,14 +191,17 @@ async def build_alias_index() -> list[tuple[str, str, str]]:
     aliases.sort(key=lambda x: len(x[0]), reverse=True)
     return aliases
 
-def find_matches(text: str, alias_index: list[tuple[str, str, str]]) -> list[tuple[str, str, str]]:
+
+def find_matches(
+    text: str, alias_index: list[tuple[str, str, str]]
+) -> list[tuple[str, str, str]]:
     """
     Scans text for aliases using word-boundary regex.
     Deduplicates to avoid matching shorter substrings if a longer alias for the SAME content_id already matched.
     """
     if not text:
         return []
-    
+
     norm_text = normalize_alias(text)
     matches = []
     seen_content_ids = set()
@@ -118,9 +209,9 @@ def find_matches(text: str, alias_index: list[tuple[str, str, str]]) -> list[tup
     for alias, ctype, cid in alias_index:
         if cid in seen_content_ids:
             continue
-            
+
         if alias in norm_text:
-            pattern = r'\b' + re.escape(alias) + r'\b'
+            pattern = r"\b" + re.escape(alias) + r"\b"
             if re.search(pattern, norm_text):
                 matches.append((alias, ctype, cid))
                 seen_content_ids.add(cid)

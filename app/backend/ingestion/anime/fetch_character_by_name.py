@@ -1,18 +1,13 @@
 import asyncio
 import httpx
 
-from app.db.mongo import (
-    connect_db,
-    close_db,
-    get_db
-)
+from app.db.mongo import connect_db, close_db, get_db
 
 from app.backend.ingestion.anime.anilist_resolvers import (
     resolve_or_create_voice_actor,
     resolve_or_create_character,
 )
 from app.services.game_property_extractor import extract_game_properties
-
 
 ANILIST_URL = "https://graphql.anilist.co"
 
@@ -87,18 +82,15 @@ async def fetch_and_save(
     print(f"\n Fetching: {character_name}")
 
     variables = {}
-    if isinstance(character_name, int) or (isinstance(character_name, str) and character_name.isdigit()):
+    if isinstance(character_name, int) or (
+        isinstance(character_name, str) and character_name.isdigit()
+    ):
         variables["id"] = int(character_name)
     else:
         variables["name"] = character_name
 
     response = await client.post(
-        ANILIST_URL,
-        json={
-            "query": QUERY,
-            "variables": variables
-        },
-        timeout=30.0
+        ANILIST_URL, json={"query": QUERY, "variables": variables}, timeout=30.0
     )
 
     response.raise_for_status()
@@ -123,15 +115,14 @@ async def fetch_and_save(
     # Name mismatch check
     if expected_name is not None:
         check_name = expected_name
-    elif not isinstance(character_name, int) and not (isinstance(character_name, str) and character_name.isdigit()):
+    elif not isinstance(character_name, int) and not (
+        isinstance(character_name, str) and character_name.isdigit()
+    ):
         check_name = character_name
     else:
         check_name = False
 
-    if (
-        check_name is not False
-        and returned_name.lower() != check_name.lower()
-    ):
+    if check_name is not False and returned_name.lower() != check_name.lower():
         print(
             f"  ⚠️  Name mismatch: searched '{character_name}' "
             f"→ got '{returned_name}' (expected '{check_name}'). Saving anyway."
@@ -156,6 +147,7 @@ async def fetch_and_save(
             )
             if title:
                 from app.backend.utils.slug import create_slug
+
                 anime_slug = create_slug(title)
                 anime_ids.append(f"anime_{anime_slug}")
 
@@ -167,7 +159,6 @@ async def fetch_and_save(
 
     # Use first anime_id as primary, or empty string if none
     primary_anime_id = anime_ids[0] if anime_ids else ""
-
 
     # ── Resolve voice actors (id-based dedup via shared resolver) ──
     voice_actor_ids = []
@@ -199,8 +190,7 @@ async def fetch_and_save(
         if existing:
             merged = list(set(existing.get("anime_ids", []) + anime_ids))
             await db["characters"].update_one(
-                {"_id": char_id},
-                {"$set": {"anime_ids": merged}}
+                {"_id": char_id}, {"$set": {"anime_ids": merged}}
             )
 
     if not char_id:
@@ -213,7 +203,7 @@ async def fetch_and_save(
     db = get_db()
     doc = await db["characters"].find_one({"_id": char_id})
     if doc and doc.get("description") and not doc.get("game_properties"):
-        print(f"  🎮 Extracting game properties...")
+        print("  🎮 Extracting game properties...")
         game_properties = await extract_game_properties(
             character_name=doc["name"],
             description=doc["description"],
@@ -222,8 +212,7 @@ async def fetch_and_save(
         )
         if game_properties:
             await db["characters"].update_one(
-                {"_id": char_id},
-                {"$set": {"game_properties": game_properties}}
+                {"_id": char_id}, {"$set": {"game_properties": game_properties}}
             )
             print(f"  🎮 Properties: {game_properties}")
 
@@ -248,7 +237,6 @@ async def main():
         #   ("Dragon", False)         → search "Dragon", no check
 
         characters = [
-
             # Naruto
             # "Sumire Kakei",
             # "Wasabi Izuno",
@@ -278,7 +266,6 @@ async def main():
             # "Madara Uchiha",
             # "Kaguya Otsutsuki",
             # "Might Guy",
-
             # # One Piece — D. family members use alias pattern
             # "Monkey D. Luffy",
             # (4884, False),                  # Monkey D. Dragon (AniList has just "Dragon", ID: 4884)
@@ -302,7 +289,6 @@ async def main():
             # "Big Mom",
             # "Dracule Mihawk",
             # "Sabo",
-
             # # Jujutsu Kaisen
             # "Yuji Itadori",
             # "Megumi Fushiguro",
@@ -314,7 +300,6 @@ async def main():
             # "Toge Inumaki",
             # "Panda",
             # "Yuta Okkotsu",
-
             # # Demon Slayer
             # "Tanjiro Kamado",
             # "Nezuko Kamado",
@@ -326,7 +311,6 @@ async def main():
             # "Tengen Uzui",
             # "Muzan Kibutsuji",
             # "Akaza",
-
             # # Dragon Ball
             # "Goku",
             # "Vegeta",
@@ -338,7 +322,6 @@ async def main():
             # "Trunks",
             # "Krillin",
             # "Bulma",
-
             # # AOT
             # "Eren Yeager",
             # "Mikasa Ackerman",
@@ -350,7 +333,6 @@ async def main():
             # "Reiner Braun",
             # "Zeke Yeager",
             # "Annie Leonhart",
-
             # # Death Note
             # "Light Yagami",
             # "L Lawliet",
@@ -358,7 +340,6 @@ async def main():
             # "Near",
             # "Mello",
             # "Misa Amane",
-
             # # Fullmetal Alchemist
             # "Edward Elric",
             # "Alphonse Elric",
@@ -370,7 +351,6 @@ async def main():
             # "Envy",
             # "Wrath",
             # "Father",
-
             # # Bleach
             # "Ichigo Kurosaki",
             # "Rukia Kuchiki",
@@ -382,32 +362,27 @@ async def main():
             # "Sosuke Aizen",
             # "Kisuke Urahara",
             # "Yoruichi Shihoin",
-
             # # Solo Leveling
             # "Sung Jinwoo",
             # "Cha Hae-In",
-
             # # Chainsaw Man
             # "Denji",
             # "Power",
             # "Makima",
             # "Aki Hayakawa",
             # "Pochita",
-
             # # One Punch Man
             # "Saitama",
             # "Genos",
             # ("Speed-o'-Sound Sonic", False),
             # "Boros",
             # "Bang",
-
             # # Frieren
             # "Frieren",
             # "Fern",
             # "Stark",
             # "Himmel",
             # "Heiter",
-
             # # Dr. Stone
             # "Senku Ishigami",
             # "Taiju Oki",

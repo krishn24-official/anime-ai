@@ -7,6 +7,7 @@ CONTENT_COLLECTION_MAP = {
     "tv_series": "tv_series",
 }
 
+
 async def resolve_content_title(content_type: str, content_id: str) -> dict | None:
     """
     Returns a dict with 'title' and 'poster_image' if found, else None.
@@ -17,10 +18,17 @@ async def resolve_content_title(content_type: str, content_id: str) -> dict | No
         return None
 
     doc = await db[col].find_one(
-        {"_id": content_id}, 
-        {"title": 1, "name": 1, "images": 1, "poster": 1, "poster_image": 1, "cover_image": 1}
+        {"_id": content_id},
+        {
+            "title": 1,
+            "name": 1,
+            "images": 1,
+            "poster": 1,
+            "poster_image": 1,
+            "cover_image": 1,
+        },
     )
-    
+
     if not doc:
         return None
 
@@ -30,10 +38,10 @@ async def resolve_content_title(content_type: str, content_id: str) -> dict | No
             title = doc["title"]
         else:
             title = doc["title"].get("english") or doc["title"].get("romaji")
-            
+
     if not title:
         title = doc.get("name")
-    
+
     poster_image = None
     if doc.get("poster"):
         poster_image = doc["poster"]
@@ -46,8 +54,5 @@ async def resolve_content_title(content_type: str, content_id: str) -> dict | No
         poster_image = jpg.get("large_image_url") or jpg.get("image_url")
         if not poster_image:
             poster_image = doc["images"].get("poster")
-    
-    return {
-        "title": title or content_id,
-        "poster_image": poster_image
-    }
+
+    return {"title": title or content_id, "poster_image": poster_image}

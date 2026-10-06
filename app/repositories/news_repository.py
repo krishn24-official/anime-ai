@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 
 from app.db.mongo import get_db
 
-
 VALID_CATEGORIES = ["Anime", "Games", "Movies", "TV Series"]
 
 
@@ -70,7 +69,7 @@ async def get_news_by_category(
         query["$or"] = [
             {"title": {"$regex": search, "$options": "i"}},
             {"summary": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}}
+            {"description": {"$regex": search, "$options": "i"}},
         ]
 
     if start_date or end_date:
@@ -83,7 +82,11 @@ async def get_news_by_category(
                 date_filter["$gte"] = start_date
         if end_date:
             try:
-                end_str = f"{end_date}T23:59:59+00:00" if len(end_date) == 10 else end_date.replace("Z", "+00:00")
+                end_str = (
+                    f"{end_date}T23:59:59+00:00"
+                    if len(end_date) == 10
+                    else end_date.replace("Z", "+00:00")
+                )
                 dt = datetime.fromisoformat(end_str)
                 date_filter["$lte"] = dt
             except ValueError:

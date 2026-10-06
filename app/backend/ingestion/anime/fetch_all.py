@@ -29,7 +29,6 @@ from app.backend.ingestion.anime.anilist_resolvers import (
     resolve_or_create_voice_actor,
     resolve_or_create_character,
 )
-from app.backend.utils.slug import create_slug
 
 ANILIST_URL = "https://graphql.anilist.co"
 
@@ -238,6 +237,7 @@ query ($id: Int) {
 # Utils
 # ─────────────────────────────────────────────────
 
+
 class AniListRateLimiter:
     def __init__(self, limit=90, window=60):
         self.limit = limit
@@ -247,35 +247,42 @@ class AniListRateLimiter:
     async def wait_if_needed(self):
         now = time.time()
         self.timestamps = [t for t in self.timestamps if now - t < self.window]
-        
+
         if len(self.timestamps) >= self.limit - 2:
             wait_time = self.window - (now - self.timestamps[0])
             if wait_time > 0:
                 print(f"    [RATE LIMITER] Proactive pause for {wait_time:.2f}s...")
                 await asyncio.sleep(wait_time)
-            
+
             now = time.time()
             self.timestamps = [t for t in self.timestamps if now - t < self.window]
-            
+
         self.timestamps.append(time.time())
+
 
 class CheckpointManager:
     def __init__(self, mode: str):
         self.mode = mode
         self.collection = get_db()["anilist_sync_state"]
-        
+
     async def get_last_page(self) -> int:
         doc = await self.collection.find_one({"_id": self.mode})
         if doc:
             return doc.get("last_completed_page", 0)
         return 0
-        
+
     async def save_progress(self, page: int):
         await self.collection.update_one(
             {"_id": self.mode},
-            {"$set": {"last_completed_page": page, "updated_at": datetime.now(timezone.utc)}},
-            upsert=True
+            {
+                "$set": {
+                    "last_completed_page": page,
+                    "updated_at": datetime.now(timezone.utc),
+                }
+            },
+            upsert=True,
         )
+
 
 async def anilist_request(
     client: httpx.AsyncClient,
@@ -310,15 +317,17 @@ async def anilist_request(
 
         except (httpx.ConnectError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
             if attempt < max_retries:
-                wait = (2 ** attempt)
-                print(f"    [RETRY {attempt}/{max_retries}] {type(e).__name__}, waiting {wait}s...")
+                wait = 2**attempt
+                print(
+                    f"    [RETRY {attempt}/{max_retries}] {type(e).__name__}, waiting {wait}s..."
+                )
                 await asyncio.sleep(wait)
             else:
                 print(f"    [FAILED] {type(e).__name__} after {max_retries} retries")
                 return None
         except httpx.HTTPStatusError as e:
             if e.response.status_code >= 500 and attempt < max_retries:
-                wait = (2 ** attempt)
+                wait = 2**attempt
                 print(f"    [SERVER ERROR {e.response.status_code}] waiting {wait}s...")
                 await asyncio.sleep(wait)
                 continue
@@ -333,8 +342,8 @@ async def anilist_request(
 # Processors
 # ─────────────────────────────────────────────────
 
+
 async def process_anime_node(item: dict) -> bool:
-    # Explicit adult check directly in ingestion fetch
     if "Hentai" in (item.get("genres") or []):
         return False
 
@@ -372,7 +381,9 @@ async def process_anime_node(item: dict) -> bool:
                     voice_actor_ids=va_ids,
                 )
             except Exception as e:
-                print(f"    [ERR CHAR] {char_node.get('name', {}).get('full', '?')}: {e}")
+                print(
+                    f"    [ERR CHAR] {char_node.get('name', {}).get('full', '?')}: {e}"
+                )
 
         await db["anime"].replace_one({"_id": anime_id}, doc, upsert=True)
         return True
@@ -380,17 +391,20 @@ async def process_anime_node(item: dict) -> bool:
         print(f"    [ERR ANIME] {item.get('title', {}).get('romaji', '?')}: {e}")
         return False
 
-async def fetch_anime_unified(client: httpx.AsyncClient, limiter: AniListRateLimiter, top: int = None):
+
+async def fetch_anime_unified(
+    client: httpx.AsyncClient, limiter: AniListRateLimiter, top: int = None
+):
     db = get_db()
     checkpoint = CheckpointManager("anime_all")
     start_page = await checkpoint.get_last_page() + 1
-    
+
     saved = 0
     failed = 0
-    max_items = top or float('inf')
+    max_items = top or float("inf")
 
     print(f"\n{'='*60}")
-    print(f"  ANIME + CHARACTERS INGESTION")
+    print("  ANIME + CHARACTERS INGESTION")
     print(f"  Resuming from page: {start_page}")
     print(f"{'='*60}")
 
@@ -400,7 +414,9 @@ async def fetch_anime_unified(client: httpx.AsyncClient, limiter: AniListRateLim
             print(f"  Reached target limit of {max_items}. Stopping.")
             break
 
-        data = await anilist_request(client, limiter, ANIME_UNIFIED_QUERY, {"page": page, "perPage": 50})
+        data = await anilist_request(
+            client, limiter, ANIME_UNIFIED_QUERY, {"page": page, "perPage": 50}
+        )
 
         if not data:
             print(f"  Page {page}: FAILED to fetch")
@@ -416,7 +432,7 @@ async def fetch_anime_unified(client: httpx.AsyncClient, limiter: AniListRateLim
         for item in items:
             if saved + failed >= max_items:
                 break
-                
+
             success = await process_anime_node(item)
             if success:
                 saved += 1
@@ -425,29 +441,32 @@ async def fetch_anime_unified(client: httpx.AsyncClient, limiter: AniListRateLim
                 print(f"    [OK] {display}")
             else:
                 failed += 1
-                
+
         await checkpoint.save_progress(page)
-        
+
         if not page_info.get("hasNextPage", False):
             print("  (No more pages)")
             break
-            
+
         page += 1
 
     return {"saved": saved, "failed": failed}
 
-async def fetch_all_manga(client: httpx.AsyncClient, limiter: AniListRateLimiter, top: int = None):
+
+async def fetch_all_manga(
+    client: httpx.AsyncClient, limiter: AniListRateLimiter, top: int = None
+):
     db = get_db()
     collection = db["manga"]
     checkpoint = CheckpointManager("manga_all")
     start_page = await checkpoint.get_last_page() + 1
-    
+
     saved = 0
     failed = 0
-    max_items = top or float('inf')
+    max_items = top or float("inf")
 
     print(f"\n{'='*60}")
-    print(f"  MANGA INGESTION")
+    print("  MANGA INGESTION")
     print(f"  Resuming from page: {start_page}")
     print(f"{'='*60}")
 
@@ -456,8 +475,10 @@ async def fetch_all_manga(client: httpx.AsyncClient, limiter: AniListRateLimiter
         if saved + failed >= max_items:
             print(f"  Reached target limit of {max_items}. Stopping.")
             break
-            
-        data = await anilist_request(client, limiter, MANGA_PAGE_QUERY, {"page": page, "perPage": 50})
+
+        data = await anilist_request(
+            client, limiter, MANGA_PAGE_QUERY, {"page": page, "perPage": 50}
+        )
 
         if not data:
             print(f"  Page {page}: FAILED to fetch")
@@ -484,16 +505,17 @@ async def fetch_all_manga(client: httpx.AsyncClient, limiter: AniListRateLimiter
             except Exception as e:
                 failed += 1
                 print(f"    [ERR] {item.get('title', {}).get('romaji', '?')}: {e}")
-                
+
         await checkpoint.save_progress(page)
 
         if not page_info.get("hasNextPage", False):
             print("  (No more pages)")
             break
-            
+
         page += 1
 
     return {"saved": saved, "failed": failed}
+
 
 async def run_backfill(client: httpx.AsyncClient, limiter: AniListRateLimiter):
     db = get_db()
@@ -515,11 +537,15 @@ async def run_backfill(client: httpx.AsyncClient, limiter: AniListRateLimiter):
     for idx, anime_doc in enumerate(all_anime, 1):
         anilist_id = anime_doc["source_metadata"]["anilist_id"]
         title_data = anime_doc.get("title", {})
-        display_title = title_data.get("english") or title_data.get("romaji") or anime_doc["_id"]
+        display_title = (
+            title_data.get("english") or title_data.get("romaji") or anime_doc["_id"]
+        )
 
         print(f"\n  [{idx}/{total_anime}] {display_title} (anilist_id={anilist_id})")
 
-        data = await anilist_request(client, limiter, BACKFILL_ANIME_QUERY, {"id": anilist_id})
+        data = await anilist_request(
+            client, limiter, BACKFILL_ANIME_QUERY, {"id": anilist_id}
+        )
         if not data:
             failed += 1
             continue
@@ -528,7 +554,7 @@ async def run_backfill(client: httpx.AsyncClient, limiter: AniListRateLimiter):
         if not media:
             failed += 1
             continue
-            
+
         success = await process_anime_node(media)
         if success:
             saved += 1
@@ -542,6 +568,7 @@ async def run_backfill(client: httpx.AsyncClient, limiter: AniListRateLimiter):
 # Main
 # ─────────────────────────────────────────────────
 
+
 async def main():
     parser = argparse.ArgumentParser(description="AniList bulk ingestion")
     parser.add_argument(
@@ -550,8 +577,14 @@ async def main():
         default="all",
         help="Fetch only a specific type",
     )
-    parser.add_argument("--top", type=int, default=None, help="Cap fetching at top N items (e.g. 10000)")
-    parser.add_argument("--backfill", action="store_true", help="Backfill voice actors and release dates for existing anime")
+    parser.add_argument(
+        "--top", type=int, default=None, help="Cap fetching at top N items (e.g. 10000)"
+    )
+    parser.add_argument(
+        "--backfill",
+        action="store_true",
+        help="Backfill voice actors and release dates for existing anime",
+    )
     args = parser.parse_args()
 
     print("Connecting to MongoDB...")
@@ -566,7 +599,9 @@ async def main():
             results["backfill"] = await run_backfill(client, limiter)
         else:
             if args.only in ("all", "anime"):
-                results["anime"] = await fetch_anime_unified(client, limiter, top=args.top)
+                results["anime"] = await fetch_anime_unified(
+                    client, limiter, top=args.top
+                )
 
             if args.only in ("all", "manga"):
                 results["manga"] = await fetch_all_manga(client, limiter, top=args.top)
@@ -578,7 +613,9 @@ async def main():
     print("  INGESTION COMPLETE")
     print(f"{'='*60}")
     for category, stats in results.items():
-        print(f"  {category.upper():>12}: saved={stats['saved']}, failed={stats['failed']}")
+        print(
+            f"  {category.upper():>12}: saved={stats['saved']}, failed={stats['failed']}"
+        )
     print()
 
 
@@ -589,4 +626,5 @@ if __name__ == "__main__":
         print("\nInterrupted by user. Progress was saved in checkpoint.")
     except Exception:
         import traceback
+
         traceback.print_exc()

@@ -24,6 +24,7 @@ COLLECTIONS = [
     "lore_chunks",
 ]
 
+
 async def create_collections():
     db = get_db()
     existing = await db.list_collection_names()

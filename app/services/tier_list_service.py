@@ -63,7 +63,9 @@ def _validate_tiers(tiers: list) -> tuple[bool, str | None]:
     return True, None
 
 
-async def create_new_tier_list(user_id: ObjectId, name: str, tiers: list, is_public: bool = True):
+async def create_new_tier_list(
+    user_id: ObjectId, name: str, tiers: list, is_public: bool = True
+):
     if not name or not name.strip():
         return None, "Tier list name is required"
 
@@ -164,7 +166,8 @@ async def search_content_for_tier_list(query: str, content_type: str | None = No
     results = []
 
     types_to_search = (
-        [content_type] if content_type and content_type in VALID_CONTENT_TYPES
+        [content_type]
+        if content_type and content_type in VALID_CONTENT_TYPES
         else list(VALID_CONTENT_TYPES)
     )
 
@@ -196,10 +199,7 @@ async def search_content_for_tier_list(query: str, content_type: str | None = No
             projection = {"_id": 1, name_field: 1, "images": 1}
 
         docs = await (
-            db[collection]
-            .find(query_filter, projection)
-            .limit(5)
-            .to_list(None)
+            db[collection].find(query_filter, projection).limit(5).to_list(None)
         )
 
         for doc in docs:
@@ -214,15 +214,17 @@ async def search_content_for_tier_list(query: str, content_type: str | None = No
             else:
                 label = doc.get(name_field) or str(doc["_id"])
 
-            results.append({
-                "content_type": ctype,
-                "content_id": str(doc["_id"]),
-                "name": label,
-                "image": (
-                    images.get("profile")
-                    or images.get("poster")
-                    or images.get("cover_image")
-                ),
-            })
+            results.append(
+                {
+                    "content_type": ctype,
+                    "content_id": str(doc["_id"]),
+                    "name": label,
+                    "image": (
+                        images.get("profile")
+                        or images.get("poster")
+                        or images.get("cover_image")
+                    ),
+                }
+            )
 
     return results

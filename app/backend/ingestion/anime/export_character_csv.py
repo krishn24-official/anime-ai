@@ -31,6 +31,7 @@ CSV columns:
 Leave a cell EMPTY to skip updating that field for that character.
 Only non-empty cells overwrite existing DB values when imported.
 """
+
 import asyncio
 import csv
 
@@ -82,27 +83,32 @@ async def main():
     await connect_db()
     db = get_db()
 
-    characters = await db["characters"].find(
-        {"is_deleted": {"$ne": True}},
-        {
-            "_id": 1,
-            "name": 1,
-            "native_name": 1,
-            "birth_day": 1,
-            "birth_month": 1,
-            "gender": 1,
-            "role": 1,
-            "status": 1,
-            "species": 1,
-            "physical": 1,
-            "images": 1,
-            "affiliations": 1,
-            "abilities": 1,
-            "forms": 1,
-            "tags": 1,
-            "game_properties": 1,
-        }
-    ).sort("name", 1).to_list(None)
+    characters = (
+        await db["characters"]
+        .find(
+            {"is_deleted": {"$ne": True}},
+            {
+                "_id": 1,
+                "name": 1,
+                "native_name": 1,
+                "birth_day": 1,
+                "birth_month": 1,
+                "gender": 1,
+                "role": 1,
+                "status": 1,
+                "species": 1,
+                "physical": 1,
+                "images": 1,
+                "affiliations": 1,
+                "abilities": 1,
+                "forms": 1,
+                "tags": 1,
+                "game_properties": 1,
+            },
+        )
+        .sort("name", 1)
+        .to_list(None)
+    )
 
     await close_db()
 
@@ -114,27 +120,29 @@ async def main():
             physical = char.get("physical") or {}
             images = char.get("images") or {}
 
-            writer.writerow({
-                "_id": char["_id"],
-                "name": char.get("name", ""),
-                "native_name": _val(char.get("native_name")),
-                "birth_day": _val(char.get("birth_day")),
-                "birth_month": _val(char.get("birth_month")),
-                "gender": _val(char.get("gender")),
-                "role": _val(char.get("role")),
-                "status": _val(char.get("status")),
-                "species": _val(char.get("species")),
-                "height": _val(physical.get("height")),
-                "hair_color": _val(physical.get("hair_color")),
-                "has_hair": _val(physical.get("has_hair")),
-                "image_profile": _val(images.get("profile")),
-                "image_banner": _val(images.get("banner")),
-                "affiliations": _join(char.get("affiliations")),
-                "abilities": _join(char.get("abilities")),
-                "forms": _join(char.get("forms")),
-                "tags": _join(char.get("tags")),
-                "game_properties": _join(char.get("game_properties")),
-            })
+            writer.writerow(
+                {
+                    "_id": char["_id"],
+                    "name": char.get("name", ""),
+                    "native_name": _val(char.get("native_name")),
+                    "birth_day": _val(char.get("birth_day")),
+                    "birth_month": _val(char.get("birth_month")),
+                    "gender": _val(char.get("gender")),
+                    "role": _val(char.get("role")),
+                    "status": _val(char.get("status")),
+                    "species": _val(char.get("species")),
+                    "height": _val(physical.get("height")),
+                    "hair_color": _val(physical.get("hair_color")),
+                    "has_hair": _val(physical.get("has_hair")),
+                    "image_profile": _val(images.get("profile")),
+                    "image_banner": _val(images.get("banner")),
+                    "affiliations": _join(char.get("affiliations")),
+                    "abilities": _join(char.get("abilities")),
+                    "forms": _join(char.get("forms")),
+                    "tags": _join(char.get("tags")),
+                    "game_properties": _join(char.get("game_properties")),
+                }
+            )
 
     print(f"✅ Exported {len(characters)} characters to {OUTPUT_FILE}")
     print("📝 Fill in the empty cells, then run bulk_update_characters.py")

@@ -38,10 +38,13 @@ async def upload_image(
     """
 
     if not _is_configured():
-        print("[cloudinary] not configured — set CLOUDINARY_CLOUD_NAME, API_KEY, API_SECRET in .env")
+        print(
+            "[cloudinary] not configured — set CLOUDINARY_CLOUD_NAME, API_KEY, API_SECRET in .env"
+        )
         return None
 
     try:
+
         def _upload():
             return cloudinary.uploader.upload(
                 source,
@@ -50,6 +53,7 @@ async def upload_image(
                 overwrite=True,
                 resource_type="image",
             )
+
         result = await asyncio.to_thread(_upload)
         return result.get("secure_url")
 
@@ -75,6 +79,7 @@ async def upload_image_from_bytes(
 ) -> str | None:
     """Upload raw image bytes (e.g. from a file upload in the API)."""
     import io
+
     return await upload_image(
         io.BytesIO(data),
         folder=folder,

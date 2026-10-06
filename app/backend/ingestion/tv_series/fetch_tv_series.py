@@ -23,7 +23,7 @@ async def fetch_and_save(client: httpx.AsyncClient, title: str):
             "type": "series",
             "plot": "full",
         },
-        timeout=30.0
+        timeout=30.0,
     )
 
     response.raise_for_status()
@@ -36,9 +36,7 @@ async def fetch_and_save(client: httpx.AsyncClient, title: str):
     formatted_series = transform_tv_series(data)
 
     await tv_collection.replace_one(
-        {"_id": formatted_series["_id"]},
-        formatted_series,
-        upsert=True
+        {"_id": formatted_series["_id"]}, formatted_series, upsert=True
     )
 
     print(f"✅ Saved: {formatted_series['_id']}")

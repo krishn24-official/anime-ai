@@ -8,6 +8,7 @@ The loop:
   4. Send results back to Gemini
   5. Repeat until Gemini produces a final text response (no more tool calls)
 """
+
 import re
 from google import genai
 from google.genai import types
@@ -22,22 +23,39 @@ MAX_ITERATIONS = 5  # safety cap on tool-call rounds
 # These fire BEFORE sending to Gemini, routing obvious queries directly.
 INTENT_PATTERNS = [
     (
-        re.compile(r"\b(highest rated|top rated|best rated|most rated|top anime|best anime|top movies|best movies|top tv|trending|most popular|what('s| is) popular|what('s| are) (users|people) (rating|watching|saving|adding)|watchlist)\b", re.I),
+        re.compile(
+            r"\b(highest rated|top rated|best rated|most rated|top anime|best anime|top movies|best movies|top tv|trending|most popular|what('s| is) popular|what('s| are) (users|people) (rating|watching|saving|adding)|watchlist)\b",
+            re.I,
+        ),
         "get_content_trends",
-        lambda msg: {"trend_type": "watchlist" if re.search(r"watchlist|saving|adding", msg, re.I) else "ratings"},
+        lambda msg: {
+            "trend_type": (
+                "watchlist"
+                if re.search(r"watchlist|saving|adding", msg, re.I)
+                else "ratings"
+            )
+        },
     ),
     (
-        re.compile(r"\b(latest news|recent news|what('s| is) (happening|new|going on)|today('s| ) news|news about|any news)\b", re.I),
+        re.compile(
+            r"\b(latest news|recent news|what('s| is) (happening|new|going on)|today('s| ) news|news about|any news)\b",
+            re.I,
+        ),
         "get_latest_news",
         lambda msg: {},
     ),
     (
-        re.compile(r"\b(birthday|born today|whose birthday|character.*birthday|birthday.*today)\b", re.I),
+        re.compile(
+            r"\b(birthday|born today|whose birthday|character.*birthday|birthday.*today)\b",
+            re.I,
+        ),
         "get_today_birthdays",
         lambda msg: {},
     ),
     (
-        re.compile(r"\b(anniversary|anniversaries|on this day|today('s| ) event)\b", re.I),
+        re.compile(
+            r"\b(anniversary|anniversaries|on this day|today('s| ) event)\b", re.I
+        ),
         "get_today_events",
         lambda msg: {},
     ),
@@ -54,16 +72,19 @@ def _detect_intent(message: str):
 
 def _build_gemini_tools():
     """Convert our tool definitions dict into Gemini SDK tool objects."""
-    return [types.Tool(
-        function_declarations=[
-            types.FunctionDeclaration(
-                name=fn["name"],
-                description=fn["description"],
-                parameters=fn["parameters"]
-            )
-            for fn in tool_group["function_declarations"]
-        ]
-    ) for tool_group in AGENT_TOOLS]
+    return [
+        types.Tool(
+            function_declarations=[
+                types.FunctionDeclaration(
+                    name=fn["name"],
+                    description=fn["description"],
+                    parameters=fn["parameters"],
+                )
+                for fn in tool_group["function_declarations"]
+            ]
+        )
+        for tool_group in AGENT_TOOLS
+    ]
 
 
 async def run_agent(user_message: str) -> dict:
@@ -106,10 +127,10 @@ async def run_agent(user_message: str) -> dict:
                         "Synthesize the data into a clear, friendly, conversational response. "
                         "If the data is empty or says 'No data available', say so honestly."
                     )
-                )
+                ),
             )
             answer = response.text.strip()
-        except Exception as e:
+        except Exception:
             # Quota hit or error — return raw data directly, still useful
             answer = tool_result
 
@@ -123,7 +144,9 @@ async def run_agent(user_message: str) -> dict:
     tools = _build_gemini_tools()
 
     # Conversation history for multi-turn tool calling
-    messages = [types.Content(role="user", parts=[types.Part.from_text(text=user_message)])]
+    messages = [
+        types.Content(role="user", parts=[types.Part.from_text(text=user_message)])
+    ]
 
     tools_used = []
     iterations = 0
@@ -138,8 +161,10 @@ async def run_agent(user_message: str) -> dict:
                 config=types.GenerateContentConfig(
                     system_instruction=AGENT_SYSTEM_PROMPT,
                     tools=tools,
-                    automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
-                )
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                        disable=True
+                    ),
+                ),
             )
         except Exception as e:
             return {
@@ -149,16 +174,18 @@ async def run_agent(user_message: str) -> dict:
             }
 
         candidate = response.candidates[0] if response.candidates else None
-        parts = (candidate.content.parts if candidate and candidate.content and candidate.content.parts is not None else [])
+        parts = (
+            candidate.content.parts
+            if candidate and candidate.content and candidate.content.parts is not None
+            else []
+        )
 
         # Check if Gemini wants to call tools
         tool_call_parts = [p for p in parts if p.function_call]
 
         if not tool_call_parts:
             # No tool calls — this is the final answer
-            final_text = "".join(
-                p.text for p in parts if p.text
-            ).strip()
+            final_text = "".join(p.text for p in parts if p.text).strip()
 
             # Deduplicate tools_used while preserving order
             seen = set()
@@ -189,8 +216,7 @@ async def run_agent(user_message: str) -> dict:
 
             tool_results.append(
                 types.Part.from_function_response(
-                    name=tool_name,
-                    response={"result": result_str}
+                    name=tool_name, response={"result": result_str}
                 )
             )
 

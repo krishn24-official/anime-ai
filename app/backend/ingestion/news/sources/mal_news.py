@@ -1,7 +1,11 @@
 import feedparser
 import httpx
 
-from app.services.news_date_utils import parse_published_entry, extract_image_url, DEFAULT_NEWS_HEADERS
+from app.services.news_date_utils import (
+    parse_published_entry,
+    extract_image_url,
+    DEFAULT_NEWS_HEADERS,
+)
 
 MAL_RSS = "https://myanimelist.net/rss/news.xml"
 
@@ -11,7 +15,9 @@ async def fetch_mal_news():
     articles = []
 
     try:
-        async with httpx.AsyncClient(timeout=10.0, headers=DEFAULT_NEWS_HEADERS) as client:
+        async with httpx.AsyncClient(
+            timeout=10.0, headers=DEFAULT_NEWS_HEADERS
+        ) as client:
             response = await client.get(MAL_RSS, follow_redirects=True)
             feed = feedparser.parse(response.content)
 
@@ -22,13 +28,15 @@ async def fetch_mal_news():
 
             image_url = extract_image_url(entry)
 
-            articles.append({
-                "title": entry.title,
-                "url": entry.link,
-                "source": "myanimelist",
-                "published_at": published_at,
-                "image_url": image_url
-            })
+            articles.append(
+                {
+                    "title": entry.title,
+                    "url": entry.link,
+                    "source": "myanimelist",
+                    "published_at": published_at,
+                    "image_url": image_url,
+                }
+            )
 
     except Exception as e:
         print("MAL RSS error:", e)

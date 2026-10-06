@@ -11,7 +11,9 @@ async def fetch_crunchyroll_news():
     articles = []
 
     try:
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
         async with httpx.AsyncClient(timeout=10.0, headers=headers) as client:
             response = await client.get(CRUNCHYROLL_RSS, follow_redirects=True)
             feed = feedparser.parse(response.content)
@@ -28,14 +30,16 @@ async def fetch_crunchyroll_news():
             elif hasattr(entry, "description"):
                 description = entry.description
 
-            articles.append({
-                "title": entry.title,
-                "url": entry.link,
-                "source": "crunchyroll",
-                "description": description[:500] if description else "",
-                "published_at": published_at,
-                "image_url": image_url
-            })
+            articles.append(
+                {
+                    "title": entry.title,
+                    "url": entry.link,
+                    "source": "crunchyroll",
+                    "description": description[:500] if description else "",
+                    "published_at": published_at,
+                    "image_url": image_url,
+                }
+            )
 
     except Exception as e:
         print("Crunchyroll RSS error:", e)

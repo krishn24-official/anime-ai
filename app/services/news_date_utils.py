@@ -2,7 +2,6 @@ import time
 from datetime import datetime, timezone
 from dateutil import parser
 
-
 DEFAULT_NEWS_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -64,21 +63,21 @@ def extract_image_url(entry) -> str | None:
     # 1. Check media_thumbnail
     if hasattr(entry, "media_thumbnail") and entry.media_thumbnail:
         return entry.media_thumbnail[0].get("url")
-    
+
     # 2. Check media_content
     if hasattr(entry, "media_content") and entry.media_content:
         return entry.media_content[0].get("url")
-        
+
     # 3. Check enclosures (often contains image attachments)
     if hasattr(entry, "enclosures") and entry.enclosures:
         for enclosure in entry.enclosures:
             if enclosure.get("type", "").startswith("image/"):
                 return enclosure.get("url")
-                
+
     # 4. Check links
     if hasattr(entry, "links") and entry.links:
         for link in entry.links:
             if link.get("type", "").startswith("image/"):
                 return link.get("href")
-                
+
     return None

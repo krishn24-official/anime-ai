@@ -29,19 +29,41 @@ from app.services.tmdb_sync_service import (
     sync_discover_tv,
 )
 
+
 async def main():
     parser = argparse.ArgumentParser(description="TMDb bulk ingestion")
-    parser.add_argument("--movie-pages", type=int, default=5, help="Pages of movies to fetch (20 per page)")
-    parser.add_argument("--tv-pages", type=int, default=5, help="Pages of TV series to fetch (20 per page)")
+    parser.add_argument(
+        "--movie-pages",
+        type=int,
+        default=5,
+        help="Pages of movies to fetch (20 per page)",
+    )
+    parser.add_argument(
+        "--tv-pages",
+        type=int,
+        default=5,
+        help="Pages of TV series to fetch (20 per page)",
+    )
     parser.add_argument(
         "--only",
         choices=["movies", "tv", "all"],
         default="all",
         help="Fetch only a specific type",
     )
-    parser.add_argument("--country", type=str, help="Filter by origin country (e.g., IN, JP, US, KR)")
-    parser.add_argument("--language", type=str, help="Filter by original language (e.g., hi, ja, en, ko)")
-    parser.add_argument("--max-cast", type=int, default=10, help="Maximum number of cast members to fetch per title")
+    parser.add_argument(
+        "--country", type=str, help="Filter by origin country (e.g., IN, JP, US, KR)"
+    )
+    parser.add_argument(
+        "--language",
+        type=str,
+        help="Filter by original language (e.g., hi, ja, en, ko)",
+    )
+    parser.add_argument(
+        "--max-cast",
+        type=int,
+        default=10,
+        help="Maximum number of cast members to fetch per title",
+    )
     args = parser.parse_args()
 
     filters = {}
@@ -59,24 +81,40 @@ async def main():
     try:
         if args.only in ("all", "movies"):
             print(f"=== Discovering Popular Movies ({args.movie_pages} pages) ===")
-            results["movies"] = await sync_discover_movies(pages=args.movie_pages, max_cast=args.max_cast, sort_by="popularity.desc", **filters)
-            print(f"Movies result: saved={results['movies']['saved']}, failed={results['movies']['failed']}\n")
+            results["movies"] = await sync_discover_movies(
+                pages=args.movie_pages,
+                max_cast=args.max_cast,
+                sort_by="popularity.desc",
+                **filters,
+            )
+            print(
+                f"Movies result: saved={results['movies']['saved']}, failed={results['movies']['failed']}\n"
+            )
 
         if args.only in ("all", "tv"):
             print(f"=== Discovering Popular TV Series ({args.tv_pages} pages) ===")
-            results["tv"] = await sync_discover_tv(pages=args.tv_pages, max_cast=args.max_cast, sort_by="popularity.desc", **filters)
-            print(f"TV Series result: saved={results['tv']['saved']}, failed={results['tv']['failed']}\n")
-            
+            results["tv"] = await sync_discover_tv(
+                pages=args.tv_pages,
+                max_cast=args.max_cast,
+                sort_by="popularity.desc",
+                **filters,
+            )
+            print(
+                f"TV Series result: saved={results['tv']['saved']}, failed={results['tv']['failed']}\n"
+            )
+
     finally:
         await close_client()
         await close_db()
-        
+
     # --- Summary ---
     print(f"\n{'='*60}")
     print("  TMDb INGESTION COMPLETE")
     print(f"{'='*60}")
     for category, stats in results.items():
-        print(f"  {category.upper():>12}: saved={stats['saved']}, failed={stats['failed']}")
+        print(
+            f"  {category.upper():>12}: saved={stats['saved']}, failed={stats['failed']}"
+        )
     print()
 
 
@@ -87,4 +125,5 @@ if __name__ == "__main__":
         print("\nInterrupted by user.")
     except Exception:
         import traceback
+
         traceback.print_exc()

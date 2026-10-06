@@ -2,10 +2,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.services.movie_service import fetch_all_movies, fetch_movie
 
-router = APIRouter(
-    prefix="/movies",
-    tags=["Movies"]
-)
+router = APIRouter(prefix="/movies", tags=["Movies"])
 
 
 @router.get("")

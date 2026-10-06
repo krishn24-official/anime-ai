@@ -25,11 +25,11 @@ CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
 # ── Auth (JWT) ────────────────────────────────────────
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret-change-me")
 JWT_ALGORITHM = "HS256"
-JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "15"))       # 15 minutes
+JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "15"))  # 15 minutes
 REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "30"))  # 30 days
 
 # ── Gmail SMTP ────────────────────────────────────────
-GMAIL_SENDER = os.getenv("GMAIL_SENDER")           # your Gmail address
+GMAIL_SENDER = os.getenv("GMAIL_SENDER")  # your Gmail address
 GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")  # Gmail App Password
 OTP_EXPIRE_MINUTES = 10
 
@@ -38,4 +38,4 @@ LORE_CHUNK_SIZE = int(os.getenv("LORE_CHUNK_SIZE", "800"))
 LORE_CHUNK_OVERLAP = int(os.getenv("LORE_CHUNK_OVERLAP", "100"))
 LORE_EMBEDDING_MODEL = os.getenv("LORE_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 LORE_TOP_K = int(os.getenv("LORE_TOP_K", "5"))
-LORE_VECTOR_INDEX_NAME = os.getenv("LORE_VECTOR_INDEX_NAME", "lore_vector_index")
+LORE_VECTOR_INDEX_NAME = os.getenv("LORE_VECTOR_INDEX_NAME", "lore_vector_index")

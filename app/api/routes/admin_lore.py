@@ -41,11 +41,17 @@ async def upload_lore_pdf(
         try:
             loaded = json.loads(character_ids)
             if isinstance(loaded, list):
-                parsed_character_ids = [str(item).strip() for item in loaded if str(item).strip()]
+                parsed_character_ids = [
+                    str(item).strip() for item in loaded if str(item).strip()
+                ]
             elif isinstance(loaded, str):
-                parsed_character_ids = [s.strip() for s in loaded.split(",") if s.strip()]
+                parsed_character_ids = [
+                    s.strip() for s in loaded.split(",") if s.strip()
+                ]
         except Exception:
-            parsed_character_ids = [s.strip() for s in character_ids.split(",") if s.strip()]
+            parsed_character_ids = [
+                s.strip() for s in character_ids.split(",") if s.strip()
+            ]
 
     try:
         file_bytes = await file.read()

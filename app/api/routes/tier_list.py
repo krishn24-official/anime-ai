@@ -4,22 +4,19 @@ from pydantic import BaseModel
 from app.api.deps import get_current_user, get_optional_user
 from app.services import tier_list_service
 
-router = APIRouter(
-    prefix="/tier-lists",
-    tags=["Tier Lists"]
-)
+router = APIRouter(prefix="/tier-lists", tags=["Tier Lists"])
 
 
 class TierItem(BaseModel):
-    content_type: str   # character, anime, manga, movie, tv_series
+    content_type: str  # character, anime, manga, movie, tv_series
     content_id: str
-    name: str | None = None     # display name, optional cache
-    image: str | None = None    # display image, optional cache
+    name: str | None = None  # display name, optional cache
+    image: str | None = None  # display image, optional cache
 
 
 class Tier(BaseModel):
     name: str
-    color: str = "#888888"   # hex color
+    color: str = "#888888"  # hex color
     items: list[TierItem] = []
 
 
@@ -71,7 +68,9 @@ async def get_public_tier_lists(
 @router.get("/search")
 async def search_content(
     q: str = Query(..., min_length=2),
-    content_type: str | None = Query(None, description="character, anime, manga, movie, tv_series"),
+    content_type: str | None = Query(
+        None, description="character, anime, manga, movie, tv_series"
+    ),
 ):
     """Search for characters/anime/manga/movies/tv_series to add to a tier list."""
     return await tier_list_service.search_content_for_tier_list(q, content_type)
@@ -99,7 +98,9 @@ async def update_tier_list(
     payload: UpdateTierListRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    tiers_data = [t.model_dump() for t in payload.tiers] if payload.tiers is not None else None
+    tiers_data = (
+        [t.model_dump() for t in payload.tiers] if payload.tiers is not None else None
+    )
 
     result, error = await tier_list_service.update_existing_tier_list(
         tier_list_id=tier_list_id,

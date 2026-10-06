@@ -9,6 +9,7 @@ Run:
 Validates game_properties, birth_day, birth_month, gender, role, status
 before writing anything, and warns about anything unrecognized.
 """
+
 import asyncio
 import csv
 
@@ -24,8 +25,12 @@ VALID_GENDER = {"male", "female", "unknown"}
 VALID_ROLE = {"main", "supporting", "background"}
 
 VALID_BOOL_STRINGS = {
-    "true": True, "yes": True, "1": True,
-    "false": False, "no": False, "0": False,
+    "true": True,
+    "yes": True,
+    "1": True,
+    "false": False,
+    "no": False,
+    "0": False,
 }
 
 
@@ -241,21 +246,22 @@ async def main():
             skipped += 1
             continue
 
-        result = await col.update_one(
-            {"_id": char_id},
-            {"$set": update}
-        )
+        result = await col.update_one({"_id": char_id}, {"$set": update})
 
         if result.matched_count:
             updated += 1
-            print(f"  ✅ Updated: {row.get('name')} ({char_id}) — {list(update.keys())}")
+            print(
+                f"  ✅ Updated: {row.get('name')} ({char_id}) — {list(update.keys())}"
+            )
         else:
             not_found += 1
             print(f"  ❌ Not found in DB: {char_id} ({row.get('name')})")
 
     await close_db()
 
-    print(f"\n🏁 Done. Updated: {updated}, Skipped (no changes): {skipped}, Not found: {not_found}")
+    print(
+        f"\n🏁 Done. Updated: {updated}, Skipped (no changes): {skipped}, Not found: {not_found}"
+    )
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import re
 
+
 def create_slug(text):
 
     text = text.lower()

@@ -27,6 +27,7 @@ CSV columns:
 
 Leave a cell EMPTY to skip updating that field.
 """
+
 import asyncio
 import csv
 import sys
@@ -34,8 +35,8 @@ import sys
 # Ensure Unicode support in Windows console
 if sys.platform == "win32":
     try:
-        sys.stdout.reconfigure(encoding='utf-8')
-        sys.stderr.reconfigure(encoding='utf-8')
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
     except Exception:
         pass
 
@@ -106,9 +107,12 @@ async def main():
     await connect_db()
     db = get_db()
 
-    movies = await db["movies"].find(
-        {"is_deleted": {"$ne": True}}
-    ).sort("title", 1).to_list(None)
+    movies = (
+        await db["movies"]
+        .find({"is_deleted": {"$ne": True}})
+        .sort("title", 1)
+        .to_list(None)
+    )
 
     await close_db()
 
@@ -122,25 +126,27 @@ async def main():
                 rating = movie.get("rating") or {}
                 source = movie.get("source_metadata") or {}
 
-                writer.writerow({
-                    "_id": movie["_id"],
-                    "title": _val(movie.get("title")),
-                    "year": _val(movie.get("year")),
-                    "release_date": _val(movie.get("release_date")),
-                    "runtime_minutes": _val(movie.get("runtime_minutes")),
-                    "genres": _join(movie.get("genres")),
-                    "director": _join(movie.get("director")),
-                    "writers": _join(movie.get("writers")),
-                    "cast": _join(movie.get("cast")),
-                    "plot": _val(movie.get("plot")),
-                    "language": _join(movie.get("language")),
-                    "country": _join(movie.get("country")),
-                    "box_office": _val(movie.get("box_office")),
-                    "imdb_rating": _val(rating.get("imdb")),
-                    "imdb_votes": _val(rating.get("imdb_votes")),
-                    "imdb_id": _val(source.get("imdb_id")),
-                    "image_poster": _val(images.get("poster")),
-                })
+                writer.writerow(
+                    {
+                        "_id": movie["_id"],
+                        "title": _val(movie.get("title")),
+                        "year": _val(movie.get("year")),
+                        "release_date": _val(movie.get("release_date")),
+                        "runtime_minutes": _val(movie.get("runtime_minutes")),
+                        "genres": _join(movie.get("genres")),
+                        "director": _join(movie.get("director")),
+                        "writers": _join(movie.get("writers")),
+                        "cast": _join(movie.get("cast")),
+                        "plot": _val(movie.get("plot")),
+                        "language": _join(movie.get("language")),
+                        "country": _join(movie.get("country")),
+                        "box_office": _val(movie.get("box_office")),
+                        "imdb_rating": _val(rating.get("imdb")),
+                        "imdb_votes": _val(rating.get("imdb_votes")),
+                        "imdb_id": _val(source.get("imdb_id")),
+                        "image_poster": _val(images.get("poster")),
+                    }
+                )
         else:
             print("📝 No movies found — writing example rows as template")
             for row in EXAMPLE_ROWS:

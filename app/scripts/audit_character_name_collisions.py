@@ -71,17 +71,21 @@ async def main(csv_path: str | None = None):
 
     # ── Fetch all non-deleted characters ─────────────────────────────────────
     print("  Fetching all characters from DB...")
-    all_chars = await db["characters"].find(
-        {"is_deleted": {"$ne": True}},
-        {
-            "_id": 1,
-            "name": 1,
-            "source_metadata": 1,
-            "anime_ids": 1,
-            "birth_day": 1,
-            "birth_month": 1,
-        },
-    ).to_list(length=None)
+    all_chars = (
+        await db["characters"]
+        .find(
+            {"is_deleted": {"$ne": True}},
+            {
+                "_id": 1,
+                "name": 1,
+                "source_metadata": 1,
+                "anime_ids": 1,
+                "birth_day": 1,
+                "birth_month": 1,
+            },
+        )
+        .to_list(length=None)
+    )
 
     total = len(all_chars)
     print(f"  Total characters: {total}\n")
@@ -131,19 +135,23 @@ async def main(csv_path: str | None = None):
     print("  AUDIT REPORT — Character Name Collisions")
     print("=" * 70)
 
-    print(f"\n📊 Summary")
+    print("\n📊 Summary")
     print(f"  Total characters          : {total}")
     print(f"  Distinct normalized names : {len(by_name)}")
     print(f"  Characters without anilist_id : {len(no_anilist_id)}")
-    print(f"\n  Names shared by 2+ docs:")
+    print("\n  Names shared by 2+ docs:")
     print(f"    ✅ All have distinct anilist_ids (safe)  : {len(shared_names_ok)}")
     print(f"    ⚠️  At least one has no anilist_id       : {len(shared_names_no_id)}")
-    print(f"    ❌ Duplicate anilist_id across docs (BUG): {len(shared_names_conflict)}")
+    print(
+        f"    ❌ Duplicate anilist_id across docs (BUG): {len(shared_names_conflict)}"
+    )
 
     # --- Category OK (informational) ---
     if shared_names_ok:
         print(f"\n{'─' * 70}")
-        print(f"  ✅ SAFE SHARED NAMES ({len(shared_names_ok)}) — distinct anilist_ids, no action needed")
+        print(
+            f"  ✅ SAFE SHARED NAMES ({len(shared_names_ok)}) — distinct anilist_ids, no action needed"
+        )
         print(f"{'─' * 70}")
         for norm_name, docs in sorted(shared_names_ok, key=lambda x: x[0]):
             ids = [f"{d['_id']}(al:{get_anilist_id(d)})" for d in docs]
@@ -183,12 +191,14 @@ async def main(csv_path: str | None = None):
                     f"  anime_ids={doc.get('anime_ids', [])}"
                 )
     else:
-        print(f"\n  ✅ No anilist_id conflicts detected.")
+        print("\n  ✅ No anilist_id conflicts detected.")
 
     # --- Characters with no anilist_id ---
     if no_anilist_id:
         print(f"\n{'─' * 70}")
-        print(f"  🔗 CHARACTERS WITHOUT ANILIST_ID ({len(no_anilist_id)}) — admin-created, no AniList link")
+        print(
+            f"  🔗 CHARACTERS WITHOUT ANILIST_ID ({len(no_anilist_id)}) — admin-created, no AniList link"
+        )
         print(f"{'─' * 70}")
         for doc in sorted(no_anilist_id, key=lambda d: d.get("name", "")):
             print(f"  {doc['_id']}: {doc.get('name', '?')}")
@@ -217,27 +227,39 @@ async def main(csv_path: str | None = None):
                 continue
             for doc in docs:
                 aid = get_anilist_id(doc)
-                rows.append({
-                    "normalized_name": norm_name,
-                    "_id": doc["_id"],
-                    "anilist_id": aid or "",
-                    "anime_ids": ";".join(doc.get("anime_ids", [])),
-                    "birth_day": doc.get("birth_day", ""),
-                    "birth_month": doc.get("birth_month", ""),
-                    "category": (
-                        "conflict" if aid and any(
-                            get_anilist_id(d) == aid for d in docs if d["_id"] != doc["_id"]
-                        )
-                        else "no_anilist_id" if not aid
-                        else "safe"
-                    ),
-                })
+                rows.append(
+                    {
+                        "normalized_name": norm_name,
+                        "_id": doc["_id"],
+                        "anilist_id": aid or "",
+                        "anime_ids": ";".join(doc.get("anime_ids", [])),
+                        "birth_day": doc.get("birth_day", ""),
+                        "birth_month": doc.get("birth_month", ""),
+                        "category": (
+                            "conflict"
+                            if aid
+                            and any(
+                                get_anilist_id(d) == aid
+                                for d in docs
+                                if d["_id"] != doc["_id"]
+                            )
+                            else "no_anilist_id" if not aid else "safe"
+                        ),
+                    }
+                )
 
         with open(csv_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(
                 f,
-                fieldnames=["normalized_name", "_id", "anilist_id", "anime_ids",
-                            "birth_day", "birth_month", "category"],
+                fieldnames=[
+                    "normalized_name",
+                    "_id",
+                    "anilist_id",
+                    "anime_ids",
+                    "birth_day",
+                    "birth_month",
+                    "category",
+                ],
             )
             writer.writeheader()
             writer.writerows(rows)

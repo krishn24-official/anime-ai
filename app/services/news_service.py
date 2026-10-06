@@ -35,8 +35,8 @@ async def fetch_latest_news(limit: int = 5):
 
 
 async def fetch_news_by_category(
-    category: str = None, 
-    page: int = 1, 
+    category: str = None,
+    page: int = 1,
     limit: int = 10,
     start_date: str | None = None,
     end_date: str | None = None,
@@ -44,8 +44,8 @@ async def fetch_news_by_category(
     source: str | None = None,
 ):
     items, total = await get_news_by_category(
-        category=category, 
-        page=page, 
+        category=category,
+        page=page,
         limit=limit,
         start_date=start_date,
         end_date=end_date,

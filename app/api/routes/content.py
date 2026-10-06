@@ -6,9 +6,7 @@ from app.api.deps import get_current_user, get_optional_user
 from app.services import content_service
 from app.services.content_service import ContentError
 
-router = APIRouter(
-    tags=["Content"]
-)
+router = APIRouter(tags=["Content"])
 
 
 class RatingRequest(BaseModel):
@@ -21,9 +19,11 @@ class CommentRequest(BaseModel):
     is_spoiler: bool = False
 
 
+from app.repositories.content_repository import (
+    get_dated_releases_range,
+    get_announced_releases_range,
+)
 
-
-from app.repositories.content_repository import get_dated_releases_range, get_announced_releases_range
 
 @router.get("/content/releases-range")
 async def get_releases_range(start_date: str = Query(...), end_date: str = Query(...)):
@@ -31,8 +31,10 @@ async def get_releases_range(start_date: str = Query(...), end_date: str = Query
         return await get_dated_releases_range(start_date, end_date)
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/content/announced-range")
 async def get_announced_range(start_date: str = Query(...), end_date: str = Query(...)):
@@ -42,12 +44,16 @@ async def get_announced_range(start_date: str = Query(...), end_date: str = Quer
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/content/weekly-suggestions")
-async def get_weekly_suggestions(picks_per_type: int = Query(2, description="Number of suggestions per content type")):
+async def get_weekly_suggestions(
+    picks_per_type: int = Query(2, description="Number of suggestions per content type")
+):
     try:
         return await content_service.get_weekly_watch_suggestions(picks_per_type)
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -56,6 +62,7 @@ async def get_weekly_suggestions(picks_per_type: int = Query(2, description="Num
 
 from app.services.content_lookup import resolve_content_title
 from app.db.mongo import get_db
+
 
 @router.get("/episodes/{content_id}")
 async def get_episode_detail(content_id: str):
@@ -67,7 +74,9 @@ async def get_episode_detail(content_id: str):
     parent_type = "anime" if doc.get("anime_id") else "tv_series"
     parent_id = doc.get("anime_id") or doc.get("tv_series_id")
 
-    parent_info = await resolve_content_title(parent_type, parent_id) if parent_id else None
+    parent_info = (
+        await resolve_content_title(parent_type, parent_id) if parent_id else None
+    )
 
     return {
         "episode_number": doc.get("episode_number"),
@@ -83,6 +92,7 @@ async def get_episode_detail(content_id: str):
         "parent_title": parent_info["title"] if parent_info else None,
         "parent_poster": parent_info["poster_image"] if parent_info else None,
     }
+
 
 @router.get("/chapters/{content_id}")
 async def get_chapter_detail(content_id: str):
@@ -108,17 +118,20 @@ async def get_chapter_detail(content_id: str):
 
 from app.services.trending_service import get_trending_content
 
+
 @router.get("/content/trending")
 async def get_trending(limit: int = 10):
     try:
         return await get_trending_content(limit)
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
 # --- Ratings ---
+
 
 @router.post("/content/{content_type}/{content_id}/rate")
 async def rate_content(
@@ -144,7 +157,9 @@ async def get_rating(
     user_id = current_user["_id"] if current_user else None
 
     try:
-        return await content_service.get_content_rating(user_id, content_type, content_id)
+        return await content_service.get_content_rating(
+            user_id, content_type, content_id
+        )
     except ContentError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
@@ -156,13 +171,16 @@ async def delete_rating(
     current_user: dict = Depends(get_current_user),
 ):
     try:
-        await content_service.remove_rating(current_user["_id"], content_type, content_id)
+        await content_service.remove_rating(
+            current_user["_id"], content_type, content_id
+        )
         return {"status": "ok"}
     except ContentError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
 
 # --- Watchlist ---
+
 
 @router.post("/content/{content_type}/{content_id}/watchlist")
 async def add_to_watchlist(
@@ -171,7 +189,9 @@ async def add_to_watchlist(
     current_user: dict = Depends(get_current_user),
 ):
     try:
-        return await content_service.add_watchlist_item(current_user["_id"], content_type, content_id)
+        return await content_service.add_watchlist_item(
+            current_user["_id"], content_type, content_id
+        )
     except ContentError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
@@ -183,7 +203,9 @@ async def remove_from_watchlist(
     current_user: dict = Depends(get_current_user),
 ):
     try:
-        return await content_service.remove_watchlist_item(current_user["_id"], content_type, content_id)
+        return await content_service.remove_watchlist_item(
+            current_user["_id"], content_type, content_id
+        )
     except ContentError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
@@ -195,7 +217,9 @@ async def check_watchlist(
     current_user: dict = Depends(get_current_user),
 ):
     try:
-        return await content_service.check_watchlist_item(current_user["_id"], content_type, content_id)
+        return await content_service.check_watchlist_item(
+            current_user["_id"], content_type, content_id
+        )
     except ContentError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
@@ -207,6 +231,7 @@ async def get_my_watchlist(current_user: dict = Depends(get_current_user)):
 
 # --- Comments ---
 
+
 @router.post("/content/{content_type}/{content_id}/comments")
 async def add_comment(
     content_type: str,
@@ -216,7 +241,12 @@ async def add_comment(
 ):
     try:
         return await content_service.add_comment(
-            current_user["_id"], content_type, content_id, payload.text, payload.parent_id, payload.is_spoiler
+            current_user["_id"],
+            content_type,
+            content_id,
+            payload.text,
+            payload.parent_id,
+            payload.is_spoiler,
         )
     except ContentError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
@@ -224,9 +254,9 @@ async def add_comment(
 
 @router.get("/content/{content_type}/{content_id}/comments")
 async def get_comments(
-    content_type: str, 
+    content_type: str,
     content_id: str,
-    current_user: dict | None = Depends(get_optional_user)
+    current_user: dict | None = Depends(get_optional_user),
 ):
     user_id = current_user["_id"] if current_user else None
     try:
@@ -264,11 +294,9 @@ async def toggle_like_comment(
 
 # --- Detail Page ---
 
+
 @router.get("/content/{content_type}/{content_id}")
-async def get_content_details(
-    content_type: str,
-    content_id: str
-):
+async def get_content_details(content_type: str, content_id: str):
     try:
         return await content_service.fetch_content_details(content_type, content_id)
     except ContentError as e:

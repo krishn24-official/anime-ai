@@ -3,16 +3,12 @@ from app.repositories.character_repository import (
     get_character_by_id,
     search_characters,
     get_character_basic,
-    get_birthdays_by_date_range
+    get_birthdays_by_date_range,
 )
 
-from app.repositories.relationship_repository import (
-    get_relationships_by_type
-)
+from app.repositories.relationship_repository import get_relationships_by_type
 
-from app.repositories.organization_repository import (
-    find_organizations_by_names
-)
+from app.repositories.organization_repository import find_organizations_by_names
 
 from app.repositories.anime_repository import find_anime_by_ids
 
@@ -25,13 +21,11 @@ async def fetch_birthdays_by_date_range(start_date: str, end_date: str):
     return await get_birthdays_by_date_range(start_date, end_date)
 
 
-async def fetch_character(
-    character_id: str
-):
+async def fetch_character(character_id: str):
     character = await get_character_by_id(character_id)
     if not character:
         return None
-        
+
     anime_ids = character.get("anime_ids", [])
     anime_details = []
     if anime_ids:
@@ -39,74 +33,55 @@ async def fetch_character(
         for a in animes:
             title = a.get("title", {})
             title_str = title.get("english") or title.get("romaji", "")
-            anime_details.append({
-                "id": a["_id"],
-                "title": title_str,
-                "poster": a.get("images", {}).get("poster", ""),
-                "year": a.get("year", "")
-            })
+            anime_details.append(
+                {
+                    "id": a["_id"],
+                    "title": title_str,
+                    "poster": a.get("images", {}).get("poster", ""),
+                    "year": a.get("year", ""),
+                }
+            )
     character["anime_details"] = anime_details
     return character
 
-async def search_character(
-    query: str
-):
 
-    return await search_characters(
-        query
-    )
+async def search_character(query: str):
+
+    return await search_characters(query)
 
 
-async def enrich_relationships_by_source(
-    relationships
-):
+async def enrich_relationships_by_source(relationships):
 
     enriched = []
 
     for relationship in relationships:
 
-        source = await get_character_basic(
-            relationship["source_id"]
-        )
+        source = await get_character_basic(relationship["source_id"])
 
         enriched.append(
             {
-                "relationship":
-                    relationship["relationship"],
-
-                "type":
-                    relationship["type"],
-
-                "target":
-                    source
+                "relationship": relationship["relationship"],
+                "type": relationship["type"],
+                "target": source,
             }
         )
 
     return enriched
 
 
-async def enrich_relationships(
-    relationships
-):
+async def enrich_relationships(relationships):
 
     enriched = []
 
     for relationship in relationships:
 
-        target = await get_character_basic(
-            relationship["target_id"]
-        )
+        target = await get_character_basic(relationship["target_id"])
 
         enriched.append(
             {
-                "relationship":
-                    relationship["relationship"],
-
-                "type":
-                    relationship["type"],
-
-                "target":
-                    target
+                "relationship": relationship["relationship"],
+                "type": relationship["type"],
+                "target": target,
             }
         )
 
@@ -124,61 +99,40 @@ def deduplicate_by_target(relationships):
     return unique
 
 
-async def fetch_character_details(
-    character_id: str
-):
+async def fetch_character_details(character_id: str):
 
-    character = await get_character_by_id(
-        character_id
-    )
+    character = await get_character_by_id(character_id)
 
     if not character:
         return None
 
-    family = deduplicate_by_target(await get_relationships_by_type(
-        character_id,
-        "family"
-    ))
-
-    friends = deduplicate_by_target(await get_relationships_by_type(
-        character_id,
-        "friendship"
-    ))
-
-    team = deduplicate_by_target(await get_relationships_by_type(
-        character_id,
-        "team"
-    ))
-
-    mentors = deduplicate_by_target(await get_relationships_by_type(
-        character_id,
-        "mentor"
-    ))
-
-    combat = deduplicate_by_target(await get_relationships_by_type(
-        character_id,
-        "combat"
-    ))
-
-    family = await enrich_relationships(
-        family
+    family = deduplicate_by_target(
+        await get_relationships_by_type(character_id, "family")
     )
 
-    friends = await enrich_relationships(
-        friends
+    friends = deduplicate_by_target(
+        await get_relationships_by_type(character_id, "friendship")
     )
 
-    team = await enrich_relationships(
-        team
+    team = deduplicate_by_target(await get_relationships_by_type(character_id, "team"))
+
+    mentors = deduplicate_by_target(
+        await get_relationships_by_type(character_id, "mentor")
     )
 
-    mentors = await enrich_relationships(
-        mentors
+    combat = deduplicate_by_target(
+        await get_relationships_by_type(character_id, "combat")
     )
 
-    combat = await enrich_relationships(
-        combat
-    )
+    family = await enrich_relationships(family)
+
+    friends = await enrich_relationships(friends)
+
+    team = await enrich_relationships(team)
+
+    mentors = await enrich_relationships(mentors)
+
+    combat = await enrich_relationships(combat)
 
     affiliations = character.get("affiliations", [])
     organizations = []
@@ -190,7 +144,7 @@ async def fetch_character_details(
                 "name": org.get("name"),
                 "type": org.get("type"),
                 "images": org.get("images", {"logo": "", "banner": ""}),
-                "status": org.get("status")
+                "status": org.get("status"),
             }
             for org in org_docs
         ]
@@ -202,96 +156,46 @@ async def fetch_character_details(
         "team": team,
         "mentors": mentors,
         "combat": combat,
-        "organizations": organizations
+        "organizations": organizations,
     }
 
-async def fetch_character_summary(
-    character_id: str
-):
 
-    character = await get_character_by_id(
-        character_id
-    )
+async def fetch_character_summary(character_id: str):
+
+    character = await get_character_by_id(character_id)
 
     if not character:
         return None
 
-    family = deduplicate_by_target(await get_relationships_by_type(
-        character_id,
-        "family"
-    ))
+    family = deduplicate_by_target(
+        await get_relationships_by_type(character_id, "family")
+    )
 
-    friends = deduplicate_by_target(await get_relationships_by_type(
-        character_id,
-        "friendship"
-    ))
+    friends = deduplicate_by_target(
+        await get_relationships_by_type(character_id, "friendship")
+    )
 
-    team = deduplicate_by_target(await get_relationships_by_type(
-        character_id,
-        "team"
-    ))
+    team = deduplicate_by_target(await get_relationships_by_type(character_id, "team"))
 
-    mentors = deduplicate_by_target(await get_relationships_by_type(
-        character_id,
-        "mentor"
-    ))
+    mentors = deduplicate_by_target(
+        await get_relationships_by_type(character_id, "mentor")
+    )
 
-    combat = deduplicate_by_target(await get_relationships_by_type(
-        character_id,
-        "combat"
-    ))
+    combat = deduplicate_by_target(
+        await get_relationships_by_type(character_id, "combat")
+    )
 
     return {
-
         "_id": character["_id"],
-
         "name": character["name"],
-
-        "native_name": character.get(
-            "native_name"
-        ),
-
-        "image": (
-            character.get(
-                "images",
-                {}
-            ).get(
-                "profile"
-            )
-        ),
-
-        "role": character.get(
-            "role"
-        ),
-
-        "gender": character.get(
-            "gender"
-        ),
-
-        "anime_count": len(
-            character.get(
-                "anime_ids",
-                []
-            )
-        ),
-
-        "family_count": len(
-            family
-        ),
-
-        "friend_count": len(
-            friends
-        ),
-
-        "team_count": len(
-            team
-        ),
-
-        "mentor_count": len(
-            mentors
-        ),
-
-        "combat_count": len(
-            combat
-        )
+        "native_name": character.get("native_name"),
+        "image": (character.get("images", {}).get("profile")),
+        "role": character.get("role"),
+        "gender": character.get("gender"),
+        "anime_count": len(character.get("anime_ids", [])),
+        "family_count": len(family),
+        "friend_count": len(friends),
+        "team_count": len(team),
+        "mentor_count": len(mentors),
+        "combat_count": len(combat),
     }

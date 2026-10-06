@@ -73,10 +73,10 @@ def normalize_markdown_spacing(text: str) -> str:
     is out of scope here — such cases need manual correction in the source
     document.
     """
-    text = re.sub(r'(?<![\n#])(#{1,4}\s)', r'\n\1', text)
-    text = re.sub(r'(?<!\n)(---)', r'\n\1', text)
-    text = re.sub(r'(?<=[a-zA-Z0-9.,;:])-(?=\s+[A-Z0-9])', r'\n-', text)
-    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = re.sub(r"(?<![\n#])(#{1,4}\s)", r"\n\1", text)
+    text = re.sub(r"(?<!\n)(---)", r"\n\1", text)
+    text = re.sub(r"(?<=[a-zA-Z0-9.,;:])-(?=\s+[A-Z0-9])", r"\n-", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
 
 
@@ -120,7 +120,11 @@ def parse_markdown_sections(text: str) -> list[MarkdownSection]:
 
     if not matches:
         cleaned = _clean_section_content(text)
-        return [MarkdownSection(title="General Lore", level=1, content=cleaned)] if cleaned else []
+        return (
+            [MarkdownSection(title="General Lore", level=1, content=cleaned)]
+            if cleaned
+            else []
+        )
 
     sections: list[MarkdownSection] = []
 
@@ -128,7 +132,9 @@ def parse_markdown_sections(text: str) -> list[MarkdownSection]:
     if matches[0].start() > 0:
         preamble = _clean_section_content(text[: matches[0].start()])
         if preamble:
-            sections.append(MarkdownSection(title="Overview", level=1, content=preamble))
+            sections.append(
+                MarkdownSection(title="Overview", level=1, content=preamble)
+            )
 
     for idx, match in enumerate(matches):
         level = len(match.group(1))
@@ -168,7 +174,9 @@ def _attach_breadcrumbs(sections: list[MarkdownSection]) -> None:
         sec.parent_title = parent_title
 
 
-def _is_safe_merge_target(current: MarkdownSection, next_section: MarkdownSection) -> bool:
+def _is_safe_merge_target(
+    current: MarkdownSection, next_section: MarkdownSection
+) -> bool:
     """
     Decides whether next_section is a safe place to fold current's small
     content into. Guards against merging unrelated sibling sections (e.g.
@@ -205,15 +213,19 @@ def merge_small_sections(
     if not sections:
         return []
 
-    def flush_buffer_into(buffer: list[MarkdownSection], target: MarkdownSection) -> str:
+    def flush_buffer_into(
+        buffer: list[MarkdownSection], target: MarkdownSection
+    ) -> str:
         """Fold buffered small-section fragments into target's content."""
-        prefix_parts = [
-            f"{s.title}: {s.content}" for s in buffer if s.content.strip()
-        ]
+        prefix_parts = [f"{s.title}: {s.content}" for s in buffer if s.content.strip()]
         if not prefix_parts:
             return target.content
         prefix = "\n\n".join(prefix_parts)
-        return f"{prefix}\n\n{target.content}".strip() if target.content.strip() else prefix
+        return (
+            f"{prefix}\n\n{target.content}".strip()
+            if target.content.strip()
+            else prefix
+        )
 
     merged: list[MarkdownSection] = []
     buffer: list[MarkdownSection] = []
@@ -221,7 +233,9 @@ def merge_small_sections(
     for idx, section in enumerate(sections):
         is_last = idx == len(sections) - 1
         next_section = sections[idx + 1] if not is_last else None
-        safe_next = next_section is not None and _is_safe_merge_target(section, next_section)
+        safe_next = next_section is not None and _is_safe_merge_target(
+            section, next_section
+        )
 
         if len(section.content) >= min_chars or not safe_next:
             section.content = flush_buffer_into(buffer, section)
@@ -288,11 +302,11 @@ def chunk_markdown_text(
 
         for piece in pieces:
             full_text = f"{breadcrumb_str}\n{piece}".strip()
-            result.append(LoreTextChunk(section_title=breadcrumb_str, chunk_text=full_text))
+            result.append(
+                LoreTextChunk(section_title=breadcrumb_str, chunk_text=full_text)
+            )
 
     return result
-
-
 
 
 # ── PDF Text Extraction ───────────────────────────────────────────────────────
@@ -314,8 +328,12 @@ def extract_text_from_pdf(file_bytes: bytes) -> list[dict[str, str]]:
     try:
         from pypdf import PdfReader
     except ImportError as err:
-        logger.error("[lore_service] pypdf is not installed. Please run pip install -r requirements.txt")
-        raise ImportError("pypdf package is required for PDF text extraction. Install with `pip install pypdf`.") from err
+        logger.error(
+            "[lore_service] pypdf is not installed. Please run pip install -r requirements.txt"
+        )
+        raise ImportError(
+            "pypdf package is required for PDF text extraction. Install with `pip install pypdf`."
+        ) from err
 
     try:
         reader = PdfReader(io.BytesIO(file_bytes))
@@ -335,7 +353,9 @@ def extract_text_from_pdf(file_bytes: bytes) -> list[dict[str, str]]:
             if page_text.strip():
                 full_text_pages.append(page_text.strip())
         except Exception as err:
-            logger.warning(f"[lore_service] Warning extracting text from page {idx + 1}: {err}")
+            logger.warning(
+                f"[lore_service] Warning extracting text from page {idx + 1}: {err}"
+            )
 
     if not full_text_pages:
         raise ValueError("No extractable text found in the PDF")
@@ -459,7 +479,9 @@ def chunk_text(
                         break
 
                 current_doc = overlap_doc + [split]
-                current_len = sum(len(p) for p in current_doc) + len(sep) * max(0, len(current_doc) - 1)
+                current_len = sum(len(p) for p in current_doc) + len(sep) * max(
+                    0, len(current_doc) - 1
+                )
             else:
                 current_doc.append(split)
                 current_len += split_len
@@ -494,7 +516,9 @@ class LoreEmbedder:
             from sentence_transformers import SentenceTransformer
 
             try:
-                self._model = SentenceTransformer(self.model_name, local_files_only=True)
+                self._model = SentenceTransformer(
+                    self.model_name, local_files_only=True
+                )
             except Exception:
                 self._model = SentenceTransformer(self.model_name)
         return self._model
@@ -599,14 +623,21 @@ async def resolve_series_id(raw_input: str, media_type: str | None = None) -> st
     }
 
     # If raw_input already is a full prefixed _id (e.g. "anime_attack_on_titan", "tv_loki")
-    for pfx, col in [("anime_", "anime"), ("movie_", "movies"), ("tv_", "tv_series"), ("manga_", "manga")]:
+    for pfx, col in [
+        ("anime_", "anime"),
+        ("movie_", "movies"),
+        ("tv_", "tv_series"),
+        ("manga_", "manga"),
+    ]:
         if clean_raw.lower().startswith(pfx):
             doc = await db[col].find_one({"_id": clean_raw.lower()})
             if doc:
                 return str(doc["_id"])
 
     # 1. Fast path: slugify raw_input
-    base_raw = re.sub(r"^(anime|movie|tv_series|tv|manga)_", "", clean_raw, flags=re.IGNORECASE)
+    base_raw = re.sub(
+        r"^(anime|movie|tv_series|tv|manga)_", "", clean_raw, flags=re.IGNORECASE
+    )
     slug = create_slug(base_raw)
 
     m_hint = media_type.lower().strip() if media_type else None
@@ -628,42 +659,54 @@ async def resolve_series_id(raw_input: str, media_type: str | None = None) -> st
     async def search_collection(m_type: str):
         col_name, _ = collection_map[m_type]
         if m_type == "anime":
-            return await db[col_name].find_one({
-                "$or": [
-                    {"title.english": exact_pattern},
-                    {"title.romaji": exact_pattern},
-                    {"title.japanese": exact_pattern},
-                    {"synonyms": exact_pattern},
-                ],
-                "is_deleted": False,
-            })
+            return await db[col_name].find_one(
+                {
+                    "$or": [
+                        {"title.english": exact_pattern},
+                        {"title.romaji": exact_pattern},
+                        {"title.japanese": exact_pattern},
+                        {"synonyms": exact_pattern},
+                    ],
+                    "is_deleted": False,
+                }
+            )
         elif m_type == "movie":
-            return await db[col_name].find_one({
-                "$or": [
-                    {"title": exact_pattern},
-                    {"original_title": exact_pattern},
-                ],
-                "is_deleted": {"$ne": True},
-            })
+            return await db[col_name].find_one(
+                {
+                    "$or": [
+                        {"title": exact_pattern},
+                        {"original_title": exact_pattern},
+                    ],
+                    "is_deleted": {"$ne": True},
+                }
+            )
         elif m_type in ("tv_series", "tv"):
-            return await db[col_name].find_one({
-                "$or": [
-                    {"title": exact_pattern},
-                    {"original_title": exact_pattern},
-                ],
-                "is_deleted": {"$ne": True},
-            })
+            return await db[col_name].find_one(
+                {
+                    "$or": [
+                        {"title": exact_pattern},
+                        {"original_title": exact_pattern},
+                    ],
+                    "is_deleted": {"$ne": True},
+                }
+            )
         elif m_type == "manga":
-            return await db[col_name].find_one({
-                "$or": [
-                    {"name": exact_pattern},
-                    {"native_name": exact_pattern},
-                ],
-                "is_deleted": False,
-            })
+            return await db[col_name].find_one(
+                {
+                    "$or": [
+                        {"name": exact_pattern},
+                        {"native_name": exact_pattern},
+                    ],
+                    "is_deleted": False,
+                }
+            )
         return None
 
-    types_to_search = [m_hint] if (m_hint and m_hint in collection_map) else ["anime", "movie", "tv_series", "manga"]
+    types_to_search = (
+        [m_hint]
+        if (m_hint and m_hint in collection_map)
+        else ["anime", "movie", "tv_series", "manga"]
+    )
     for m_type in types_to_search:
         doc = await search_collection(m_type)
         if doc:
@@ -721,7 +764,9 @@ def process_lore_pdf(
                     }
                 )
         else:
-            chunks = chunk_text(sec_text, chunk_size=LORE_CHUNK_SIZE, overlap=LORE_CHUNK_OVERLAP)
+            chunks = chunk_text(
+                sec_text, chunk_size=LORE_CHUNK_SIZE, overlap=LORE_CHUNK_OVERLAP
+            )
             for chunk in chunks:
                 chunk_records.append(
                     {
@@ -732,7 +777,6 @@ def process_lore_pdf(
 
     if not chunk_records:
         raise ValueError("No text chunks generated from PDF content")
-
 
     # Embed all text chunks in batches
     texts_to_embed = [str(r["text"]) for r in chunk_records]
@@ -820,8 +864,11 @@ def format_lore_context(results: list[LoreQueryResult]) -> str:
 
     context_blocks: list[str] = []
     for idx, item in enumerate(results, 1):
-        heading = f"### [Section: {item.section_title}]" if item.section_title else f"### [Lore Reference {idx}]"
+        heading = (
+            f"### [Section: {item.section_title}]"
+            if item.section_title
+            else f"### [Lore Reference {idx}]"
+        )
         context_blocks.append(f"{heading}\n{item.chunk_text.strip()}")
 
     return "\n\n".join(context_blocks)
-

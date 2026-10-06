@@ -2,10 +2,7 @@ from fastapi import APIRouter
 
 from app.services.game_service import fetch_game_characters
 
-router = APIRouter(
-    prefix="/game",
-    tags=["Game"]
-)
+router = APIRouter(prefix="/game", tags=["Game"])
 
 
 @router.get("/characters")

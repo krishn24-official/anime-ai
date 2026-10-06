@@ -23,6 +23,7 @@ character _ids (from your characters collection), fill in relationship,
 and the import script will auto-create BOTH directions (source->target
 and target->source) unless the relationship is one-directional by nature.
 """
+
 import asyncio
 import csv
 
@@ -48,14 +49,15 @@ async def main():
     await connect_db()
     db = get_db()
 
-    relationships = await db["relationships"].find(
-        {"is_deleted": {"$ne": True}}
-    ).sort("source_id", 1).to_list(None)
+    relationships = (
+        await db["relationships"]
+        .find({"is_deleted": {"$ne": True}})
+        .sort("source_id", 1)
+        .to_list(None)
+    )
 
     # Build a name lookup for readability
-    characters = await db["characters"].find(
-        {}, {"_id": 1, "name": 1}
-    ).to_list(None)
+    characters = await db["characters"].find({}, {"_id": 1, "name": 1}).to_list(None)
     name_map = {c["_id"]: c.get("name", "") for c in characters}
 
     await close_db()
@@ -77,16 +79,18 @@ async def main():
             continue
         seen_pairs.add(pair_key)
 
-        rows.append({
-            "source_name": name_map.get(source_id, ""),
-            "source_id": source_id,
-            "target_name": name_map.get(target_id, ""),
-            "target_id": target_id,
-            "relationship": relationship,
-            "type": rel.get("type") or "",
-            "context": rel.get("context") or "",
-            "inverse_relationship": "",   # leave blank, already in DB
-        })
+        rows.append(
+            {
+                "source_name": name_map.get(source_id, ""),
+                "source_id": source_id,
+                "target_name": name_map.get(target_id, ""),
+                "target_id": target_id,
+                "relationship": relationship,
+                "type": rel.get("type") or "",
+                "context": rel.get("context") or "",
+                "inverse_relationship": "",  # leave blank, already in DB
+            }
+        )
 
     with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
@@ -95,16 +99,18 @@ async def main():
 
         # Add a few blank template rows at the bottom for new entries
         writer.writerow({})
-        writer.writerow({
-            "source_name": "(example) Naruto Uzumaki",
-            "source_id": "char_naruto_uzumaki",
-            "target_name": "(example) Sasuke Uchiha",
-            "target_id": "char_sasuke_uchiha",
-            "relationship": "rival",
-            "type": "academy",
-            "context": "",
-            "inverse_relationship": "",
-        })
+        writer.writerow(
+            {
+                "source_name": "(example) Naruto Uzumaki",
+                "source_id": "char_naruto_uzumaki",
+                "target_name": "(example) Sasuke Uchiha",
+                "target_id": "char_sasuke_uchiha",
+                "relationship": "rival",
+                "type": "academy",
+                "context": "",
+                "inverse_relationship": "",
+            }
+        )
 
     print(f"✅ Exported {len(rows)} existing relationships to {OUTPUT_FILE}")
     print("📝 Add new rows at the bottom (use the example row as a template)")

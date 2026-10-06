@@ -18,9 +18,5 @@ def transform_voice_actor(staff):
         "gender": staff.get("gender", "").lower() if staff.get("gender") else None,
         "is_deleted": False,
         "deleted_at": None,
-        "source_metadata": {
-            "anilist": {
-                "id": staff.get("id")
-            }
-        }
+        "source_metadata": {"anilist": {"id": staff.get("id")}},
     }

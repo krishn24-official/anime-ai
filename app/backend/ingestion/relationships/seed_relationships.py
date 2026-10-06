@@ -2,12 +2,7 @@ import os
 import json
 import asyncio
 
-from app.db.mongo import (
-    connect_db,
-    close_db,
-    get_relationship_collection
-)
-
+from app.db.mongo import connect_db, close_db, get_relationship_collection
 
 RELATIONSHIP_FOLDER = "data/relationships"
 
@@ -30,9 +25,7 @@ async def seed_relationships():
 
     await connect_db()
 
-    relationship_collection = (
-        get_relationship_collection()
-    )
+    relationship_collection = get_relationship_collection()
 
     total_saved = 0
 
@@ -40,31 +33,21 @@ async def seed_relationships():
 
     for filepath in filepaths:
 
-        print(
-            f"\n📂 Reading: {filepath}"
-        )
+        print(f"\n📂 Reading: {filepath}")
 
         relationships = await asyncio.to_thread(load_json_file, filepath)
 
         for relationship in relationships:
 
             await relationship_collection.replace_one(
-                {
-                    "_id": relationship["_id"]
-                },
-                relationship,
-                upsert=True
+                {"_id": relationship["_id"]}, relationship, upsert=True
             )
 
             total_saved += 1
 
-            print(
-                f"✅ Saved: {relationship['_id']}"
-            )
+            print(f"✅ Saved: {relationship['_id']}")
 
-    print(
-        f"\n🎉 Total relationships saved: {total_saved}"
-    )
+    print(f"\n🎉 Total relationships saved: {total_saved}")
 
     await close_db()
 

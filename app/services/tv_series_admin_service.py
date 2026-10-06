@@ -4,6 +4,7 @@ from app.repositories import tv_series_repository, actors_repository
 from app.services.cloudinary_service import upload_image_from_bytes
 from app.services.release_date_utils import parse_release_date
 
+
 async def create_tv_series(
     admin_id: str,
     title: str,
@@ -34,114 +35,123 @@ async def create_tv_series(
     poster_bytes: bytes | None,
     backdrop_bytes: bytes | None,
     writer: list[dict] | None = None,
-    producers: list[str] = []
+    producers: list[str] = [],
 ):
     if not title:
         raise ValueError("Title must be provided")
-        
+
     slug = create_slug(title)
     content_id = f"tv_{slug}"
-    
+
     existing = await tv_series_repository.find_tv_series_by_slug(slug)
     if existing:
-        raise ValueError(f"A TV series with this title already exists (content_id: {content_id}). Edit the existing entry instead, or use a more specific title.")
-        
+        raise ValueError(
+            f"A TV series with this title already exists (content_id: {content_id}). Edit the existing entry instead, or use a more specific title."
+        )
+
     if released and status_value not in ["Returning Series", "Ended", "Canceled"]:
         raise ValueError("Invalid status for released TV series")
     if not released and status_value not in ["Planned", "In Production", "Pilot"]:
         raise ValueError("Invalid status for unreleased TV series")
-        
+
     status = status_value
-    
-    start_date_obj = parse_release_date(start_day, start_month, start_year, start_precision)
+
+    start_date_obj = parse_release_date(
+        start_day, start_month, start_year, start_precision
+    )
     first_air_date = None
     first_air_precision = None
-    
+
     if released and start_precision != "day":
-        raise ValueError("A released TV series must have day precision for its start date.")
-        
+        raise ValueError(
+            "A released TV series must have day precision for its start date."
+        )
+
     if start_precision == "day":
-        first_air_date = f"{start_year}-{str(start_month).zfill(2)}-{str(start_day).zfill(2)}"
+        first_air_date = (
+            f"{start_year}-{str(start_month).zfill(2)}-{str(start_day).zfill(2)}"
+        )
     else:
         first_air_precision = {
             "year": start_year,
             "month": start_month,
             "day": None,
-            "precision": start_precision
+            "precision": start_precision,
         }
-        
+
     last_air_date = None
     last_air_precision = None
-    
+
     if end_precision is not None:
         end_date_obj = parse_release_date(end_day, end_month, end_year, end_precision)
-        
-        start_cmp = (
-            start_year or 0,
-            start_month or 0,
-            start_day or 0
-        )
-        end_cmp = (
-            end_year or 0,
-            end_month or 0,
-            end_day or 0
-        )
-        
+
+        start_cmp = (start_year or 0, start_month or 0, start_day or 0)
+        end_cmp = (end_year or 0, end_month or 0, end_day or 0)
+
         if end_cmp < start_cmp:
             raise ValueError("end_date cannot be before the start release_date")
-            
+
         if end_precision == "day":
-            last_air_date = f"{end_year}-{str(end_month).zfill(2)}-{str(end_day).zfill(2)}"
+            last_air_date = (
+                f"{end_year}-{str(end_month).zfill(2)}-{str(end_day).zfill(2)}"
+            )
         else:
             last_air_precision = {
                 "year": end_year,
                 "month": end_month,
                 "day": None,
-                "precision": end_precision
+                "precision": end_precision,
             }
-    
+
     derived_year = start_year
-        
+
     poster_url = None
     if poster_bytes:
-        poster_url = await upload_image_from_bytes(poster_bytes, folder="tv_series", public_id=f"{content_id}_poster")
-        
+        poster_url = await upload_image_from_bytes(
+            poster_bytes, folder="tv_series", public_id=f"{content_id}_poster"
+        )
+
     backdrop_url = None
     if backdrop_bytes:
-        backdrop_url = await upload_image_from_bytes(backdrop_bytes, folder="tv_series", public_id=f"{content_id}_backdrop")
-        
+        backdrop_url = await upload_image_from_bytes(
+            backdrop_bytes, folder="tv_series", public_id=f"{content_id}_backdrop"
+        )
+
     processed_cast = []
     if cast:
         for idx, entry in enumerate(cast):
             actor_id = entry.get("actor_id")
             if not actor_id:
                 raise ValueError(f"Missing actor_id in cast entry {idx}")
-            
+
             actor = await actors_repository.get_actor_by_id(actor_id)
             if not actor:
-                raise ValueError(f"Actor ID '{actor_id}' not found in database for cast entry {idx}")
-                
-            processed_cast.append({
-                "actor_id": actor_id,
-                "character_name": entry.get("character_name", ""),
-                "order": idx
-            })
-        
+                raise ValueError(
+                    f"Actor ID '{actor_id}' not found in database for cast entry {idx}"
+                )
+
+            processed_cast.append(
+                {
+                    "actor_id": actor_id,
+                    "character_name": entry.get("character_name", ""),
+                    "order": idx,
+                }
+            )
+
     processed_creators = []
     if creators:
         for idx, entry in enumerate(creators):
             actor_id = entry.get("actor_id")
             if not actor_id:
                 raise ValueError(f"Missing actor_id in creators entry {idx}")
-            
+
             actor = await actors_repository.get_actor_by_id(actor_id)
             if not actor:
-                raise ValueError(f"Actor ID '{actor_id}' not found in database for creators entry {idx}")
-                
-            processed_creators.append({
-                "actor_id": actor_id,
-                "order": idx
-            })
+                raise ValueError(
+                    f"Actor ID '{actor_id}' not found in database for creators entry {idx}"
+                )
+
+            processed_creators.append({"actor_id": actor_id, "order": idx})
 
     processed_writer = []
     if writer:
@@ -149,15 +159,14 @@ async def create_tv_series(
             actor_id = entry.get("actor_id")
             if not actor_id:
                 raise ValueError(f"Missing actor_id in writer entry {idx}")
-            
+
             actor = await actors_repository.get_actor_by_id(actor_id)
             if not actor:
-                raise ValueError(f"Actor ID '{actor_id}' not found in database for writer entry {idx}")
-                
-            processed_writer.append({
-                "actor_id": actor_id,
-                "order": idx
-            })
+                raise ValueError(
+                    f"Actor ID '{actor_id}' not found in database for writer entry {idx}"
+                )
+
+            processed_writer.append({"actor_id": actor_id, "order": idx})
 
     doc = {
         "_id": content_id,
@@ -182,10 +191,7 @@ async def create_tv_series(
         "language": language,
         "country": country,
         "rating": {"tmdb": None, "tmdb_vote_count": None},
-        "images": {
-            "poster": poster_url,
-            "backdrop": backdrop_url
-        },
+        "images": {"poster": poster_url, "backdrop": backdrop_url},
         "trailers": trailers,
         "status": status,
         "tagline": tagline,
@@ -193,14 +199,12 @@ async def create_tv_series(
         "is_deleted": False,
         "deleted_at": None,
         "needs_release_review": False,
-        "source_metadata": {
-            "source": "manual",
-            "created_by": str(admin_id)
-        }
+        "source_metadata": {"source": "manual", "created_by": str(admin_id)},
     }
-    
+
     await tv_series_repository.create_tv_series(doc)
     return content_id
+
 
 async def update_tv_series(
     admin_id: str,
@@ -234,10 +238,10 @@ async def update_tv_series(
     trailers: list[dict] | None = None,
     cast: list[dict] | None = None,
     poster_bytes: bytes | None = None,
-    backdrop_bytes: bytes | None = None
+    backdrop_bytes: bytes | None = None,
 ):
     updates = {}
-    
+
     if title is not None:
         updates["title"] = title
     if original_title is not None:
@@ -266,73 +270,81 @@ async def update_tv_series(
         updates["tagline"] = tagline
     if trailers is not None:
         updates["trailers"] = trailers
-        
+
     if creators is not None:
         processed_creators = []
         for idx, entry in enumerate(creators):
             actor_id = entry.get("actor_id")
             if not actor_id:
                 raise ValueError(f"Missing actor_id in creators entry {idx}")
-            
+
             actor = await actors_repository.get_actor_by_id(actor_id)
             if not actor:
-                raise ValueError(f"Actor ID '{actor_id}' not found in database for creators entry {idx}")
-                
-            processed_creators.append({
-                "actor_id": actor_id,
-                "order": idx
-            })
+                raise ValueError(
+                    f"Actor ID '{actor_id}' not found in database for creators entry {idx}"
+                )
+
+            processed_creators.append({"actor_id": actor_id, "order": idx})
         updates["creators"] = processed_creators
-        
+
     if writer is not None:
         processed_writer = []
         for idx, entry in enumerate(writer):
             actor_id = entry.get("actor_id")
             if not actor_id:
                 raise ValueError(f"Missing actor_id in writer entry {idx}")
-            
+
             actor = await actors_repository.get_actor_by_id(actor_id)
             if not actor:
-                raise ValueError(f"Actor ID '{actor_id}' not found in database for writer entry {idx}")
-                
-            processed_writer.append({
-                "actor_id": actor_id,
-                "order": idx
-            })
+                raise ValueError(
+                    f"Actor ID '{actor_id}' not found in database for writer entry {idx}"
+                )
+
+            processed_writer.append({"actor_id": actor_id, "order": idx})
         updates["writer"] = processed_writer
-        
+
     if cast is not None:
         processed_cast = []
         for idx, entry in enumerate(cast):
             actor_id = entry.get("actor_id")
             if not actor_id:
                 raise ValueError(f"Missing actor_id in cast entry {idx}")
-            
+
             actor = await actors_repository.get_actor_by_id(actor_id)
             if not actor:
-                raise ValueError(f"Actor ID '{actor_id}' not found in database for cast entry {idx}")
-                
-            processed_cast.append({
-                "actor_id": actor_id,
-                "character_name": entry.get("character_name", ""),
-                "order": idx
-            })
+                raise ValueError(
+                    f"Actor ID '{actor_id}' not found in database for cast entry {idx}"
+                )
+
+            processed_cast.append(
+                {
+                    "actor_id": actor_id,
+                    "character_name": entry.get("character_name", ""),
+                    "order": idx,
+                }
+            )
         updates["cast"] = processed_cast
-        
+
     if released is not None and status_value is not None:
         if released and status_value not in ["Returning Series", "Ended", "Canceled"]:
             raise ValueError("Invalid status for released TV series")
         if not released and status_value not in ["Planned", "In Production", "Pilot"]:
             raise ValueError("Invalid status for unreleased TV series")
         updates["status"] = status_value
-        
+
     if start_precision is not None:
         if released and start_precision != "day":
-            raise ValueError("A released TV series must have day precision for its start date.")
-            
-        start_date_obj = parse_release_date(start_day, start_month, start_year, start_precision)
+            raise ValueError(
+                "A released TV series must have day precision for its start date."
+            )
+
+        start_date_obj = parse_release_date(
+            start_day, start_month, start_year, start_precision
+        )
         if start_precision == "day":
-            updates["first_air_date"] = f"{start_year}-{str(start_month).zfill(2)}-{str(start_day).zfill(2)}"
+            updates["first_air_date"] = (
+                f"{start_year}-{str(start_month).zfill(2)}-{str(start_day).zfill(2)}"
+            )
             updates["first_air_precision"] = None
         else:
             updates["first_air_date"] = None
@@ -340,24 +352,24 @@ async def update_tv_series(
                 "year": start_year,
                 "month": start_month,
                 "day": None,
-                "precision": start_precision
+                "precision": start_precision,
             }
         updates["year"] = start_year
-        
+
     # Process end date logic
     if clear_end_date:
         updates["last_air_date"] = None
         updates["last_air_precision"] = None
     elif end_precision is not None:
         end_date_obj = parse_release_date(end_day, end_month, end_year, end_precision)
-        
+
         # Need to fetch existing start date for validation if not updating start date
         current = await tv_series_repository.get_tv_series_by_id(content_id)
         if not current:
             raise ValueError("TV series not found")
-            
+
         curr_s_year = updates.get("year", current.get("year"))
-        
+
         if updates.get("first_air_precision"):
             curr_s_month = updates["first_air_precision"].get("month")
             curr_s_day = updates["first_air_precision"].get("day")
@@ -377,23 +389,17 @@ async def update_tv_series(
             else:
                 curr_s_month = None
                 curr_s_day = None
-                
-        start_cmp = (
-            curr_s_year or 0,
-            curr_s_month or 0,
-            curr_s_day or 0
-        )
-        end_cmp = (
-            end_year or 0,
-            end_month or 0,
-            end_day or 0
-        )
-        
+
+        start_cmp = (curr_s_year or 0, curr_s_month or 0, curr_s_day or 0)
+        end_cmp = (end_year or 0, end_month or 0, end_day or 0)
+
         if end_cmp < start_cmp:
             raise ValueError("end_date cannot be before the start release_date")
-            
+
         if end_precision == "day":
-            updates["last_air_date"] = f"{end_year}-{str(end_month).zfill(2)}-{str(end_day).zfill(2)}"
+            updates["last_air_date"] = (
+                f"{end_year}-{str(end_month).zfill(2)}-{str(end_day).zfill(2)}"
+            )
             updates["last_air_precision"] = None
         else:
             updates["last_air_date"] = None
@@ -401,27 +407,32 @@ async def update_tv_series(
                 "year": end_year,
                 "month": end_month,
                 "day": None,
-                "precision": end_precision
+                "precision": end_precision,
             }
-        
+
     if poster_bytes:
-        poster_url = await upload_image_from_bytes(poster_bytes, folder="tv_series", public_id=f"{content_id}_poster")
+        poster_url = await upload_image_from_bytes(
+            poster_bytes, folder="tv_series", public_id=f"{content_id}_poster"
+        )
         updates["images.poster"] = poster_url
-        
+
     if backdrop_bytes:
-        backdrop_url = await upload_image_from_bytes(backdrop_bytes, folder="tv_series", public_id=f"{content_id}_backdrop")
+        backdrop_url = await upload_image_from_bytes(
+            backdrop_bytes, folder="tv_series", public_id=f"{content_id}_backdrop"
+        )
         updates["images.backdrop"] = backdrop_url
-        
+
     if not updates:
         return True
-        
+
     updates["source_metadata.updated_by"] = str(admin_id)
     updates["source_metadata.updated_at"] = datetime.now(timezone.utc)
-    
+
     # Needs release review needs to be recalculated, for now we set it to False on any explicit admin update
     updates["needs_release_review"] = False
-    
+
     return await tv_series_repository.update_tv_series(content_id, updates)
+
 
 async def delete_tv_series(content_id: str):
     return await tv_series_repository.soft_delete_tv_series(content_id)

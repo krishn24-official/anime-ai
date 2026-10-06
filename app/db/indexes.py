@@ -1,14 +1,15 @@
 from app.db.mongo import get_db
 from app.db.index_utils import create_index_safely
 
+
 async def create_indexes():
     db = get_db()
 
     # characters
-        # characters
+    # characters
     await create_index_safely(db.characters, "name")
-    await create_index_safely(db.characters, [("name", "text")])          # ADD
-    await create_index_safely(db.characters, "game_properties")           # ADD
+    await create_index_safely(db.characters, [("name", "text")])  # ADD
+    await create_index_safely(db.characters, "game_properties")  # ADD
     await create_index_safely(db.characters, [("birth_month", 1), ("birth_day", 1)])
 
     # relationships
@@ -19,15 +20,13 @@ async def create_indexes():
     # manga / chapters
     await create_index_safely(db.manga, "name")
     await create_index_safely(
-        db.chapters, 
-        [("manga_id", 1), ("chapter_number", 1)], 
-        unique=True
+        db.chapters, [("manga_id", 1), ("chapter_number", 1)], unique=True
     )
 
     # anime / episodes
-    await create_index_safely(db.anime, "title.english")                  # CHANGED
-    await create_index_safely(db.anime, "title.romaji")                   # CHANGED
-    
+    await create_index_safely(db.anime, "title.english")  # CHANGED
+    await create_index_safely(db.anime, "title.romaji")  # CHANGED
+
     try:
         await db.episodes.drop_index("anime_id_1")
     except Exception:
@@ -38,16 +37,16 @@ async def create_indexes():
         pass
 
     await create_index_safely(
-        db.episodes, 
-        [("anime_id", 1), ("episode_number", 1)], 
+        db.episodes,
+        [("anime_id", 1), ("episode_number", 1)],
         unique=True,
-        partialFilterExpression={"anime_id": {"$type": "string"}}
+        partialFilterExpression={"anime_id": {"$type": "string"}},
     )
     await create_index_safely(
-        db.episodes, 
-        [("tv_series_id", 1), ("episode_number", 1)], 
+        db.episodes,
+        [("tv_series_id", 1), ("episode_number", 1)],
         unique=True,
-        partialFilterExpression={"tv_series_id": {"$type": "string"}}
+        partialFilterExpression={"tv_series_id": {"$type": "string"}},
     )
 
     # voice actors
@@ -61,7 +60,7 @@ async def create_indexes():
     await create_index_safely(db.news, "source")
 
     # organizations
-    await create_index_safely(db.organizations, "name")                   # REMOVED unique=True
+    await create_index_safely(db.organizations, "name")  # REMOVED unique=True
     await create_index_safely(db.organizations, "type")
     await create_index_safely(db.organizations, "anime_ids")
     await create_index_safely(db.organizations, "manga_id")
@@ -80,14 +79,14 @@ async def create_indexes():
     await create_index_safely(
         db.refresh_tokens,
         "expires_at",
-        expireAfterSeconds=0   # MongoDB TTL index — auto-deletes expired tokens
+        expireAfterSeconds=0,  # MongoDB TTL index — auto-deletes expired tokens
     )
 
     # ratings
     await create_index_safely(
         db.ratings,
         [("user_id", 1), ("content_type", 1), ("content_id", 1)],
-        unique=True
+        unique=True,
     )
     await create_index_safely(db.ratings, [("content_type", 1), ("content_id", 1)])
 
@@ -95,7 +94,7 @@ async def create_indexes():
     await create_index_safely(
         db.watchlist,
         [("user_id", 1), ("content_type", 1), ("content_id", 1)],
-        unique=True
+        unique=True,
     )
 
     # comments
@@ -119,36 +118,26 @@ async def create_indexes():
 
     # trending
     await create_index_safely(
-        db.trending,
-        [("content_type", 1), ("content_id", 1)],
-        unique=True
+        db.trending, [("content_type", 1), ("content_id", 1)], unique=True
     )
     await create_index_safely(db.trending, [("pinned", -1), ("score", -1)])
-    await create_index_safely(
-        db.trending,
-        "expires_at",
-        expireAfterSeconds=0
-    )
+    await create_index_safely(db.trending, "expires_at", expireAfterSeconds=0)
 
     # trending_mentions
-    await create_index_safely(db.trending_mentions, [("content_id", 1), ("matched_at", -1)])
     await create_index_safely(
-        db.trending_mentions,
-        [("content_id", 1), ("news_id", 1)],
-        unique=True
+        db.trending_mentions, [("content_id", 1), ("matched_at", -1)]
     )
     await create_index_safely(
-        db.trending_mentions,
-        "matched_at",
-        expireAfterSeconds=172800  # 48 hours
+        db.trending_mentions, [("content_id", 1), ("news_id", 1)], unique=True
+    )
+    await create_index_safely(
+        db.trending_mentions, "matched_at", expireAfterSeconds=172800  # 48 hours
     )
 
     # search_logs
     await create_index_safely(db.search_logs, [("content_id", 1), ("searched_at", -1)])
     await create_index_safely(
-        db.search_logs,
-        "searched_at",
-        expireAfterSeconds=10800  # 3 hours
+        db.search_logs, "searched_at", expireAfterSeconds=10800  # 3 hours
     )
 
     # actors
@@ -183,4 +172,4 @@ async def create_indexes():
     #   ]
     # }
 
-    print("Indexes created")
+    print("Indexes created")

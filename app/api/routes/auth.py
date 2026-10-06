@@ -15,10 +15,7 @@ from app.services.user_service import (
 )
 from app.api.deps import get_current_user
 
-router = APIRouter(
-    prefix="/auth",
-    tags=["Auth"]
-)
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 class RegisterRequest(BaseModel):
@@ -28,7 +25,7 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    identifier: str     # email or username
+    identifier: str  # email or username
     password: str
 
 
@@ -58,6 +55,7 @@ class ResetPasswordRequest(BaseModel):
 
 # --- Register ---
 
+
 @router.post("/register")
 async def register(payload: RegisterRequest):
     result, error = await register_user(
@@ -74,6 +72,7 @@ async def register(payload: RegisterRequest):
 
 # --- Login (JSON) ---
 
+
 @router.post("/login")
 async def login(payload: LoginRequest):
     result, error = await login_user(
@@ -88,6 +87,7 @@ async def login(payload: LoginRequest):
 
 
 # --- Login (OAuth2 form — for Swagger Authorize button) ---
+
 
 @router.post("/token")
 async def token(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -107,6 +107,7 @@ async def token(form_data: OAuth2PasswordRequestForm = Depends()):
 
 # --- Refresh ---
 
+
 @router.post("/refresh")
 async def refresh(payload: RefreshRequest):
     """Exchange a valid refresh token for a new access token + rotated refresh token."""
@@ -120,6 +121,7 @@ async def refresh(payload: RefreshRequest):
 
 # --- Logout (single device) ---
 
+
 @router.post("/logout")
 async def logout(payload: LogoutRequest):
     """Revoke the provided refresh token (logout current device)."""
@@ -128,6 +130,7 @@ async def logout(payload: LogoutRequest):
 
 
 # --- Logout all devices ---
+
 
 @router.post("/logout-all")
 async def logout_all(current_user: dict = Depends(get_current_user)):
@@ -138,12 +141,14 @@ async def logout_all(current_user: dict = Depends(get_current_user)):
 
 # --- Me ---
 
+
 @router.get("/me")
 async def me(current_user: dict = Depends(get_current_user)):
     return await get_user_profile(current_user)
 
 
 # --- Forgot Password ---
+
 
 @router.post("/forgot-password")
 async def forgot_password(payload: ForgotPasswordRequest):
@@ -158,6 +163,7 @@ async def forgot_password(payload: ForgotPasswordRequest):
 
 # --- Verify OTP ---
 
+
 @router.post("/verify-otp")
 async def verify_otp_endpoint(payload: VerifyOTPRequest):
     valid, error = await verify_otp(payload.email, payload.otp)
@@ -169,6 +175,7 @@ async def verify_otp_endpoint(payload: VerifyOTPRequest):
 
 
 # --- Reset Password ---
+
 
 @router.post("/reset-password")
 async def reset_password_endpoint(payload: ResetPasswordRequest):

@@ -13,16 +13,20 @@ from app.backend.ingestion.news.sources.boxoffice import fetch_boxoffice_news
 from app.backend.ingestion.news.sources.youtube_rss import fetch_youtube_news
 from app.backend.ingestion.news.sources.pinkvilla import fetch_pinkvilla_news
 from app.backend.ingestion.news.sources.filmfare import fetch_filmfare_news
-from app.backend.ingestion.news.sources.bollywood_hungama import fetch_bollywood_hungama_news
+from app.backend.ingestion.news.sources.bollywood_hungama import (
+    fetch_bollywood_hungama_news,
+)
 from app.backend.ingestion.news.sources.koimoi import fetch_koimoi_news
 from app.backend.ingestion.news.sources.variety import fetch_variety_news
 from app.backend.ingestion.news.sources.thr import fetch_thr_news
 from app.backend.ingestion.news.sources.slashfilm import fetch_slashfilm_news
-from app.services.news_category_mapping import get_mapped_category, make_fallback_summary
+from app.services.news_category_mapping import (
+    get_mapped_category,
+    make_fallback_summary,
+)
 from app.repositories.news_repository import article_exists, insert_article
 from app.services import title_matcher
 from app.services import trending_service
-
 
 LAST_72_HOURS = 72 * 60 * 60
 # Alias index is expensive to build (scans all collections). Cache it for 2 h.
@@ -56,7 +60,9 @@ async def _get_alias_index() -> list:
     try:
         _ALIAS_INDEX_CACHE = await title_matcher.build_alias_index()
         _ALIAS_INDEX_BUILT_AT = now
-        print(f"[news_pipeline] alias index rebuilt ({len(_ALIAS_INDEX_CACHE)} entries)")
+        print(
+            f"[news_pipeline] alias index rebuilt ({len(_ALIAS_INDEX_CACHE)} entries)"
+        )
     except Exception as e:
         print(f"[news_pipeline] failed to build alias index: {e}")
         # Keep the stale cache rather than returning empty
@@ -73,26 +79,38 @@ JUNK_PATTERNS = [
     r"document\.getElementById\(",  # catches any raw script leakage that slips through
 ]
 
+
 def is_listicle(title: str) -> bool:
     if not title:
         return False
     # Matches "Top 10", "15 Best", "7 Things", etc.
-    return bool(re.search(r'\b(?:top\s)?\d+\s(?:best|worst|things|reasons|times|moments|movies|shows|anime|games|characters)\b|^\d+\s', title, re.IGNORECASE))
+    return bool(
+        re.search(
+            r"\b(?:top\s)?\d+\s(?:best|worst|things|reasons|times|moments|movies|shows|anime|games|characters)\b|^\d+\s",
+            title,
+            re.IGNORECASE,
+        )
+    )
+
 
 def extract_list_items(html_content: str) -> list[str]:
     items = []
     if not html_content:
         return items
     # Extracting text from h2 and h3 tags
-    headings = re.findall(r'<h[23][^>]*>(.*?)</h[23]>', html_content, re.IGNORECASE | re.DOTALL)
+    headings = re.findall(
+        r"<h[23][^>]*>(.*?)</h[23]>", html_content, re.IGNORECASE | re.DOTALL
+    )
     for h in headings:
         # strip tags inside heading
-        clean_text = re.sub(r'<[^>]+>', '', h).strip()
+        clean_text = re.sub(r"<[^>]+>", "", h).strip()
         if clean_text and len(clean_text) > 3:
             items.append(clean_text)
     return items
 
+
 from app.services.news_date_utils import DEFAULT_NEWS_HEADERS
+
 
 async def fetch_full_article_content(url: str) -> tuple[str | None, str | None]:
     """Fetch and extract the main text content of an article from its webpage."""
@@ -100,7 +118,9 @@ async def fetch_full_article_content(url: str) -> tuple[str | None, str | None]:
         return None, None
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            r = await client.get(url, headers=DEFAULT_NEWS_HEADERS, follow_redirects=True)
+            r = await client.get(
+                url, headers=DEFAULT_NEWS_HEADERS, follow_redirects=True
+            )
             if r.status_code == 200:
                 html = r.text
                 result = trafilatura.extract(
@@ -109,17 +129,20 @@ async def fetch_full_article_content(url: str) -> tuple[str | None, str | None]:
                     include_tables=False,
                     no_fallback=False,
                 )
-                
+
                 if not result:
                     return None, html
-                    
+
                 # Secondary safety net: strip known junk patterns even after extraction
                 clean_lines = []
                 for line in result.split("\n"):
-                    if any(re.search(pattern, line, re.IGNORECASE) for pattern in JUNK_PATTERNS):
+                    if any(
+                        re.search(pattern, line, re.IGNORECASE)
+                        for pattern in JUNK_PATTERNS
+                    ):
                         continue
                     clean_lines.append(line)
-                    
+
                 full_text = "\n\n".join(clean_lines)
                 return (full_text if full_text.strip() else None), html
     except Exception as e:
@@ -128,7 +151,9 @@ async def fetch_full_article_content(url: str) -> tuple[str | None, str | None]:
 
 
 async def _fetch_all_sources():
-    results = await asyncio.gather(*(source() for source in SOURCES), return_exceptions=True)
+    results = await asyncio.gather(
+        *(source() for source in SOURCES), return_exceptions=True
+    )
 
     articles = []
     for result in results:
@@ -206,14 +231,21 @@ async def run_news_pipeline():
                         if is_listicle(title) and raw_html:
                             list_items = extract_list_items(raw_html)
                             if list_items:
-                                from app.services.gemini_service import generate_listicle_article_body
-                                listicle_body = await generate_listicle_article_body(title, list_items, full_content)
+                                from app.services.gemini_service import (
+                                    generate_listicle_article_body,
+                                )
+
+                                listicle_body = await generate_listicle_article_body(
+                                    title, list_items, full_content
+                                )
                                 if listicle_body:
                                     full_content = listicle_body
 
                         article["description"] = full_content
                 except Exception as content_err:
-                    print(f"[news_pipeline] Error extracting full content for {url}: {content_err}")
+                    print(
+                        f"[news_pipeline] Error extracting full content for {url}: {content_err}"
+                    )
 
             article["category"] = mapped_category
             article["summary"] = make_fallback_summary(article)
@@ -225,10 +257,10 @@ async def run_news_pipeline():
                 try:
                     from app.services.websocket_manager import manager
                     from app.services.news_service import _serialize
-                    await manager.broadcast({
-                        "type": "NEW_ARTICLE",
-                        "data": _serialize(article)
-                    })
+
+                    await manager.broadcast(
+                        {"type": "NEW_ARTICLE", "data": _serialize(article)}
+                    )
                 except Exception as ws_err:
                     print("[news_pipeline] websocket broadcast error:", ws_err)
             except Exception as e:
@@ -239,7 +271,9 @@ async def run_news_pipeline():
             else:
                 if alias_index:
                     try:
-                        await trending_service.scan_article_for_mentions(article, alias_index)
+                        await trending_service.scan_article_for_mentions(
+                            article, alias_index
+                        )
                     except Exception as match_err:
                         print("[news_pipeline] title matcher error:", match_err)
         except Exception as item_err:
@@ -257,7 +291,9 @@ async def run_news_pipeline():
         try:
             await trending_service.recompute_news_trending(hours=48)
         except Exception as trend_err:
-            print("[news_pipeline] Failed to recompute trending after ingest:", trend_err)
+            print(
+                "[news_pipeline] Failed to recompute trending after ingest:", trend_err
+            )
 
     print("[news_pipeline] done:", summary)
 

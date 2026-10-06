@@ -31,7 +31,7 @@ async def create_news_post(
     category: str,
     author_id,
     author_name: str,
-    image_files: list[tuple[bytes, str]],   # list of (file_bytes, filename)
+    image_files: list[tuple[bytes, str]],  # list of (file_bytes, filename)
 ):
     if not title or not title.strip():
         return None, "Title is required"
@@ -58,7 +58,9 @@ async def create_news_post(
         "summary": description.strip()[:240],
         "category": category,
         "images": image_urls,
-        "image_url": image_urls[0] if image_urls else None,  # first image for card display
+        "image_url": (
+            image_urls[0] if image_urls else None
+        ),  # first image for card display
         "author_id": author_id,
         "author_name": author_name,
     }
@@ -72,10 +74,8 @@ async def create_news_post(
     try:
         from app.services.websocket_manager import manager
         from app.services.news_service import _serialize as serialize_news
-        await manager.broadcast({
-            "type": "NEW_ARTICLE",
-            "data": serialize_news(result)
-        })
+
+        await manager.broadcast({"type": "NEW_ARTICLE", "data": serialize_news(result)})
     except Exception as ws_err:
         print("[manual_news_service] websocket broadcast error:", ws_err)
 

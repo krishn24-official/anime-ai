@@ -1,12 +1,15 @@
 async def format_content_profile(content: dict, content_type: str) -> str:
     from app.db.mongo import get_db
+
     db = get_db()
 
     poster_tag = ""
     cast_str = ""
 
     if content_type == "anime":
-        title = content.get("title", {}).get("english") or content.get("title", {}).get("romaji")
+        title = content.get("title", {}).get("english") or content.get("title", {}).get(
+            "romaji"
+        )
         year = content.get("year")
         status = content.get("status")
         genres = content.get("genres", [])
@@ -15,11 +18,11 @@ async def format_content_profile(content: dict, content_type: str) -> str:
         description = content.get("description")
     elif content_type == "movie":
         title = content.get("title")
-        
+
         # Use release_date if available, otherwise fallback to year
         release_date = content.get("release_date")
         year = release_date if release_date else content.get("year")
-        
+
         status = content.get("status")
         genres = content.get("genres", [])
         runtime = content.get("runtime_minutes")
@@ -30,7 +33,7 @@ async def format_content_profile(content: dict, content_type: str) -> str:
         cast = content.get("cast", [])
         if cast:
             actor_names = []
-            for c in cast[:5]: # limit to top 5 cast members
+            for c in cast[:5]:  # limit to top 5 cast members
                 actor_id = c.get("actor_id")
                 if actor_id:
                     actor_doc = await db["actors"].find_one({"_id": actor_id})
@@ -82,7 +85,9 @@ async def format_content_profile(content: dict, content_type: str) -> str:
             second_line_parts.append(f"{runtime} min")
     elif content_type == "tv_series":
         if total_seasons and total_episodes:
-            second_line_parts.append(f"{total_seasons} seasons, {total_episodes} episodes")
+            second_line_parts.append(
+                f"{total_seasons} seasons, {total_episodes} episodes"
+            )
 
     if rating:
         second_line_parts.append(f"Rated {rating}")
@@ -92,15 +97,16 @@ async def format_content_profile(content: dict, content_type: str) -> str:
     output = first_line
     if second_line:
         output += f"\n{second_line}"
-        
+
     if cast_str:
         output += f"\n{cast_str}"
-        
+
     if description:
         import re
-        desc_clean = re.sub(r'<[^>]+>', '', description)
+
+        desc_clean = re.sub(r"<[^>]+>", "", description)
         output += f"\n\n{desc_clean}"
-        
+
     if poster_tag:
         output += poster_tag
 

@@ -3,10 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from app.api.deps import get_current_admin
 from app.services import manual_news_service
 
-router = APIRouter(
-    prefix="/admin/news",
-    tags=["Admin - News"]
-)
+router = APIRouter(prefix="/admin/news", tags=["Admin - News"])
 
 
 @router.post("")

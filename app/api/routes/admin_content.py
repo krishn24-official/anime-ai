@@ -10,16 +10,15 @@ from app.services import anime_admin_service
 from app.repositories.anime_repository import list_anime_for_admin
 from app.services.content_types import VALID_CONTENT_TYPES
 
-router = APIRouter(
-    prefix="/admin",
-    tags=["Admin Content"]
-)
+router = APIRouter(prefix="/admin", tags=["Admin Content"])
+
 
 class SetTrendingRequest(BaseModel):
     content_type: str
     content_id: str
     note: Optional[str] = None
     expires_at: Optional[datetime] = None
+
 
 @router.get("/trending")
 async def get_active_trending(current_admin: dict = Depends(get_current_admin)):
@@ -28,6 +27,7 @@ async def get_active_trending(current_admin: dict = Depends(get_current_admin)):
     # for now getting the enriched ones is fine for the admin panel)
     return await trending_service.get_trending_content(limit=100)
 
+
 @router.post("/trending")
 async def set_manual_trending(
     content_type: str = Form(...),
@@ -35,14 +35,14 @@ async def set_manual_trending(
     note: Optional[str] = Form(None),
     expires_at: Optional[datetime] = Form(None),
     image: Optional[UploadFile] = File(None),
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     if content_type not in VALID_CONTENT_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid content type. Must be one of {VALID_CONTENT_TYPES}"
+            detail=f"Invalid content type. Must be one of {VALID_CONTENT_TYPES}",
         )
-        
+
     image_bytes = None
     if image:
         content = await image.read()
@@ -55,27 +55,27 @@ async def set_manual_trending(
         admin_id=current_admin["_id"],
         note=note,
         expires_at=expires_at,
-        image_bytes=image_bytes
+        image_bytes=image_bytes,
     )
-    
+
     if not success:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Content not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Content not found"
         )
-        
+
     return {"status": "ok"}
+
 
 @router.delete("/trending/{content_type}/{content_id}")
 async def remove_manual_trending(
-    content_type: str,
-    content_id: str,
-    current_admin: dict = Depends(get_current_admin)
+    content_type: str, content_id: str, current_admin: dict = Depends(get_current_admin)
 ):
     await trending_service.remove_manual_trending(content_type, content_id)
     return {"status": "ok"}
 
+
 # --- Anime Admin ---
+
 
 @router.get("/anime")
 async def list_anime(
@@ -85,9 +85,12 @@ async def list_anime(
     skip: int = 0,
     needs_review: bool = False,
     flagged_duplicates_only: bool = False,
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
-    return await list_anime_for_admin(include_deleted, search, limit, skip, needs_review, flagged_duplicates_only)
+    return await list_anime_for_admin(
+        include_deleted, search, limit, skip, needs_review, flagged_duplicates_only
+    )
+
 
 @router.post("/anime")
 async def create_new_anime(
@@ -113,16 +116,16 @@ async def create_new_anime(
     end_month: Optional[int] = Form(None),
     end_year: Optional[int] = Form(None),
     end_precision: Optional[str] = Form(None),
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     try:
         synonyms_list = json.loads(synonyms)
         genres_list = json.loads(genres)
         studios_list = json.loads(studios)
-        
+
         poster_bytes = await poster.read() if poster else None
         banner_bytes = await banner.read() if banner else None
-        
+
         content_id = await anime_admin_service.create_anime(
             admin_id=current_admin["_id"],
             title_english=title_english,
@@ -146,7 +149,7 @@ async def create_new_anime(
             end_day=end_day,
             end_month=end_month,
             end_year=end_year,
-            end_precision=end_precision
+            end_precision=end_precision,
         )
         return {"status": "ok", "content_id": content_id}
     except ValueError as e:
@@ -155,6 +158,7 @@ async def create_new_anime(
         if "An anime with this title already exists" in str(e):
             raise HTTPException(status_code=409, detail=str(e))
         raise
+
 
 @router.patch("/anime/{content_id}")
 async def update_existing_anime(
@@ -182,16 +186,16 @@ async def update_existing_anime(
     end_year: Optional[int] = Form(None),
     end_precision: Optional[str] = Form(None),
     clear_end_date: bool = Form(False),
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     try:
         synonyms_list = json.loads(synonyms) if synonyms else None
         genres_list = json.loads(genres) if genres else None
         studios_list = json.loads(studios) if studios else None
-        
+
         poster_bytes = await poster.read() if poster else None
         banner_bytes = await banner.read() if banner else None
-        
+
         await anime_admin_service.update_anime(
             admin_id=current_admin["_id"],
             content_id=content_id,
@@ -217,35 +221,40 @@ async def update_existing_anime(
             end_month=end_month,
             end_year=end_year,
             end_precision=end_precision,
-            clear_end_date=clear_end_date
+            clear_end_date=clear_end_date,
         )
         return {"status": "ok"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.delete("/anime/{content_id}")
 async def delete_existing_anime(
-    content_id: str,
-    current_admin: dict = Depends(get_current_admin)
+    content_id: str, current_admin: dict = Depends(get_current_admin)
 ):
     success = await anime_admin_service.delete_anime(content_id)
     if not success:
         raise HTTPException(status_code=404, detail="Anime not found")
     return {"status": "ok"}
 
+
 @router.post("/anime/{content_id}/dismiss-duplicate")
 async def dismiss_anime_duplicate(
-    content_id: str,
-    current_admin: dict = Depends(get_current_admin)
+    content_id: str, current_admin: dict = Depends(get_current_admin)
 ):
     from app.db.mongo import get_db
+
     db = get_db()
-    res = await db["anime"].update_one({"_id": content_id}, {"$unset": {"possible_duplicate_of": ""}})
+    res = await db["anime"].update_one(
+        {"_id": content_id}, {"$unset": {"possible_duplicate_of": ""}}
+    )
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Anime not found")
     return {"status": "ok"}
 
+
 # --- Movies Admin ---
+
 
 @router.get("/movies")
 async def list_movies(
@@ -255,10 +264,14 @@ async def list_movies(
     skip: int = 0,
     needs_review: bool = False,
     flagged_duplicates_only: bool = False,
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     from app.repositories.movie_repository import list_movies_for_admin
-    return await list_movies_for_admin(include_deleted, search, limit, skip, needs_review, flagged_duplicates_only)
+
+    return await list_movies_for_admin(
+        include_deleted, search, limit, skip, needs_review, flagged_duplicates_only
+    )
+
 
 @router.post("/movies")
 async def create_new_movie(
@@ -285,9 +298,10 @@ async def create_new_movie(
     cast: str = Form("[]"),
     poster: Optional[UploadFile] = File(None),
     backdrop: Optional[UploadFile] = File(None),
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     from app.services import movie_admin_service
+
     try:
         genres_list = json.loads(genres)
         director_list = json.loads(director)
@@ -298,10 +312,10 @@ async def create_new_movie(
         language_list = json.loads(language)
         country_list = json.loads(country)
         cast_list = json.loads(cast)
-        
+
         poster_bytes = await poster.read() if poster else None
         backdrop_bytes = await backdrop.read() if backdrop else None
-        
+
         content_id = await movie_admin_service.create_movie(
             admin_id=current_admin["_id"],
             title=title,
@@ -326,7 +340,7 @@ async def create_new_movie(
             trailers=json.loads(trailers),
             cast=cast_list,
             poster_bytes=poster_bytes,
-            backdrop_bytes=backdrop_bytes
+            backdrop_bytes=backdrop_bytes,
         )
         return {"status": "ok", "content_id": content_id}
     except ValueError as e:
@@ -335,6 +349,7 @@ async def create_new_movie(
         if "already exists" in str(e):
             raise HTTPException(status_code=409, detail=str(e))
         raise
+
 
 @router.patch("/movies/{content_id}")
 async def update_existing_movie(
@@ -362,23 +377,26 @@ async def update_existing_movie(
     cast: Optional[str] = Form(None),
     poster: Optional[UploadFile] = File(None),
     backdrop: Optional[UploadFile] = File(None),
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     from app.services import movie_admin_service
+
     try:
         genres_list = json.loads(genres) if genres else None
         director_list = json.loads(director) if director else None
         writers_list = json.loads(writers) if writers else None
         producers_list = json.loads(producers) if producers else None
-        production_house_list = json.loads(production_house) if production_house else None
+        production_house_list = (
+            json.loads(production_house) if production_house else None
+        )
         actors_list = json.loads(actors) if actors else None
         language_list = json.loads(language) if language else None
         country_list = json.loads(country) if country else None
         cast_list = json.loads(cast) if cast is not None else None
-        
+
         poster_bytes = await poster.read() if poster else None
         backdrop_bytes = await backdrop.read() if backdrop else None
-        
+
         await movie_admin_service.update_movie(
             admin_id=current_admin["_id"],
             content_id=content_id,
@@ -404,36 +422,42 @@ async def update_existing_movie(
             trailers=json.loads(trailers) if trailers is not None else None,
             cast=cast_list,
             poster_bytes=poster_bytes,
-            backdrop_bytes=backdrop_bytes
+            backdrop_bytes=backdrop_bytes,
         )
         return {"status": "ok"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.delete("/movies/{content_id}")
 async def delete_existing_movie(
-    content_id: str,
-    current_admin: dict = Depends(get_current_admin)
+    content_id: str, current_admin: dict = Depends(get_current_admin)
 ):
     from app.services import movie_admin_service
+
     success = await movie_admin_service.delete_movie(content_id)
     if not success:
         raise HTTPException(status_code=404, detail="Movie not found")
     return {"status": "ok"}
 
+
 @router.post("/movies/{content_id}/dismiss-duplicate")
 async def dismiss_movie_duplicate(
-    content_id: str,
-    current_admin: dict = Depends(get_current_admin)
+    content_id: str, current_admin: dict = Depends(get_current_admin)
 ):
     from app.db.mongo import get_db
+
     db = get_db()
-    res = await db["movies"].update_one({"_id": content_id}, {"$unset": {"possible_duplicate_of": ""}})
+    res = await db["movies"].update_one(
+        {"_id": content_id}, {"$unset": {"possible_duplicate_of": ""}}
+    )
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Movie not found")
     return {"status": "ok"}
 
+
 # --- TV Series Admin ---
+
 
 @router.get("/tv-series")
 async def list_tv_series(
@@ -443,10 +467,14 @@ async def list_tv_series(
     skip: int = 0,
     needs_review: bool = False,
     flagged_duplicates_only: bool = False,
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     from app.repositories.tv_series_repository import list_tv_series_for_admin
-    return await list_tv_series_for_admin(include_deleted, search, limit, skip, needs_review, flagged_duplicates_only)
+
+    return await list_tv_series_for_admin(
+        include_deleted, search, limit, skip, needs_review, flagged_duplicates_only
+    )
+
 
 @router.post("/tv-series")
 async def create_new_tv_series(
@@ -478,10 +506,11 @@ async def create_new_tv_series(
     cast: str = Form("[]"),
     poster: Optional[UploadFile] = File(None),
     backdrop: Optional[UploadFile] = File(None),
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     try:
         from app.services.tv_series_admin_service import create_tv_series
+
         genres_list = json.loads(genres)
         creators_list = json.loads(creators)
         producers_list = json.loads(producers)
@@ -490,10 +519,10 @@ async def create_new_tv_series(
         language_list = json.loads(language)
         country_list = json.loads(country)
         cast_list = json.loads(cast)
-        
+
         poster_bytes = await poster.read() if poster else None
         backdrop_bytes = await backdrop.read() if backdrop else None
-        
+
         content_id = await create_tv_series(
             admin_id=current_admin["_id"],
             title=title,
@@ -523,7 +552,7 @@ async def create_new_tv_series(
             trailers=json.loads(trailers),
             cast=cast_list,
             poster_bytes=poster_bytes,
-            backdrop_bytes=backdrop_bytes
+            backdrop_bytes=backdrop_bytes,
         )
         return {"status": "ok", "content_id": content_id}
     except ValueError as e:
@@ -532,6 +561,7 @@ async def create_new_tv_series(
         if "already exists" in str(e):
             raise HTTPException(status_code=409, detail=str(e))
         raise
+
 
 @router.patch("/tv-series/{content_id}")
 async def update_existing_tv_series(
@@ -565,22 +595,25 @@ async def update_existing_tv_series(
     cast: Optional[str] = Form(None),
     poster: Optional[UploadFile] = File(None),
     backdrop: Optional[UploadFile] = File(None),
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     try:
         from app.services.tv_series_admin_service import update_tv_series
+
         genres_list = json.loads(genres) if genres else None
         creators_list = json.loads(creators) if creators else None
         producers_list = json.loads(producers) if producers else None
-        production_house_list = json.loads(production_house) if production_house else None
+        production_house_list = (
+            json.loads(production_house) if production_house else None
+        )
         actors_list = json.loads(actors) if actors else None
         language_list = json.loads(language) if language else None
         country_list = json.loads(country) if country else None
         cast_list = json.loads(cast) if cast is not None else None
-        
+
         poster_bytes = await poster.read() if poster else None
         backdrop_bytes = await backdrop.read() if backdrop else None
-        
+
         await update_tv_series(
             admin_id=current_admin["_id"],
             content_id=content_id,
@@ -612,46 +645,54 @@ async def update_existing_tv_series(
             trailers=json.loads(trailers) if trailers is not None else None,
             cast=cast_list,
             poster_bytes=poster_bytes,
-            backdrop_bytes=backdrop_bytes
+            backdrop_bytes=backdrop_bytes,
         )
         return {"status": "ok"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.delete("/tv-series/{content_id}")
 async def delete_existing_tv_series(
-    content_id: str,
-    current_admin: dict = Depends(get_current_admin)
+    content_id: str, current_admin: dict = Depends(get_current_admin)
 ):
     from app.services.tv_series_admin_service import delete_tv_series
+
     success = await delete_tv_series(content_id)
     if not success:
         raise HTTPException(status_code=404, detail="TV Series not found")
     return {"status": "ok"}
 
+
 @router.post("/tv-series/{content_id}/dismiss-duplicate")
 async def dismiss_tv_series_duplicate(
-    content_id: str,
-    current_admin: dict = Depends(get_current_admin)
+    content_id: str, current_admin: dict = Depends(get_current_admin)
 ):
     from app.db.mongo import get_db
+
     db = get_db()
-    res = await db["tv_series"].update_one({"_id": content_id}, {"$unset": {"possible_duplicate_of": ""}})
+    res = await db["tv_series"].update_one(
+        {"_id": content_id}, {"$unset": {"possible_duplicate_of": ""}}
+    )
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="TV series not found")
     return {"status": "ok"}
 
+
 # --- Episodes Admin ---
+
 
 @router.get("/episodes")
 async def list_episodes(
     parent_id: str,
     parent_type: str,
     include_deleted: bool = False,
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     from app.repositories.episode_repository import list_episodes_for_admin
+
     return await list_episodes_for_admin(parent_id, parent_type, include_deleted)
+
 
 class CreateEpisodeRequest(BaseModel):
     parent_type: str
@@ -665,12 +706,13 @@ class CreateEpisodeRequest(BaseModel):
     canon_type: Optional[str] = None
     summary: Optional[str] = None
 
+
 @router.post("/episodes")
 async def create_new_episode(
-    req: CreateEpisodeRequest,
-    current_admin: dict = Depends(get_current_admin)
+    req: CreateEpisodeRequest, current_admin: dict = Depends(get_current_admin)
 ):
     from app.services.episode_admin_service import create_episode
+
     try:
         return await create_episode(
             admin_id=str(current_admin["_id"]),
@@ -683,7 +725,7 @@ async def create_new_episode(
             arc=req.arc,
             is_filler=req.is_filler,
             canon_type=req.canon_type,
-            summary=req.summary
+            summary=req.summary,
         )
     except ValueError as e:
         if "already exists" in str(e):
@@ -692,6 +734,7 @@ async def create_new_episode(
             raise HTTPException(status_code=404, detail=str(e))
         else:
             raise HTTPException(status_code=400, detail=str(e))
+
 
 class UpdateEpisodeRequest(BaseModel):
     title: Optional[str] = None
@@ -702,13 +745,15 @@ class UpdateEpisodeRequest(BaseModel):
     canon_type: Optional[str] = None
     summary: Optional[str] = None
 
+
 @router.patch("/episodes/{content_id}")
 async def update_existing_episode(
     content_id: str,
     req: UpdateEpisodeRequest,
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     from app.services.episode_admin_service import update_episode
+
     try:
         success = await update_episode(
             content_id=content_id,
@@ -718,7 +763,7 @@ async def update_existing_episode(
             arc=req.arc,
             is_filler=req.is_filler,
             canon_type=req.canon_type,
-            summary=req.summary
+            summary=req.summary,
         )
         if not success:
             raise HTTPException(status_code=404, detail="Episode not found")
@@ -726,12 +771,13 @@ async def update_existing_episode(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.delete("/episodes/{content_id}")
 async def delete_existing_episode(
-    content_id: str,
-    current_admin: dict = Depends(get_current_admin)
+    content_id: str, current_admin: dict = Depends(get_current_admin)
 ):
     from app.services.episode_admin_service import delete_episode
+
     success = await delete_episode(content_id)
     if not success:
         raise HTTPException(status_code=404, detail="Episode not found")
@@ -740,14 +786,17 @@ async def delete_existing_episode(
 
 # --- Chapters Admin ---
 
+
 @router.get("/chapters")
 async def list_chapters(
     manga_id: str,
     include_deleted: bool = False,
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     from app.repositories.chapter_repository import list_chapters_for_admin
+
     return await list_chapters_for_admin(manga_id, include_deleted)
+
 
 class CreateChapterRequest(BaseModel):
     manga_id: str
@@ -755,19 +804,20 @@ class CreateChapterRequest(BaseModel):
     release_date: Optional[str] = None
     summary: Optional[str] = None
 
+
 @router.post("/chapters")
 async def create_new_chapter(
-    req: CreateChapterRequest,
-    current_admin: dict = Depends(get_current_admin)
+    req: CreateChapterRequest, current_admin: dict = Depends(get_current_admin)
 ):
     from app.services.chapter_admin_service import create_chapter
+
     try:
         return await create_chapter(
             admin_id=str(current_admin["_id"]),
             manga_id=req.manga_id,
             chapter_number=req.chapter_number,
             release_date=req.release_date,
-            summary=req.summary
+            summary=req.summary,
         )
     except ValueError as e:
         if "already exists" in str(e):
@@ -777,22 +827,23 @@ async def create_new_chapter(
         else:
             raise HTTPException(status_code=400, detail=str(e))
 
+
 class UpdateChapterRequest(BaseModel):
     release_date: Optional[str] = None
     summary: Optional[str] = None
+
 
 @router.patch("/chapters/{content_id}")
 async def update_existing_chapter(
     content_id: str,
     req: UpdateChapterRequest,
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     from app.services.chapter_admin_service import update_chapter
+
     try:
         success = await update_chapter(
-            content_id=content_id,
-            release_date=req.release_date,
-            summary=req.summary
+            content_id=content_id, release_date=req.release_date, summary=req.summary
         )
         if not success:
             raise HTTPException(status_code=404, detail="Chapter not found")
@@ -800,45 +851,52 @@ async def update_existing_chapter(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.delete("/chapters/{content_id}")
 async def delete_existing_chapter(
-    content_id: str,
-    current_admin: dict = Depends(get_current_admin)
+    content_id: str, current_admin: dict = Depends(get_current_admin)
 ):
     from app.services.chapter_admin_service import delete_chapter
+
     success = await delete_chapter(content_id)
     if not success:
         raise HTTPException(status_code=404, detail="Chapter not found")
     return {"status": "ok"}
 
+
 # --- Relationships Admin ---
+
 
 @router.get("/relationships/search-entities")
 async def get_relationship_entities(
     q: str,
     types: Optional[str] = None,
     limit: int = 10,
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     from app.repositories.relationship_repository import search_relationship_entities
+
     if not q or len(q) < 2:
         return []
-        
+
     types_list = [t.strip() for t in types.split(",")] if types else None
     return await search_relationship_entities(q, limit, types_list)
+
 
 @router.get("/relationships/check")
 async def check_relationship_duplicate(
     source_id: str,
     target_id: str,
     relationship: str,
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     from app.services.relationship_admin_service import check_relationship_exists
+
     existing = await check_relationship_exists(source_id, target_id, relationship)
     if existing:
         return {"exists": True, "context": existing.get("context", "")}
     return {"exists": False}
+
 
 class CreateRelationshipRequest(BaseModel):
     source_id: str
@@ -849,12 +907,13 @@ class CreateRelationshipRequest(BaseModel):
     inverse_relationship: Optional[str] = None
     overwrite: bool = False
 
+
 @router.post("/relationships")
 async def create_new_relationship(
-    req: CreateRelationshipRequest,
-    current_admin: dict = Depends(get_current_admin)
+    req: CreateRelationshipRequest, current_admin: dict = Depends(get_current_admin)
 ):
     from app.services.relationship_admin_service import create_relationship
+
     try:
         result = await create_relationship(
             admin_id=str(current_admin["_id"]),
@@ -864,7 +923,7 @@ async def create_new_relationship(
             rel_type=req.type,
             context=req.context,
             explicit_inverse=req.inverse_relationship,
-            overwrite=req.overwrite
+            overwrite=req.overwrite,
         )
         return result
     except ValueError as e:
@@ -872,17 +931,25 @@ async def create_new_relationship(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/relationships/types")
 async def get_relationship_types(current_admin: dict = Depends(get_current_admin)):
     from app.backend.constants.anime_enums import RELATIONSHIP_TYPES
+
     return RELATIONSHIP_TYPES
 
+
 @router.get("/relationships/common-words")
-async def get_relationship_common_words(current_admin: dict = Depends(get_current_admin)):
+async def get_relationship_common_words(
+    current_admin: dict = Depends(get_current_admin),
+):
     from app.backend.constants.anime_enums import RELATIONSHIP_WORDS
+
     return RELATIONSHIP_WORDS
 
+
 # --- Characters Admin ---
+
 
 @router.get("/characters")
 async def list_characters(
@@ -890,11 +957,13 @@ async def list_characters(
     include_deleted: bool = False,
     limit: int = 20,
     skip: int = 0,
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     from app.repositories.character_admin_repository import list_characters_for_admin
+
     items, total = await list_characters_for_admin(include_deleted, search, limit, skip)
     return {"items": items, "total": total}
+
 
 @router.post("/characters")
 async def create_character_admin(
@@ -918,10 +987,10 @@ async def create_character_admin(
     tags: str = Form("[]"),
     profile_image: UploadFile = File(None),
     banner_image: UploadFile = File(None),
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     from app.services import character_admin_service
-    
+
     try:
         a_ids = json.loads(anime_ids)
         m_ids = json.loads(manga_ids)
@@ -957,7 +1026,7 @@ async def create_character_admin(
             role=role,
             tags=tgs,
             profile_bytes=prof_bytes,
-            banner_bytes=ban_bytes
+            banner_bytes=ban_bytes,
         )
         return {"status": "ok", "content_id": content_id}
     except ValueError as e:
@@ -966,6 +1035,7 @@ async def create_character_admin(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.patch("/characters/{content_id}")
 async def update_character_admin(
@@ -990,10 +1060,10 @@ async def update_character_admin(
     tags: str = Form(None),
     profile_image: UploadFile = File(None),
     banner_image: UploadFile = File(None),
-    current_admin: dict = Depends(get_current_admin)
+    current_admin: dict = Depends(get_current_admin),
 ):
     from app.services import character_admin_service
-    
+
     try:
         a_ids = json.loads(anime_ids) if anime_ids else None
         m_ids = json.loads(manga_ids) if manga_ids else None
@@ -1030,7 +1100,7 @@ async def update_character_admin(
             role=role,
             tags=tgs,
             profile_bytes=prof_bytes,
-            banner_bytes=ban_bytes
+            banner_bytes=ban_bytes,
         )
         return {"status": "ok"}
     except ValueError as e:
@@ -1038,12 +1108,13 @@ async def update_character_admin(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.delete("/characters/{content_id}")
 async def delete_character_admin(
-    content_id: str,
-    current_admin: dict = Depends(get_current_admin)
+    content_id: str, current_admin: dict = Depends(get_current_admin)
 ):
     from app.services import character_admin_service
+
     try:
         await character_admin_service.delete_character(content_id)
         return {"status": "ok"}

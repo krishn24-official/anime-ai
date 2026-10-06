@@ -11,8 +11,6 @@ from app.backend.ingestion.tmdb_client import close_client
 from app.services.tmdb_sync_service import (
     sync_trending_movies,
     sync_trending_tv,
-    add_movie_by_title,
-    add_tv_series_by_title,
 )
 
 
@@ -24,11 +22,15 @@ async def main():
     # --- Trending (2 pages = ~40 movies + ~40 TV series) ---
     print("=== Fetching Trending Movies (2 pages) ===")
     movies_result = await sync_trending_movies(pages=2)
-    print(f"Movies result: saved={movies_result['saved']}, failed={movies_result['failed']}\n")
+    print(
+        f"Movies result: saved={movies_result['saved']}, failed={movies_result['failed']}\n"
+    )
 
     print("=== Fetching Trending TV Series (2 pages) ===")
     tv_result = await sync_trending_tv(pages=2)
-    print(f"TV Series result: saved={tv_result['saved']}, failed={tv_result['failed']}\n")
+    print(
+        f"TV Series result: saved={tv_result['saved']}, failed={tv_result['failed']}\n"
+    )
 
     # --- Specific titles (optional) ---
     # Uncomment and edit to add specific titles:
@@ -51,4 +53,5 @@ if __name__ == "__main__":
         asyncio.run(main())
     except Exception:
         import traceback
+
         traceback.print_exc()

@@ -9,9 +9,7 @@ from app.repositories.search_repository import (
 from app.repositories.actors_repository import search_actors
 
 
-async def global_search(
-    query: str
-):
+async def global_search(query: str):
 
     characters = await search_characters(query)
     anime = await search_anime(query)

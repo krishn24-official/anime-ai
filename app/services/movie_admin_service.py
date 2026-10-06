@@ -4,6 +4,7 @@ from app.repositories import movie_repository, actors_repository
 from app.services.cloudinary_service import upload_image_from_bytes
 from app.services.release_date_utils import parse_release_date
 
+
 async def create_movie(
     admin_id: str,
     title: str,
@@ -29,27 +30,31 @@ async def create_movie(
     poster_bytes: bytes | None,
     backdrop_bytes: bytes | None,
     writer: list[dict] | None = None,
-    writers: list[str] = []
+    writers: list[str] = [],
 ):
     if not title:
         raise ValueError("Title must be provided")
-        
+
     slug = create_slug(title)
     content_id = f"movie_{slug}"
-    
+
     existing = await movie_repository.find_movie_by_slug(slug)
     if existing:
-        raise ValueError(f"A movie with this title already exists (content_id: {content_id}). Edit the existing entry instead, or use a more specific title.")
-        
+        raise ValueError(
+            f"A movie with this title already exists (content_id: {content_id}). Edit the existing entry instead, or use a more specific title."
+        )
+
     status = "Released" if released else sub_status
-    
+
     release_date_obj = parse_release_date(day, month, year, precision)
     release_date = None
     release_precision = None
-    
+
     if released and precision != "day":
-        raise ValueError("A released movie must have day precision for its release date.")
-        
+        raise ValueError(
+            "A released movie must have day precision for its release date."
+        )
+
     if precision == "day":
         # Format as YYYY-MM-DD
         release_date = f"{year}-{str(month).zfill(2)}-{str(day).zfill(2)}"
@@ -58,51 +63,58 @@ async def create_movie(
             "year": year,
             "month": month,
             "day": None,
-            "precision": precision
+            "precision": precision,
         }
-    
+
     derived_year = year
-        
+
     poster_url = None
     if poster_bytes:
-        poster_url = await upload_image_from_bytes(poster_bytes, folder="movies", public_id=f"{content_id}_poster")
-        
+        poster_url = await upload_image_from_bytes(
+            poster_bytes, folder="movies", public_id=f"{content_id}_poster"
+        )
+
     backdrop_url = None
     if backdrop_bytes:
-        backdrop_url = await upload_image_from_bytes(backdrop_bytes, folder="movies", public_id=f"{content_id}_backdrop")
-        
+        backdrop_url = await upload_image_from_bytes(
+            backdrop_bytes, folder="movies", public_id=f"{content_id}_backdrop"
+        )
+
     processed_cast = []
     if cast:
         for idx, entry in enumerate(cast):
             actor_id = entry.get("actor_id")
             if not actor_id:
                 raise ValueError(f"Missing actor_id in cast entry {idx}")
-            
+
             actor = await actors_repository.get_actor_by_id(actor_id)
             if not actor:
-                raise ValueError(f"Actor ID '{actor_id}' not found in database for cast entry {idx}")
-                
-            processed_cast.append({
-                "actor_id": actor_id,
-                "character_name": entry.get("character_name", ""),
-                "order": idx
-            })
-        
+                raise ValueError(
+                    f"Actor ID '{actor_id}' not found in database for cast entry {idx}"
+                )
+
+            processed_cast.append(
+                {
+                    "actor_id": actor_id,
+                    "character_name": entry.get("character_name", ""),
+                    "order": idx,
+                }
+            )
+
     processed_director = []
     if director:
         for idx, entry in enumerate(director):
             actor_id = entry.get("actor_id")
             if not actor_id:
                 raise ValueError(f"Missing actor_id in director entry {idx}")
-            
+
             actor = await actors_repository.get_actor_by_id(actor_id)
             if not actor:
-                raise ValueError(f"Actor ID '{actor_id}' not found in database for director entry {idx}")
-                
-            processed_director.append({
-                "actor_id": actor_id,
-                "order": idx
-            })
+                raise ValueError(
+                    f"Actor ID '{actor_id}' not found in database for director entry {idx}"
+                )
+
+            processed_director.append({"actor_id": actor_id, "order": idx})
 
     processed_writer = []
     if writer:
@@ -110,15 +122,14 @@ async def create_movie(
             actor_id = entry.get("actor_id")
             if not actor_id:
                 raise ValueError(f"Missing actor_id in writer entry {idx}")
-            
+
             actor = await actors_repository.get_actor_by_id(actor_id)
             if not actor:
-                raise ValueError(f"Actor ID '{actor_id}' not found in database for writer entry {idx}")
-                
-            processed_writer.append({
-                "actor_id": actor_id,
-                "order": idx
-            })
+                raise ValueError(
+                    f"Actor ID '{actor_id}' not found in database for writer entry {idx}"
+                )
+
+            processed_writer.append({"actor_id": actor_id, "order": idx})
 
     doc = {
         "_id": content_id,
@@ -140,10 +151,7 @@ async def create_movie(
         "language": language,
         "country": country,
         "rating": {"tmdb": None, "tmdb_vote_count": None},
-        "images": {
-            "poster": poster_url,
-            "backdrop": backdrop_url
-        },
+        "images": {"poster": poster_url, "backdrop": backdrop_url},
         "trailers": trailers,
         "status": status,
         "tagline": tagline,
@@ -153,14 +161,12 @@ async def create_movie(
         "is_deleted": False,
         "deleted_at": None,
         "needs_release_review": False,
-        "source_metadata": {
-            "source": "manual",
-            "created_by": str(admin_id)
-        }
+        "source_metadata": {"source": "manual", "created_by": str(admin_id)},
     }
-    
+
     await movie_repository.create_movie(doc)
     return content_id
+
 
 async def update_movie(
     admin_id: str,
@@ -188,10 +194,10 @@ async def update_movie(
     trailers: list[dict] | None = None,
     cast: list[dict] | None = None,
     poster_bytes: bytes | None = None,
-    backdrop_bytes: bytes | None = None
+    backdrop_bytes: bytes | None = None,
 ):
     updates = {}
-    
+
     if title is not None:
         updates["title"] = title
     if original_title is not None:
@@ -218,69 +224,75 @@ async def update_movie(
         updates["tagline"] = tagline
     if trailers is not None:
         updates["trailers"] = trailers
-        
+
     if director is not None:
         processed_director = []
         for idx, entry in enumerate(director):
             actor_id = entry.get("actor_id")
             if not actor_id:
                 raise ValueError(f"Missing actor_id in director entry {idx}")
-            
+
             actor = await actors_repository.get_actor_by_id(actor_id)
             if not actor:
-                raise ValueError(f"Actor ID '{actor_id}' not found in database for director entry {idx}")
-                
-            processed_director.append({
-                "actor_id": actor_id,
-                "order": idx
-            })
+                raise ValueError(
+                    f"Actor ID '{actor_id}' not found in database for director entry {idx}"
+                )
+
+            processed_director.append({"actor_id": actor_id, "order": idx})
         updates["director"] = processed_director
-        
+
     if writer is not None:
         processed_writer = []
         for idx, entry in enumerate(writer):
             actor_id = entry.get("actor_id")
             if not actor_id:
                 raise ValueError(f"Missing actor_id in writer entry {idx}")
-            
+
             actor = await actors_repository.get_actor_by_id(actor_id)
             if not actor:
-                raise ValueError(f"Actor ID '{actor_id}' not found in database for writer entry {idx}")
-                
-            processed_writer.append({
-                "actor_id": actor_id,
-                "order": idx
-            })
+                raise ValueError(
+                    f"Actor ID '{actor_id}' not found in database for writer entry {idx}"
+                )
+
+            processed_writer.append({"actor_id": actor_id, "order": idx})
         updates["writer"] = processed_writer
-        
+
     if cast is not None:
         processed_cast = []
         for idx, entry in enumerate(cast):
             actor_id = entry.get("actor_id")
             if not actor_id:
                 raise ValueError(f"Missing actor_id in cast entry {idx}")
-            
+
             actor = await actors_repository.get_actor_by_id(actor_id)
             if not actor:
-                raise ValueError(f"Actor ID '{actor_id}' not found in database for cast entry {idx}")
-                
-            processed_cast.append({
-                "actor_id": actor_id,
-                "character_name": entry.get("character_name", ""),
-                "order": idx
-            })
+                raise ValueError(
+                    f"Actor ID '{actor_id}' not found in database for cast entry {idx}"
+                )
+
+            processed_cast.append(
+                {
+                    "actor_id": actor_id,
+                    "character_name": entry.get("character_name", ""),
+                    "order": idx,
+                }
+            )
         updates["cast"] = processed_cast
-        
+
     if released is not None and sub_status is not None:
         updates["status"] = "Released" if released else sub_status
-        
+
     if precision is not None:
         if released and precision != "day":
-            raise ValueError("A released movie must have day precision for its release date.")
-            
+            raise ValueError(
+                "A released movie must have day precision for its release date."
+            )
+
         release_date_obj = parse_release_date(day, month, year, precision)
         if precision == "day":
-            updates["release_date"] = f"{year}-{str(month).zfill(2)}-{str(day).zfill(2)}"
+            updates["release_date"] = (
+                f"{year}-{str(month).zfill(2)}-{str(day).zfill(2)}"
+            )
             updates["release_precision"] = None
         else:
             updates["release_date"] = None
@@ -288,28 +300,33 @@ async def update_movie(
                 "year": year,
                 "month": month,
                 "day": None,
-                "precision": precision
+                "precision": precision,
             }
         updates["year"] = year
-        
+
     if poster_bytes:
-        poster_url = await upload_image_from_bytes(poster_bytes, folder="movies", public_id=f"{content_id}_poster")
+        poster_url = await upload_image_from_bytes(
+            poster_bytes, folder="movies", public_id=f"{content_id}_poster"
+        )
         updates["images.poster"] = poster_url
-        
+
     if backdrop_bytes:
-        backdrop_url = await upload_image_from_bytes(backdrop_bytes, folder="movies", public_id=f"{content_id}_backdrop")
+        backdrop_url = await upload_image_from_bytes(
+            backdrop_bytes, folder="movies", public_id=f"{content_id}_backdrop"
+        )
         updates["images.backdrop"] = backdrop_url
-        
+
     if not updates:
         return True
-        
+
     updates["source_metadata.updated_by"] = str(admin_id)
     updates["source_metadata.updated_at"] = datetime.now(timezone.utc)
-    
+
     # Automatically clear the review flag if admin is updating it
     updates["needs_release_review"] = False
-    
+
     return await movie_repository.update_movie(content_id, updates)
+
 
 async def delete_movie(content_id: str):
     return await movie_repository.soft_delete_movie(content_id)

@@ -48,7 +48,7 @@ async def create_index_safely(collection, keys, name=None, **kwargs):
 
     if name in existing:
         info = existing[name]
-        
+
         # Convert index info keys to list of tuples with int directions
         info_keys = []
         for k in info.get("key", []):
@@ -59,11 +59,16 @@ async def create_index_safely(collection, keys, name=None, **kwargs):
                     val = k[1]
                 info_keys.append((k[0], val))
 
-        keys_match = (info_keys == normalized)
+        keys_match = info_keys == normalized
 
         options_match = True
         # Compare important options that define index specs
-        for opt in ["unique", "sparse", "expireAfterSeconds", "partialFilterExpression"]:
+        for opt in [
+            "unique",
+            "sparse",
+            "expireAfterSeconds",
+            "partialFilterExpression",
+        ]:
             expected = kwargs.get(opt)
             actual = info.get(opt)
             # Treat missing or False/None as equivalent

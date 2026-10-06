@@ -2,12 +2,12 @@
 Extracts game properties from a character's description using Gemini.
 Called once per character during ingestion and stored in the DB.
 """
+
 import asyncio
 import json
 import re
 
 from google import genai
-from google.genai import types
 
 from app.config import GEMINI_API_KEY, GEMINI_MODEL_NAME
 from app.services.game_properties import GAME_PROPERTIES
@@ -21,8 +21,7 @@ def _build_extraction_prompt(
 ) -> str:
 
     properties_list = "\n".join(
-        f'  "{key}": "{desc}"'
-        for key, desc in GAME_PROPERTIES.items()
+        f'  "{key}": "{desc}"' for key, desc in GAME_PROPERTIES.items()
     )
 
     anime_context = ", ".join(anime_ids) if anime_ids else "unknown"
@@ -106,7 +105,8 @@ async def extract_game_properties(
             valid_keys = set(GAME_PROPERTIES.keys())
 
             return [
-                key for key, value in data.items()
+                key
+                for key, value in data.items()
                 if value is True and key in valid_keys
             ]
 
@@ -117,11 +117,15 @@ async def extract_game_properties(
                 retry_after = _parse_retry_seconds(error_str)
 
                 if attempt < max_retries - 1:
-                    print(f"[game_extractor] 429 for '{character_name}' — waiting {retry_after}s before retry {attempt + 2}/{max_retries}")
+                    print(
+                        f"[game_extractor] 429 for '{character_name}' — waiting {retry_after}s before retry {attempt + 2}/{max_retries}"
+                    )
                     await asyncio.sleep(retry_after)
                     continue
                 else:
-                    print(f"[game_extractor] 429 quota exhausted for '{character_name}' — skipping (run script again tomorrow)")
+                    print(
+                        f"[game_extractor] 429 quota exhausted for '{character_name}' — skipping (run script again tomorrow)"
+                    )
                     return []
 
             print(f"[game_extractor] error for '{character_name}': {e}")
