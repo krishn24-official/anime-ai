@@ -126,6 +126,12 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
 
         return
 
+    if "Hentai" in (media.get("genres") or []):
+        print(
+            f"🔞 Skipping adult anime: {anime_name}"
+        )
+        return
+
     formatted_anime = transform_anime(
         media
     )

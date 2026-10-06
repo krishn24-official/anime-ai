@@ -136,6 +136,12 @@ async def fetch_and_save(
 
         return
 
+    if "Hentai" in (media.get("genres") or []):
+        print(
+            f"🔞 Skipping adult manga: {manga_name}"
+        )
+        return
+
     formatted_manga = (
         transform_manga(
             media

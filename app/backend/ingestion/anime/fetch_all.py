@@ -334,6 +334,10 @@ async def anilist_request(
 # ─────────────────────────────────────────────────
 
 async def process_anime_node(item: dict) -> bool:
+    # Explicit adult check directly in ingestion fetch
+    if "Hentai" in (item.get("genres") or []):
+        return False
+
     db = get_db()
     try:
         doc = transform_anime(item)
@@ -469,6 +473,8 @@ async def fetch_all_manga(client: httpx.AsyncClient, limiter: AniListRateLimiter
         for item in items:
             if saved + failed >= max_items:
                 break
+            if "Hentai" in (item.get("genres") or []):
+                continue
             try:
                 doc = transform_manga(item)
                 await collection.replace_one({"_id": doc["_id"]}, doc, upsert=True)
