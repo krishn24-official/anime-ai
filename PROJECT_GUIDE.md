@@ -282,6 +282,17 @@ All documents adhere to a strict, prefixed primary key naming standard:
 - **Root Cause**: Default HTTP client headers triggered Cloudflare anti-bot rules.
 - **Solution**: Configured realistic browser `User-Agent` headers and relaxed connection timeouts with backoff retries in `app/backend/ingestion/news/sources/`.
 
+### 5. Upcoming Movie Ingestion Horizon & Remake Title Collision
+- **Issue**: Highly anticipated announced movies (e.g. Marvel's *Ghost Rider*, *Avengers: Doomsday*) and TV series (e.g. *VisionQuest*) were either missed or skipped during daily discovery.
+- **Root Cause**:
+  1. **Horizon & Filter Cap**: Discovery enforced an arbitrary 120-day cutoff (`primary_release_date.lte = +120 days`) and restricted release types (`with_release_type: "2|3"`), which automatically excluded blockbusters announced 1-4 years in advance or still in pre-production.
+  2. **Over-Aggressive Title Collision**: `_ingest_movie` skipped any movie if `find_one({"title": title})` existed, completely blocking reboots and identically-titled adaptations (e.g. skipping *Ghost Rider* 2028 because *Ghost Rider* 2007 existed).
+  3. **Scheduler Startup Delay**: `daily_discovery_sync` lacked `next_run_time`, resetting a 24-hour idle delay on every server restart.
+- **Solution**:
+  - Expanded the discovery horizon up to 4 years sorted by `popularity.desc` without theatrical type filters.
+  - Allowed reboots/remakes with distinct `tmdb_id` or differing release years to proceed to unique slug indexing (`movie_ghost_rider_1`).
+  - Added `next_run_time=datetime.now() + timedelta(seconds=15)` to ensure discovery runs 15 seconds after application boot.
+
 ---
 
 ## 9. Known Limitations & Technical Debt
