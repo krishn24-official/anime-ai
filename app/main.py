@@ -96,12 +96,4 @@ async def health():
     return {"db": "connected" if ok else "failed"}
 
 
-@app.get("/debug-db")
-async def debug_db():
-    from app.db.mongo import get_db
 
-    db = get_db()
-
-    collections = await db.list_collection_names()
-
-    return {"db_name": db.name, "collections": collections}
