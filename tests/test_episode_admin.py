@@ -6,20 +6,18 @@ from bson import ObjectId
 @pytest.fixture(autouse=True)
 async def cleanup_db():
     db = get_db()
-    await db["anime"].delete_many({"_id": ObjectId("60c72b2f9b1d8b5a5198e3b1")})
-    await db["anime"].delete_many({"_id": ObjectId("60c72b2f9b1d8b5a5198e3b2")})
+    await db["anime"].delete_many({"_id": {"$in": ["60c72b2f9b1d8b5a5198e3b1", "60c72b2f9b1d8b5a5198e3b2"]}})
     await db["tv_series"].delete_many({"_id": "test_tv_1"})
     await db["episodes"].delete_many({"anime_id": {"$in": ["60c72b2f9b1d8b5a5198e3b1", "60c72b2f9b1d8b5a5198e3b2"]}})
     await db["episodes"].delete_many({"tv_series_id": "test_tv_1"})
     
-    await db["anime"].insert_one({"_id": ObjectId("60c72b2f9b1d8b5a5198e3b1"), "title": {"english": "Test Anime 1"}, "is_deleted": False})
-    await db["anime"].insert_one({"_id": ObjectId("60c72b2f9b1d8b5a5198e3b2"), "title": {"english": "Test Anime 2"}, "is_deleted": False})
+    await db["anime"].insert_one({"_id": "60c72b2f9b1d8b5a5198e3b1", "title": {"english": "Test Anime 1"}, "is_deleted": False})
+    await db["anime"].insert_one({"_id": "60c72b2f9b1d8b5a5198e3b2", "title": {"english": "Test Anime 2"}, "is_deleted": False})
     await db["tv_series"].insert_one({"_id": "test_tv_1", "title": "Test TV 1", "is_deleted": False})
     
     yield
     
-    await db["anime"].delete_many({"_id": ObjectId("60c72b2f9b1d8b5a5198e3b1")})
-    await db["anime"].delete_many({"_id": ObjectId("60c72b2f9b1d8b5a5198e3b2")})
+    await db["anime"].delete_many({"_id": {"$in": ["60c72b2f9b1d8b5a5198e3b1", "60c72b2f9b1d8b5a5198e3b2"]}})
     await db["tv_series"].delete_many({"_id": "test_tv_1"})
     await db["episodes"].delete_many({"anime_id": {"$in": ["60c72b2f9b1d8b5a5198e3b1", "60c72b2f9b1d8b5a5198e3b2"]}})
     await db["episodes"].delete_many({"tv_series_id": "test_tv_1"})

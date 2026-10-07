@@ -1,7 +1,7 @@
 import pytest
 from app.services.anime_admin_service import parse_release_date, derive_season, create_anime, update_anime, delete_anime
 from app.repositories import anime_repository
-from app.repositories.content_repository import get_upcoming_estimated
+from app.repositories.content_repository import get_announced_releases_range, get_dated_releases_range
 from app.db.mongo import get_db
 import datetime
 
@@ -298,22 +298,16 @@ async def test_get_upcoming_seasonal_with_new_fields():
         "is_deleted": False
     })
     
-    results = await get_upcoming_estimated(limit=10)
-    
-    # For Spring 2026:
-    # anime_new_month has month=3, day=99
-    # anime_new_day has month=3, day=15
-    # anime_legacy has sort_month=2 (from Spring), sort_day=99
-    
-    # Sort order will be based on sort_year, sort_month, sort_day
-    # Legacy: month=2 (sort index), day=99
-    # Month precision: month=3, day=99
-    # Day precision: month=3, day=15
-    # Order should be Legacy (2/99), New Day (3/15), New Month (3/99)
-    
-    filtered_results = [r for r in results if r["content_id"] in ["anime_legacy", "anime_new_day", "anime_new_month"]]
-    
-    assert len(filtered_results) == 3
-    assert filtered_results[0]["content_id"] == "anime_legacy"
-    assert filtered_results[1]["content_id"] == "anime_new_day"
-    assert filtered_results[2]["content_id"] == "anime_new_month"
+    # Dated releases should include day precision but exclude month/legacy precision
+    dated = await get_dated_releases_range("2026-03-01", "2026-03-31")
+    dated_ids = [r["content_id"] for r in dated]
+    assert "anime_new_day" in dated_ids
+    assert "anime_new_month" not in dated_ids
+    assert "anime_legacy" not in dated_ids
+
+    # Announced releases should include month precision
+    announced = await get_announced_releases_range("2026-03-01", "2026-03-31")
+    announced_ids = [r["content_id"] for r in announced]
+    assert "anime_new_month" in announced_ids
+    assert "anime_new_day" not in announced_ids
+    assert "anime_legacy" not in announced_ids

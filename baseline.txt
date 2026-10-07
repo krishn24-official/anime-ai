@@ -1,0 +1,51 @@
+================================================================================
+ANIME AI BACKEND -- FULL TEST SUITE BASELINE RUN (CURRENT UNMODIFIED CODE)
+================================================================================
+
+OVERALL RESULT:
+Run Completed
+
+FAILED & ERRORED TESTS (BEFORE CLEANUP):
+FAILED tests/test_character_admin.py::test_create_character_invalid_relations
+FAILED tests/test_chat_service.py::test_format_content_profile_anime - TypeEr...
+FAILED tests/test_chat_service.py::test_format_content_profile_movie - TypeEr...
+FAILED tests/test_chat_service.py::test_format_content_profile_tv_series - Ty...
+FAILED tests/test_chat_service.py::test_chat_movie_intent - assert '**Incepti...
+FAILED tests/test_episode_admin.py::test_create_episode_validation - Assertio...
+FAILED tests/test_episode_admin.py::test_create_episode_duplicate_logic - Val...
+FAILED tests/test_episode_admin.py::test_create_episode_parent_id_assignment
+FAILED tests/test_gemini_migration.py::test_game_property_extractor - Asserti...
+FAILED tests/test_gemini_migration.py::test_gemini_service_news - AssertionEr...
+FAILED tests/test_movie_admin.py::test_get_upcoming_estimated_merges - Attrib...
+FAILED tests/test_movie_admin.py::test_get_upcoming_dated_excludes_coarse - A...
+FAILED tests/test_news.py::test_run_news_pipeline - assert 3 == 2
+FAILED tests/test_news.py::test_news_apis - AssertionError: assert 3 == 2
+FAILED tests/test_tv_series_admin.py::test_duplicate_slug_protection - TypeEr...
+ERROR tests/test_anime_admin.py
+ERROR tests/test_trending.py::test_recompute_search_trending_qualifying - pym...
+
+DETAILED BREAKDOWN BY FILE:
+- tests/test_auth.py: 11 PASSED
+- tests/test_cast_enrichment.py: 1 PASSED
+- tests/test_cast_reconciliation.py: 9 PASSED
+- tests/test_chapter_admin.py: 2 PASSED
+- tests/test_character_admin.py: 3 PASSED, 1 FAILED (test_create_character_invalid_relations)
+- tests/test_chat_repository.py: 2 PASSED
+- tests/test_chat_service.py: 12 PASSED, 4 FAILED (content profile formatting mocks & Inception intent)
+- tests/test_episode_admin.py: 0 PASSED, 3 FAILED (validation & parent ID mocks)
+- tests/test_gemini_migration.py: 4 PASSED, 2 FAILED (news & game property mock assertions)
+- tests/test_lore.py: 14 PASSED
+- tests/test_anime_admin.py: 1 ERROR (ImportError: get_upcoming_estimated)
+- tests/test_movie_admin.py: 3 PASSED, 2 FAILED (AttributeError: get_upcoming_estimated)
+- tests/test_news.py: 1 PASSED, 2 FAILED (pipeline assertion count mismatch)
+- tests/test_on_this_day.py: 3 PASSED
+- tests/test_organizations.py: 8 PASSED
+- tests/test_public_episode_chapter.py: 7 PASSED
+- tests/test_relationship_admin.py: 10 PASSED
+- tests/test_release_status_sync.py: 7 PASSED
+- tests/test_trending.py: 7 PASSED, 1 ERROR (recompute_search_trending index/mock error)
+- tests/test_tv_series_admin.py: 5 PASSED, 1 FAILED (create_tv_series missing positional arguments in test)
+- tests/test_upcoming.py: 2 PASSED
+- tests/test_weekly_suggestions.py: 1 PASSED
+
+TOTAL: 112 passed, 15 failed, 2 errors (129 total items collected)

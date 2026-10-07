@@ -110,9 +110,7 @@ async def test_get_upcoming_estimated_merges():
     await db["anime"].insert_one({
         "_id": "anime_1",
         "title": {"english": "Anime 1"},
-        "status": "upcoming",
-        "year": 2025,
-        "season": "Winter"
+        "release_date": {"year": 2025, "precision": "year"}
     })
     
     # 1 movie
@@ -130,21 +128,21 @@ async def test_get_upcoming_estimated_merges():
         "title": "TV 1",
         "status": "Planned",
         "first_air_date": None,
-        "release_precision": {"year": 2026, "month": None, "day": None, "precision": "year"}
+        "first_air_precision": {"year": 2026, "month": None, "day": None, "precision": "year"}
     })
     
-    results = await content_repository.get_upcoming_estimated(limit=10)
+    results = await content_repository.get_announced_releases_range("2024-01-01", "2026-12-31")
     
     assert len(results) == 3
     
-    # Check ordering by sort_year, sort_month
-    assert results[0]["content_id"] == "movie_1" # 2024
-    assert results[1]["content_id"] == "anime_1" # 2025
-    assert results[2]["content_id"] == "tv_1" # 2026
+    # Check ordering by pinned_date
+    assert results[0]["content_id"] == "movie_1"  # 2024
+    assert results[1]["content_id"] == "anime_1"  # 2025
+    assert results[2]["content_id"] == "tv_1"     # 2026
     
-    assert results[0]["season_label"] == "May 2024"
-    assert results[1]["season_label"] == "Winter 2025"
-    assert results[2]["season_label"] == "2026"
+    assert results[0]["label"] == "May 2024"
+    assert results[1]["label"] == "2025"
+    assert results[2]["label"] == "2026"
 
 @pytest.mark.asyncio
 async def test_get_upcoming_dated_excludes_coarse():
@@ -157,5 +155,5 @@ async def test_get_upcoming_dated_excludes_coarse():
         "release_precision": {"year": 2024, "month": 5, "day": None, "precision": "month"}
     })
     
-    results = await content_repository.get_upcoming_dated(limit=10)
+    results = await content_repository.get_dated_releases_range("2024-01-01", "2024-12-31")
     assert len(results) == 0

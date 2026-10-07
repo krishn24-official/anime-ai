@@ -78,7 +78,8 @@ async def test_unknown_intent_uses_formatter_no_gemini(mock_detect_intent, mock_
 
 from app.services.content_profile_formatter import format_content_profile
 
-def test_format_content_profile_anime():
+@pytest.mark.asyncio
+async def test_format_content_profile_anime():
     anime = {
         "title": {"english": "Naruto"},
         "year": 2002,
@@ -88,13 +89,14 @@ def test_format_content_profile_anime():
         "rating": {"anilist": None},
         "description": "Ninja story."
     }
-    result = format_content_profile(anime, "anime")
+    result = await format_content_profile(anime, "anime")
     assert "**Naruto** (2002)" in result
     assert "Finished • Action, Adventure • 220 episodes" in result
     assert "Rated" not in result
     assert "Ninja story." in result
 
-def test_format_content_profile_movie():
+@pytest.mark.asyncio
+async def test_format_content_profile_movie():
     movie = {
         "title": "Your Name",
         "year": 2016,
@@ -104,12 +106,13 @@ def test_format_content_profile_movie():
         "rating": {"tmdb": 8.5},
         "plot": "Body swap."
     }
-    result = format_content_profile(movie, "movie")
+    result = await format_content_profile(movie, "movie")
     assert "**Your Name** (2016)" in result
     assert "Released • 106 min • Rated 8.5" in result
     assert "Body swap." in result
 
-def test_format_content_profile_tv_series():
+@pytest.mark.asyncio
+async def test_format_content_profile_tv_series():
     tv = {
         "title": "Breaking Bad",
         "year": 2008,
@@ -120,7 +123,7 @@ def test_format_content_profile_tv_series():
         "rating": {"tmdb": 9.3},
         "plot": "Meth."
     }
-    result = format_content_profile(tv, "tv_series")
+    result = await format_content_profile(tv, "tv_series")
     assert "**Breaking Bad** (2008)" in result
     assert "Ended • Drama • 5 seasons, 62 episodes • Rated 9.3" in result
     assert "Meth." in result
@@ -135,9 +138,16 @@ async def test_chat_anime_intent(mock_search_anime):
     assert "Soul reapers." in result["answer"]
 
 @pytest.mark.asyncio
-@patch("app.repositories.search_repository.search_movies")
-async def test_chat_movie_intent(mock_search_movies):
-    mock_search_movies.return_value = [{"title": "Inception", "plot": "Dreams."}]
+async def test_chat_movie_intent():
+    from app.db.mongo import get_db
+    db = get_db()
+    await db["movies"].delete_many({"_id": "movie_inception"})
+    await db["movies"].insert_one({
+        "_id": "movie_inception",
+        "title": "Inception",
+        "plot": "Dreams.",
+        "is_deleted": False
+    })
     result = await process_chat_message("tell me about the movie Inception")
     assert "answer" in result
     assert "**Inception**" in result["answer"]

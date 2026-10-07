@@ -21,7 +21,7 @@ MOCK_ARTICLES = [
         "url": "https://crunchyroll.com/stale-article",
         "source": "crunchyroll",
         "description": "This is an old crunchyroll article.",
-        "published_at": datetime.now(timezone.utc) - timedelta(hours=30),  # > 24 hours
+        "published_at": datetime.now(timezone.utc) - timedelta(hours=80),  # > 72 hours (stale)
         "image_url": "https://example.com/image2.jpg"
     },
     {

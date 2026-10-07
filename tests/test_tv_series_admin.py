@@ -177,11 +177,14 @@ async def test_duplicate_slug_protection():
             episode_runtime_minutes=None,
             genres=[],
             creators=[],
+            production_house=[],
+            actors=[],
             plot="",
             language=[],
             country=[],
             tagline="",
             trailers=[],
+            cast=[],
             poster_bytes=None,
             backdrop_bytes=None
         )
@@ -209,11 +212,14 @@ async def test_duplicate_slug_protection():
             episode_runtime_minutes=None,
             genres=[],
             creators=[],
+            production_house=[],
+            actors=[],
             plot="",
             language=[],
             country=[],
             tagline="",
             trailers=[],
+            cast=[],
             poster_bytes=None,
             backdrop_bytes=None
         )

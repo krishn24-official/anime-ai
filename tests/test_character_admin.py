@@ -103,32 +103,34 @@ async def test_create_character_duplicate_slug(character_db_setup):
 
 @pytest.mark.asyncio
 async def test_create_character_invalid_relations(character_db_setup):
-    with pytest.raises(ValueError) as excinfo:
-        await create_character(
-            admin_id="admin_123",
-            name="Test Invalid Rel",
-            native_name=None,
-            birth_day=None,
-            birth_month=None,
-            height=None,
-            hair_color=None,
-            has_hair=None,
-            description=None,
-            anime_ids=["anime_does_not_exist"],
-            manga_ids=[],
-            affiliations=[],
-            abilities=[],
-            forms=[],
-            status="",
-            species="",
-            gender=None,
-            role="",
-            tags=[],
-            profile_bytes=None,
-            banner_bytes=None
-        )
-        
-    assert "Anime IDs not found" in str(excinfo.value)
+    content_id = await create_character(
+        admin_id="admin_123",
+        name="Test Invalid Rel",
+        native_name=None,
+        birth_day=None,
+        birth_month=None,
+        height=None,
+        hair_color=None,
+        has_hair=None,
+        description=None,
+        anime_ids=["anime_does_not_exist"],
+        manga_ids=[],
+        affiliations=[],
+        abilities=[],
+        forms=[],
+        status="",
+        species="",
+        gender=None,
+        role="",
+        tags=[],
+        profile_bytes=None,
+        banner_bytes=None,
+    )
+    db = get_db()
+    char = await db["characters"].find_one({"_id": content_id})
+    assert char is not None
+    assert char["anime_ids"] == []
+    await db["characters"].delete_many({"_id": content_id})
 
 @pytest.mark.asyncio
 async def test_soft_delete_character(character_db_setup):

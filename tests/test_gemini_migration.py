@@ -9,6 +9,7 @@ from app.services.gemini_service import (
     identify_image,
     categorize_and_summarize_news
 )
+from app.config import GEMINI_MODEL_NAME
 from app.services.agent_service import run_agent
 
 @pytest.mark.asyncio
@@ -30,7 +31,7 @@ async def test_game_property_extractor(mock_client_cls):
     assert "isNinja" not in properties
     mock_aio_client.models.generate_content.assert_called_once()
     kwargs = mock_aio_client.models.generate_content.call_args.kwargs
-    assert kwargs["model"] == "gemini-2.5-flash-lite"
+    assert kwargs["model"] == GEMINI_MODEL_NAME
 
 
 @pytest.mark.asyncio
@@ -47,7 +48,7 @@ async def test_gemini_service_news(mock_client):
     assert result == {"category": "Anime", "summary": "A test summary."}
     mock_aio_client.models.generate_content.assert_called_once()
     kwargs = mock_aio_client.models.generate_content.call_args.kwargs
-    assert kwargs["model"] == "gemini-2.5-flash-lite"
+    assert kwargs["model"] == GEMINI_MODEL_NAME
 
 
 @pytest.mark.asyncio
