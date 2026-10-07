@@ -11,10 +11,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate
+
+    HAS_REPORTLAB = True
+except ImportError:
+    HAS_REPORTLAB = False
 
 # Project root path setup
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
@@ -80,7 +85,9 @@ def clean_text_for_pdf(text: str) -> str:
     return "".join(c if ord(c) < 128 else "" for c in text)
 
 
-def fetch_chapter_from_fandom(chapter_number: int, retries: int = 3) -> dict[str, Any] | None:
+def fetch_chapter_from_fandom(
+    chapter_number: int, retries: int = 3
+) -> dict[str, Any] | None:
     """Fetch structured metadata and summaries for a specific One Piece chapter from Fandom API."""
     url = f"{FANDOM_API_URL}?action=parse&page=Chapter_{chapter_number}&format=json"
     headers = {"User-Agent": USER_AGENT}
@@ -96,7 +103,9 @@ def fetch_chapter_from_fandom(chapter_number: int, retries: int = 3) -> dict[str
             if attempt < retries:
                 time.sleep(1.2 * attempt)
             else:
-                logger.error(f"Error fetching Chapter {chapter_number} after {retries} attempts: {e}")
+                logger.error(
+                    f"Error fetching Chapter {chapter_number} after {retries} attempts: {e}"
+                )
                 return None
 
     if "error" in data:
@@ -314,8 +323,15 @@ def generate_markdown_doc(chapters: list[dict], output_file: Path) -> str:
     return content
 
 
-def generate_pdf_doc(chapters: list[dict], output_file: Path) -> Path:
+def generate_pdf_doc(chapters: list[dict], output_file: Path) -> Path | None:
     """Generate a high-density, multi-page PDF suitable for RAG embedding and download."""
+    if not HAS_REPORTLAB:
+        logger.warning(
+            "reportlab is not installed in the active environment. Skipping PDF generation. "
+            "To enable PDF generation, run: pip install reportlab"
+        )
+        return None
+
     output_file.parent.mkdir(parents=True, exist_ok=True)
     doc = SimpleDocTemplate(
         str(output_file),
