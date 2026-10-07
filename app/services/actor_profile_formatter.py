@@ -4,10 +4,10 @@ def format_actor_profile(
     parts = []
 
     # 1. Name and Birthdate
-    name = actor.get("name", "Unknown").strip()
+    name = (actor.get("name") or "Unknown").strip()
     header_lines = [f"**{name}**"]
 
-    birthdate = actor.get("birthdate", "").strip()
+    birthdate = (actor.get("birthdate") or "").strip()
     if birthdate:
         parts_arr = birthdate.split("-")
         if len(parts_arr) >= 3:
@@ -21,7 +21,7 @@ def format_actor_profile(
     parts.append("\n".join(header_lines))
 
     # 2. Biography
-    bio = actor.get("biography", "").strip()
+    bio = (actor.get("biography") or "").strip()
     if bio:
         parts.append(f"**Biography**\n{bio}")
 
@@ -62,7 +62,7 @@ def format_actor_profile(
             parts.append("**Known For**\n" + "\n".join(kf_parts))
 
     # 4. Profile Image tag
-    images = actor.get("images", {})
+    images = actor.get("images") or {}
     profile_url = images.get("profile")
     actor_id = actor.get("_id")
     if profile_url and actor_id:

@@ -738,7 +738,10 @@ async def process_chat_message(
             # If the user asks about character relationships (father, mentor, etc.),
             # prioritize character scope over anime/movie title matches.
             rel_intent = detect_intent(message)
-            if rel_intent in TARGET_RELATIONSHIP_INTENTS or rel_intent in ("family", "team"):
+            if rel_intent in TARGET_RELATIONSHIP_INTENTS or rel_intent in (
+                "family",
+                "team",
+            ):
                 forced_scope = "character"
 
     name_query = extract_character_query(message)
@@ -1041,9 +1044,11 @@ async def process_chat_message(
         details = await build_character_context(character) or {}
 
         family_names = [
-            member["target"]["name"].strip()
-            for member in details.get("family", [])
-            if member.get("target") and member["target"].get("name", "").strip()
+            (member["target"].get("name") or "").strip()
+            for member in (details.get("family") or [])
+            if isinstance(member, dict)
+            and isinstance(member.get("target"), dict)
+            and (member["target"].get("name") or "").strip()
         ]
 
         if not family_names:
@@ -1071,9 +1076,11 @@ async def process_chat_message(
         details = await build_character_context(character) or {}
 
         team_names = [
-            member["target"]["name"].strip()
-            for member in details.get("team", [])
-            if member.get("target") and member["target"].get("name", "").strip()
+            (member["target"].get("name") or "").strip()
+            for member in (details.get("team") or [])
+            if isinstance(member, dict)
+            and isinstance(member.get("target"), dict)
+            and (member["target"].get("name") or "").strip()
         ]
 
         if not team_names:
