@@ -1,4 +1,7 @@
+import os
 from datetime import datetime, timedelta, timezone
+
+from email_validator import validate_email, EmailNotValidError
 
 from app.repositories.user_repository import (
     get_user_by_email,
@@ -26,6 +29,33 @@ from app.services.auth_service import (
 )
 from app.services.email_service import generate_otp, send_otp_email
 from app.config import OTP_EXPIRE_MINUTES
+
+TEST_DOMAINS = {"example.com", "example.org", "example.net", "test.com", "localhost"}
+
+
+def validate_email_address(email: str) -> tuple[str | None, str | None]:
+    """Validate email syntax and DNS deliverability (MX records).
+
+    Returns (normalized_email, None) if valid, or (None, error_message) if invalid.
+    """
+    if not email or not isinstance(email, str):
+        return None, "Email address is required"
+
+    clean_email = email.strip()
+    if not clean_email:
+        return None, "Email address cannot be empty"
+
+    try:
+        domain = clean_email.rsplit("@", 1)[-1].lower() if "@" in clean_email else ""
+        check_dns = (
+            domain not in TEST_DOMAINS and os.getenv("TESTING_SKIP_DNS") != "true"
+        )
+        valid_info = validate_email(clean_email, check_deliverability=check_dns)
+        return valid_info.normalized, None
+    except EmailNotValidError as e:
+        return None, str(e)
+    except Exception:
+        return None, "Invalid email address"
 
 
 def _serialize_user(user: dict) -> dict:
@@ -57,6 +87,11 @@ async def _issue_tokens(user: dict) -> tuple[str, str]:
 
 
 async def register_user(email: str, password: str, username: str):
+    normalized_email, email_error = validate_email_address(email)
+    if email_error:
+        return None, email_error
+
+    email = normalized_email
 
     if await get_user_by_email(email):
         return None, "Email already registered"
