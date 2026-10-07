@@ -734,6 +734,12 @@ async def process_chat_message(
             forced_scope = "tv_series"
         elif re.search(r"\b(actor|actress|director|producer|writer)\b", temp_text):
             forced_scope = "actor"
+        else:
+            # If the user asks about character relationships (father, mentor, etc.),
+            # prioritize character scope over anime/movie title matches.
+            rel_intent = detect_intent(message)
+            if rel_intent in TARGET_RELATIONSHIP_INTENTS or rel_intent in ("family", "team"):
+                forced_scope = "character"
 
     name_query = extract_character_query(message)
 

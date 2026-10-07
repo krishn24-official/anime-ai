@@ -34,11 +34,23 @@ async def format_content_profile(content: dict, content_type: str) -> str:
         if cast:
             actor_names = []
             for c in cast[:5]:  # limit to top 5 cast members
-                actor_id = c.get("actor_id")
-                if actor_id:
-                    actor_doc = await db["actors"].find_one({"_id": actor_id})
-                    if actor_doc and actor_doc.get("name"):
-                        actor_names.append(actor_doc["name"])
+                if isinstance(c, dict):
+                    actor_id = c.get("actor_id")
+                    if actor_id:
+                        actor_doc = await db["actors"].find_one({"_id": actor_id})
+                        if actor_doc and actor_doc.get("name"):
+                            actor_names.append(actor_doc["name"])
+                    elif c.get("name"):
+                        actor_names.append(c["name"])
+                elif isinstance(c, str):
+                    if c.startswith("actor_"):
+                        actor_doc = await db["actors"].find_one({"_id": c})
+                        if actor_doc and actor_doc.get("name"):
+                            actor_names.append(actor_doc["name"])
+                        else:
+                            actor_names.append(c)
+                    else:
+                        actor_names.append(c)
             if actor_names:
                 cast_str = "\n**Cast**: " + ", ".join(actor_names)
 
