@@ -355,23 +355,35 @@ async def _extract_candidate_series_ids(
             except Exception:
                 pass
 
-        # 4. If query mentions any character by name, find that character's indexed series
-        try:
-            from app.repositories.character_repository import search_characters
+        # 4. If all currently indexed series belong to the same franchise (e.g. One Piece), default to it
+        base_slugs = {
+            re.sub(r"^(anime|movie|tv_series|tv|manga)_", "", s) for s in indexed_series
+        }
+        if len(base_slugs) == 1:
+            return list(indexed_series)
 
-            matched_chars = await search_characters(query, limit=3)
-            for mc in matched_chars:
-                for s in get_all_char_series(mc):
-                    if s in indexed_series and s not in series_candidates:
-                        series_candidates.append(s)
-            if series_candidates:
-                return series_candidates
+        # 5. If query mentions any character by name, find that character's indexed series
+        try:
+            ignore_tokens = {
+                "what", "when", "where", "who", "why", "how", "in", "did", "does",
+                "is", "are", "the", "during", "and", "with", "from", "about", "which",
+                "after", "before", "sword", "fight", "chapter", "episode", "final", "words"
+            }
+            name_tokens = [
+                w.strip("?,.!'\"")
+                for w in query.split()
+                if len(w.strip("?,.!'\"")) >= 3 and w.strip("?,.!'\"").lower() not in ignore_tokens
+            ]
+            for tok in name_tokens:
+                cands = await find_character_candidates(tok)
+                for mc in cands:
+                    for s in get_all_char_series(mc):
+                        if s in indexed_series and s not in series_candidates:
+                            series_candidates.append(s)
+                if series_candidates:
+                    return series_candidates
         except Exception:
             pass
-
-        # 5. Fallback: if only a single series is currently indexed in lore_chunks, try it
-        if len(indexed_series) == 1:
-            return list(indexed_series)
 
     return series_candidates
 

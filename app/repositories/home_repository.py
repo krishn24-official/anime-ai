@@ -68,96 +68,108 @@ async def get_today_actor_birthdays():
 
 
 async def get_today_anime_anniversaries():
-
     db = get_db()
+    today = datetime.utcnow()
+    regex_pattern = f"-{today.month:02d}-{today.day:02d}$"
 
     anime_list = await (
-        db["anime"].find({"is_deleted": False, "is_adult": {"$ne": True}}).to_list(None)
+        db["anime"]
+        .find(
+            {
+                "start_date": {"$regex": regex_pattern},
+                "is_deleted": False,
+                "is_adult": {"$ne": True},
+            }
+        )
+        .to_list(None)
     )
 
     result = []
-
     for anime in anime_list:
-
         years_ago = get_years_ago(anime.get("start_date"))
-
         if years_ago is not None and years_ago > 0:
-
             anime["years_ago"] = years_ago
-
             result.append(anime)
 
     return result
 
 
 async def get_today_manga_anniversaries():
-
     db = get_db()
+    today = datetime.utcnow()
+    regex_pattern = f"-{today.month:02d}-{today.day:02d}$"
 
     manga_list = await (
-        db["manga"].find({"is_deleted": False, "is_adult": {"$ne": True}}).to_list(None)
+        db["manga"]
+        .find(
+            {
+                "start_date": {"$regex": regex_pattern},
+                "is_deleted": False,
+                "is_adult": {"$ne": True},
+            }
+        )
+        .to_list(None)
     )
 
     result = []
-
     for manga in manga_list:
-
         years_ago = get_years_ago(manga.get("start_date"))
-
         if years_ago is not None and years_ago > 0:
-
             manga["years_ago"] = years_ago
-
             result.append(manga)
 
     return result
 
 
 async def get_today_movie_anniversaries():
-
     db = get_db()
+    today = datetime.utcnow()
+    regex_pattern = f"-{today.month:02d}-{today.day:02d}$"
 
     movie_list = await (
         db["movies"]
-        .find({"is_deleted": False, "is_adult": {"$ne": True}})
+        .find(
+            {
+                "release_date": {"$regex": regex_pattern},
+                "is_deleted": False,
+                "is_adult": {"$ne": True},
+            }
+        )
         .to_list(None)
     )
 
     result = []
-
     for movie in movie_list:
-
         years_ago = get_years_ago(movie.get("release_date"))
-
         if years_ago is not None and years_ago > 0:
-
             movie["years_ago"] = years_ago
-
             result.append(movie)
 
     return result
 
 
 async def get_today_tv_series_anniversaries():
-
     db = get_db()
+    today = datetime.utcnow()
+    regex_pattern = f"-{today.month:02d}-{today.day:02d}$"
 
     tv_list = await (
         db["tv_series"]
-        .find({"is_deleted": False, "is_adult": {"$ne": True}})
+        .find(
+            {
+                "first_air_date": {"$regex": regex_pattern},
+                "is_deleted": False,
+                "is_adult": {"$ne": True},
+            }
+        )
         .to_list(None)
     )
 
     result = []
-
     for tv in tv_list:
-
         years_ago = get_years_ago(tv.get("first_air_date"))
-
         if years_ago is not None and years_ago > 0:
-
             tv["years_ago"] = years_ago
-
             result.append(tv)
 
     return result

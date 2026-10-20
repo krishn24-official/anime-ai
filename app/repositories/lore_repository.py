@@ -4,7 +4,7 @@ from app.schemas.lore import LoreChunk, LoreQueryResult
 
 
 async def insert_chunks(chunks: list[LoreChunk]) -> None:
-    """Bulk insert a list of LoreChunk documents into the lore_chunks collection."""
+    """Bulk insert a list of LoreChunk documents into the lore_chunks collection in safe batches."""
     if not chunks:
         return
 
@@ -15,7 +15,10 @@ async def insert_chunks(chunks: list[LoreChunk]) -> None:
         doc["_id"] = chunk.chunk_id
         docs.append(doc)
 
-    await db["lore_chunks"].insert_many(docs)
+    # Insert in batches of 500 to stay well within MongoDB BSON document/payload limits
+    batch_size = 500
+    for i in range(0, len(docs), batch_size):
+        await db["lore_chunks"].insert_many(docs[i : i + batch_size], ordered=False)
 
 
 async def delete_by_series(series_id: str) -> int:

@@ -93,6 +93,116 @@ MANGA_CONFIGS = {
         "md_name": "dragon_ball_chapters_lore.md",
         "json_name": "dragon_ball_chapters.json",
     },
+    "jujutsu_kaisen": {
+        "manga_id": "manga_jujutsu_kaisen",
+        "title": "Jujutsu Kaisen",
+        "author": "Gege Akutami",
+        "domain": "jujutsu-kaisen.fandom.com",
+        "total_chapters": 271,
+        "aliases": ["jjk"],
+        "pdf_name": "jujutsu_kaisen_chapters_lore.pdf",
+        "md_name": "jujutsu_kaisen_chapters_lore.md",
+        "json_name": "jujutsu_kaisen_chapters.json",
+    },
+    "demon_slayer": {
+        "manga_id": "manga_demon_slayer",
+        "title": "Demon Slayer: Kimetsu no Yaiba",
+        "author": "Koyoharu Gotouge",
+        "domain": "kimetsu-no-yaiba.fandom.com",
+        "total_chapters": 205,
+        "aliases": ["kimetsu_no_yaiba", "kny", "demon slayer"],
+        "pdf_name": "demon_slayer_chapters_lore.pdf",
+        "md_name": "demon_slayer_chapters_lore.md",
+        "json_name": "demon_slayer_chapters.json",
+    },
+    "my_hero_academia": {
+        "manga_id": "manga_my_hero_academia",
+        "title": "My Hero Academia",
+        "author": "Kohei Horikoshi",
+        "domain": "myheroacademia.fandom.com",
+        "total_chapters": 430,
+        "aliases": ["mha", "bnha", "boku_no_hero_academia", "hero_academia"],
+        "pdf_name": "my_hero_academia_chapters_lore.pdf",
+        "md_name": "my_hero_academia_chapters_lore.md",
+        "json_name": "my_hero_academia_chapters.json",
+    },
+    "hunter_x_hunter": {
+        "manga_id": "manga_hunter_x_hunter",
+        "title": "Hunter x Hunter",
+        "author": "Yoshihiro Togashi",
+        "domain": "hunterxhunter.fandom.com",
+        "total_chapters": 400,
+        "aliases": ["hxh", "hunterxhunter"],
+        "pdf_name": "hunter_x_hunter_chapters_lore.pdf",
+        "md_name": "hunter_x_hunter_chapters_lore.md",
+        "json_name": "hunter_x_hunter_chapters.json",
+    },
+    "chainsaw_man": {
+        "manga_id": "manga_chainsaw_man",
+        "title": "Chainsaw Man",
+        "author": "Tatsuki Fujimoto",
+        "domain": "chainsaw-man.fandom.com",
+        "total_chapters": 185,
+        "aliases": ["csm", "chainsawman"],
+        "pdf_name": "chainsaw_man_chapters_lore.pdf",
+        "md_name": "chainsaw_man_chapters_lore.md",
+        "json_name": "chainsaw_man_chapters.json",
+    },
+    "berserk": {
+        "manga_id": "manga_berserk",
+        "title": "Berserk",
+        "author": "Kentaro Miura",
+        "domain": "berserk.fandom.com",
+        "total_chapters": 376,
+        "aliases": [],
+        "pdf_name": "berserk_chapters_lore.pdf",
+        "md_name": "berserk_chapters_lore.md",
+        "json_name": "berserk_chapters.json",
+    },
+    "fullmetal_alchemist": {
+        "manga_id": "manga_fullmetal_alchemist",
+        "title": "Fullmetal Alchemist",
+        "author": "Hiromu Arakawa",
+        "domain": "fma.fandom.com",
+        "total_chapters": 108,
+        "aliases": ["fma", "fullmetal"],
+        "pdf_name": "fullmetal_alchemist_chapters_lore.pdf",
+        "md_name": "fullmetal_alchemist_chapters_lore.md",
+        "json_name": "fullmetal_alchemist_chapters.json",
+    },
+    "tokyo_ghoul": {
+        "manga_id": "manga_tokyo_ghoul",
+        "title": "Tokyo Ghoul",
+        "author": "Sui Ishida",
+        "domain": "tokyoghoul.fandom.com",
+        "total_chapters": 143,
+        "aliases": ["tg"],
+        "pdf_name": "tokyo_ghoul_chapters_lore.pdf",
+        "md_name": "tokyo_ghoul_chapters_lore.md",
+        "json_name": "tokyo_ghoul_chapters.json",
+    },
+    "spy_x_family": {
+        "manga_id": "manga_spy_x_family",
+        "title": "Spy x Family",
+        "author": "Tatsuya Endo",
+        "domain": "spy-x-family.fandom.com",
+        "total_chapters": 105,
+        "aliases": ["sxf", "spyfamily", "spy_family"],
+        "pdf_name": "spy_x_family_chapters_lore.pdf",
+        "md_name": "spy_x_family_chapters_lore.md",
+        "json_name": "spy_x_family_chapters.json",
+    },
+    "black_clover": {
+        "manga_id": "manga_black_clover",
+        "title": "Black Clover",
+        "author": "Yuki Tabata",
+        "domain": "blackclover.fandom.com",
+        "total_chapters": 375,
+        "aliases": ["bc"],
+        "pdf_name": "black_clover_chapters_lore.pdf",
+        "md_name": "black_clover_chapters_lore.md",
+        "json_name": "black_clover_chapters.json",
+    },
 }
 
 
@@ -340,14 +450,36 @@ def scrape_naruto_chapter(num: int) -> dict[str, Any] | None:
 
     # Summary
     sum_match = re.search(
-        r'id="Summary".*?</h\d>(.*?)(?:<h\d|<div class="navbox")',
+        r'id="Summary".*?</h\d>(.*?)(?:<h\d|<div class="navbox"|<div class="printfooter"|<div id="catlinks"|$)',
         html,
         re.DOTALL | re.IGNORECASE,
     )
     summary_text = clean_html(sum_match.group(1)) if sum_match else ""
 
+    if not summary_text:
+        wt_sum_m = re.search(
+            r'==\s*Summary\s*==\s*\n(.*?)(?:\n==|\n\[\[Category:|$)',
+            raw_wt,
+            re.DOTALL | re.IGNORECASE,
+        )
+        if wt_sum_m:
+            summary_text = clean_html(wt_sum_m.group(1))
+
     # Characters from summary links
     characters = extract_characters_from_html(sum_match.group(1)) if sum_match else []
+    if not characters and raw_wt:
+        # Fallback to characters extracted from wikitext links
+        char_links = re.findall(r'\[\[([^|\]\n]+)(?:\|[^\]\n]+)?\]\]', summary_text)
+        seen_c = set()
+        for cl in char_links:
+            cl = cl.strip()
+            if cl and cl not in seen_c and not any(skip in cl.lower() for skip in ["category:", "file:", "template:"]):
+                seen_c.add(cl)
+                characters.append({
+                    "name": cl,
+                    "wiki_page": cl,
+                    "slug": f"char_{create_slug(cl)}",
+                })
 
     return {
         "_id": f"chapter_naruto_{num}",
@@ -556,12 +688,203 @@ def scrape_bleach_chapter(num: int) -> dict[str, Any] | None:
     }
 
 
+def scrape_standard_fandom_chapter(
+    num: int,
+    domain: str,
+    manga_id: str,
+    series_title: str,
+) -> dict[str, Any] | None:
+    """Scrape standard chapter from Fandom MediaWiki (JJK, Demon Slayer, MHA)."""
+    url = f"https://{domain}/api.php?action=parse&page=Chapter_{num}&redirects=1&format=json"
+    data = api_request(url)
+    if not data or "parse" not in data:
+        return None
+
+    parse_data = data["parse"]
+    html = parse_data.get("text", {}).get("*", "")
+    page_title = parse_data.get("title", f"Chapter {num}")
+
+    infobox_items = re.findall(
+        r'data-source="([^"]+)"[^>]*>(.*?)</div>', html, re.DOTALL
+    )
+    meta = {k: " ".join(clean_html(v).split()) for k, v in infobox_items}
+
+    english_title = (
+        meta.get("name")
+        or meta.get("ename")
+        or meta.get("title")
+        or page_title
+    )
+    english_title = re.sub(
+        r"^(?:Chapter\s+\d+:?\s*|\d+:\s*)", "", english_title, flags=re.IGNORECASE
+    ).strip()
+    english_title = re.sub(
+        r"(?:Chapter\s+)?Cover(?:\s+Color\s+Page|\s+Page)?.*|Color\s+Page.*|Sketch.*",
+        "",
+        english_title,
+        flags=re.IGNORECASE,
+    ).strip()
+    english_title = re.sub(r"\(Chapter(?:\s+\d+)?\)", "", english_title).strip()
+    if not english_title:
+        english_title = page_title
+
+    vol_digits = re.search(r"\d+", meta.get("volume") or "")
+    volume_num = int(vol_digits.group(0)) if vol_digits else None
+
+    pages_digits = re.search(r"\d+", meta.get("pages") or meta.get("page") or "")
+    page_count = int(pages_digits.group(0)) if pages_digits else None
+
+    release_date = (
+        meta.get("date")
+        or meta.get("date2")
+        or meta.get("release_date")
+        or ""
+    )
+    release_date = re.sub(
+        r"^(?:Date\s+Released|Release\s+Date|Date):\s*", "", release_date, flags=re.IGNORECASE
+    ).strip()
+
+    arc_name = meta.get("arc") or ""
+    arc_name = re.sub(r"^Arc(?:\(s\))?:\s*", "", arc_name, flags=re.IGNORECASE).strip()
+
+    # Narrative extraction: Check for in-depth Plot Details (e.g. JJK) as well as Summary/Synopsis
+    plot_match = re.search(
+        r'id="(?:Plot_Details|Plot|Detailed_Summary|Long_Summary)".*?</h\d>(.*?)(?:<h\d|<div class="navbox"|<div class="printfooter"|<div id="catlinks"|$)',
+        html,
+        re.DOTALL | re.IGNORECASE,
+    )
+    plot_text = clean_html(plot_match.group(1)) if plot_match else ""
+
+    sum_match = re.search(
+        r'id="(?:Summary|Synopsis|Short_Summary)".*?</h\d>(.*?)(?:<h\d|<div class="navbox"|<div class="printfooter"|<div id="catlinks"|$)',
+        html,
+        re.DOTALL | re.IGNORECASE,
+    )
+    short_sum = clean_html(sum_match.group(1)) if sum_match else ""
+
+    battle_match = re.search(
+        r'id="(?:Battles_&amp;_Events|Battles_and_Events|Battles)".*?</h\d>(.*?)(?:<h\d|<div class="navbox"|<div class="printfooter"|<div id="catlinks"|$)',
+        html,
+        re.DOTALL | re.IGNORECASE,
+    )
+    battle_text = clean_html(battle_match.group(1)) if battle_match else ""
+
+    if plot_text and short_sum:
+        summary_text = f"{short_sum}\n\n{plot_text}"
+    else:
+        summary_text = plot_text or short_sum
+
+    if battle_text:
+        summary_text += f"\n\n**Key Battles & Events**: {battle_text}"
+
+    # Characters
+    char_match = re.search(
+        r'id="(?:Characters|Characters_in_Order_of_Appearance)".*?</h\d>(.*?)(?:<h\d|<div class="navbox"|<div class="printfooter"|<div id="catlinks"|$)',
+        html,
+        re.DOTALL | re.IGNORECASE,
+    )
+    c_html = (
+        char_match.group(1)
+        if char_match
+        else (sum_match.group(1) if sum_match else "")
+    )
+    characters = extract_characters_from_html(c_html)
+
+    return {
+        "_id": f"{manga_id}_{num}",
+        "manga_id": manga_id,
+        "series_id": manga_id,
+        "series_title": series_title,
+        "chapter_number": num,
+        "title": english_title,
+        "volume": volume_num,
+        "pages": page_count,
+        "arc": arc_name,
+        "release_date": release_date,
+        "summary": summary_text,
+        "characters_appeared": characters,
+        "character_ids": [c["slug"] for c in characters],
+        "source_url": f"https://{domain}/wiki/Chapter_{num}",
+        "scraped_at": datetime.now(timezone.utc),
+    }
+
+
+def scrape_jjk_chapter(num: int) -> dict[str, Any] | None:
+    return scrape_standard_fandom_chapter(
+        num, "jujutsu-kaisen.fandom.com", "manga_jujutsu_kaisen", "Jujutsu Kaisen"
+    )
+
+
+def scrape_demon_slayer_chapter(num: int) -> dict[str, Any] | None:
+    return scrape_standard_fandom_chapter(
+        num, "kimetsu-no-yaiba.fandom.com", "manga_demon_slayer", "Demon Slayer: Kimetsu no Yaiba"
+    )
+
+
+def scrape_mha_chapter(num: int) -> dict[str, Any] | None:
+    return scrape_standard_fandom_chapter(
+        num, "myheroacademia.fandom.com", "manga_my_hero_academia", "My Hero Academia"
+    )
+
+
+def scrape_hxh_chapter(num: int) -> dict[str, Any] | None:
+    return scrape_standard_fandom_chapter(
+        num, "hunterxhunter.fandom.com", "manga_hunter_x_hunter", "Hunter x Hunter"
+    )
+
+
+def scrape_csm_chapter(num: int) -> dict[str, Any] | None:
+    return scrape_standard_fandom_chapter(
+        num, "chainsaw-man.fandom.com", "manga_chainsaw_man", "Chainsaw Man"
+    )
+
+
+def scrape_berserk_chapter(num: int) -> dict[str, Any] | None:
+    return scrape_standard_fandom_chapter(
+        num, "berserk.fandom.com", "manga_berserk", "Berserk"
+    )
+
+
+def scrape_fma_chapter(num: int) -> dict[str, Any] | None:
+    return scrape_standard_fandom_chapter(
+        num, "fma.fandom.com", "manga_fullmetal_alchemist", "Fullmetal Alchemist"
+    )
+
+
+def scrape_tokyo_ghoul_chapter(num: int) -> dict[str, Any] | None:
+    return scrape_standard_fandom_chapter(
+        num, "tokyoghoul.fandom.com", "manga_tokyo_ghoul", "Tokyo Ghoul"
+    )
+
+
+def scrape_sxf_chapter(num: int) -> dict[str, Any] | None:
+    return scrape_standard_fandom_chapter(
+        num, "spy-x-family.fandom.com", "manga_spy_x_family", "Spy x Family"
+    )
+
+
+def scrape_black_clover_chapter(num: int) -> dict[str, Any] | None:
+    return scrape_standard_fandom_chapter(
+        num, "blackclover.fandom.com", "manga_black_clover", "Black Clover"
+    )
+
+
 SCRAPER_DISPATCH = {
     "one_piece": scrape_one_piece_chapter,
     "naruto": scrape_naruto_chapter,
     "bleach": scrape_bleach_chapter,
     "attack_on_titan": scrape_aot_chapter,
     "dragon_ball": scrape_dragon_ball_chapter,
+    "jujutsu_kaisen": scrape_jjk_chapter,
+    "demon_slayer": scrape_demon_slayer_chapter,
+    "my_hero_academia": scrape_mha_chapter,
+    "hunter_x_hunter": scrape_hxh_chapter,
+    "chainsaw_man": scrape_csm_chapter,
+    "berserk": scrape_berserk_chapter,
+    "fullmetal_alchemist": scrape_fma_chapter,
+    "tokyo_ghoul": scrape_tokyo_ghoul_chapter,
+    "spy_x_family": scrape_sxf_chapter,
+    "black_clover": scrape_black_clover_chapter,
 }
 
 

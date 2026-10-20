@@ -61,6 +61,19 @@ async def resolve_or_create_voice_actor(va_data: dict) -> str | None:
         {"source_metadata.anilist.id": anilist_staff_id}
     )
     if existing:
+        dob = va_data.get("dateOfBirth") or {}
+        if dob.get("day") is not None and not existing.get("birth_day"):
+            update_va = {}
+            if dob.get("year"):
+                update_va["birth_year"] = dob.get("year")
+            if dob.get("month"):
+                update_va["birth_month"] = dob.get("month")
+            if dob.get("day"):
+                update_va["birth_day"] = dob.get("day")
+            if update_va:
+                await db["voice_actors"].update_one(
+                    {"_id": existing["_id"]}, {"$set": update_va}
+                )
         return str(existing["_id"])
 
     # 2. Not found — create new document
@@ -159,14 +172,18 @@ async def resolve_or_create_character(
             merged_va_ids = list(
                 set(existing.get("voice_actor_ids", []) + voice_actor_ids)
             )
+            update_fields = {
+                "anime_ids": merged_anime_ids,
+                "voice_actor_ids": merged_va_ids,
+            }
+            dob = char_node.get("dateOfBirth") or {}
+            if dob.get("day") is not None and dob.get("month") is not None:
+                update_fields["birth_day"] = dob.get("day")
+                update_fields["birth_month"] = dob.get("month")
+
             await char_collection.update_one(
                 {"_id": existing_id},
-                {
-                    "$set": {
-                        "anime_ids": merged_anime_ids,
-                        "voice_actor_ids": merged_va_ids,
-                    }
-                },
+                {"$set": update_fields},
             )
             logger.debug(
                 "Updated existing character %s (anilist_id=%s)", name, anilist_char_id

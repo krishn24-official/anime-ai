@@ -12,11 +12,30 @@ from app.repositories.home_repository import (
 from app.services.news_service import fetch_latest_news
 
 
+import asyncio
+
 async def fetch_home_today():
-
-    birthdays = await get_today_birthdays()
-
-    actor_birthdays = await get_today_actor_birthdays()
+    (
+        birthdays,
+        actor_birthdays,
+        anime_anniversaries,
+        manga_anniversaries,
+        episode_anniversaries,
+        chapter_anniversaries,
+        movie_anniversaries,
+        tv_series_anniversaries,
+        latest_news,
+    ) = await asyncio.gather(
+        get_today_birthdays(),
+        get_today_actor_birthdays(),
+        get_today_anime_anniversaries(),
+        get_today_manga_anniversaries(),
+        get_today_episode_anniversaries(),
+        get_today_chapter_anniversaries(),
+        get_today_movie_anniversaries(),
+        get_today_tv_series_anniversaries(),
+        fetch_latest_news(limit=5),
+    )
 
     for ab in actor_birthdays:
         ab["entity_type"] = "actor"
@@ -25,20 +44,6 @@ async def fetch_home_today():
         b["entity_type"] = "character"
 
     all_birthdays = birthdays + actor_birthdays
-
-    anime_anniversaries = await get_today_anime_anniversaries()
-
-    manga_anniversaries = await get_today_manga_anniversaries()
-
-    episode_anniversaries = await get_today_episode_anniversaries()
-
-    chapter_anniversaries = await get_today_chapter_anniversaries()
-
-    movie_anniversaries = await get_today_movie_anniversaries()
-
-    tv_series_anniversaries = await get_today_tv_series_anniversaries()
-
-    latest_news = await fetch_latest_news(limit=5)
 
     return {
         "birthdays": all_birthdays,

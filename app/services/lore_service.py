@@ -743,12 +743,26 @@ def process_lore_pdf(
     sections = extract_text_from_pdf(file_bytes)
     character_ids_clean = character_ids or []
 
-    chunk_records: list[dict[str, str | None]] = []
+    chunk_records: list[dict[str, Any]] = []
     for section in sections:
         sec_title = section.get("section_title")
         sec_text = section.get("text", "")
         if not sec_text.strip():
             continue
+
+        # Extract chapter-specific characters if available in the text
+        section_chars = list(character_ids_clean)
+        char_match = re.search(
+            r"(?:Characters Appeared|Characters in Chapter(?:\s+\d+)?):\s*([^\n]+)", sec_text, re.IGNORECASE
+        )
+        if char_match:
+            raw_char_names = [
+                c.strip() for c in char_match.group(1).split(",") if c.strip()
+            ]
+            for cn in raw_char_names:
+                slug = f"char_{create_slug(cn)}"
+                if slug not in section_chars:
+                    section_chars.append(slug)
 
         if looks_like_markdown(sec_text):
             md_chunks = chunk_markdown_text(
@@ -761,6 +775,7 @@ def process_lore_pdf(
                     {
                         "section_title": mc.section_title,
                         "text": mc.chunk_text,
+                        "character_ids": section_chars,
                     }
                 )
         else:
@@ -768,19 +783,30 @@ def process_lore_pdf(
                 sec_text, chunk_size=LORE_CHUNK_SIZE, overlap=LORE_CHUNK_OVERLAP
             )
             for chunk in chunks:
+                # Prepend section/chapter title so each chunk carries full chapter context
+                prefixed_chunk = (
+                    f"[{sec_title}]\n{chunk}"
+                    if sec_title and not chunk.startswith(f"[{sec_title}]")
+                    else chunk
+                )
                 chunk_records.append(
                     {
                         "section_title": sec_title,
-                        "text": chunk,
+                        "text": prefixed_chunk,
+                        "character_ids": section_chars,
                     }
                 )
 
     if not chunk_records:
         raise ValueError("No text chunks generated from PDF content")
 
+    logger.info(
+        f"[lore_service] Generated {len(chunk_records)} chunks for series '{series_id}'. Generating embeddings..."
+    )
+
     # Embed all text chunks in batches
     texts_to_embed = [str(r["text"]) for r in chunk_records]
-    embeddings = lore_embedder.embed_chunks(texts_to_embed)
+    embeddings = lore_embedder.embed_chunks(texts_to_embed, batch_size=64)
 
     lore_chunks: list[LoreChunk] = []
     now = datetime.now(timezone.utc)
@@ -790,7 +816,7 @@ def process_lore_pdf(
             LoreChunk(
                 chunk_id=str(uuid.uuid4()),
                 series_id=series_id,
-                character_ids=character_ids_clean,
+                character_ids=record.get("character_ids", character_ids_clean),
                 chunk_text=str(record["text"]),
                 embedding_vector=embedding,
                 source_file=source_file,
@@ -842,6 +868,22 @@ async def query_lore(
         top_k=k,
         character_ids=character_ids,
     )
+
+    # Cross-prefix fallback: if searching manga_xxx yields no results, check anime_xxx (and vice versa)
+    if not results and (
+        series_id.startswith("manga_") or series_id.startswith("anime_")
+    ):
+        alt_id = (
+            f"anime_{series_id[6:]}"
+            if series_id.startswith("manga_")
+            else f"manga_{series_id[6:]}"
+        )
+        results = await lore_repository.vector_search(
+            query_embedding=query_embedding,
+            series_id=alt_id,
+            top_k=k,
+            character_ids=character_ids,
+        )
 
     # Sort descending by relevance score
     results.sort(key=lambda x: x.score, reverse=True)

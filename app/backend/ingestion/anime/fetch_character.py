@@ -140,8 +140,6 @@ async def fetch_and_save(client: httpx.AsyncClient, anime_name: str):
             if not character.get("name", {}).get("full"):
                 continue
 
-            formatted_character = transform_character(character, anime_db_id, role)
-
             # ── Resolve voice actors (id-based dedup via shared resolver) ──
             voice_actor_ids = []
             voice_actors_data = character_edge.get("voiceActors", [])

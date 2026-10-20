@@ -8,4 +8,9 @@ __pycache__/
 .DS_Store
 .vscode/
 .pytest_cache/
-*.log
+*.log
+data/manga_chapters/
+venv/
+.ruff_cache/
+scratch/
+

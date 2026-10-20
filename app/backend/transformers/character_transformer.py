@@ -44,8 +44,8 @@ def transform_character(character, anime_id, role):
         "_id": f"char_{slug}",
         "name": name,
         "native_name": character["name"].get("native"),
-        "birth_day": (character.get("dateOfBirth", {}).get("day")),
-        "birth_month": (character.get("dateOfBirth", {}).get("month")),
+        "birth_day": (character.get("dateOfBirth") or {}).get("day"),
+        "birth_month": (character.get("dateOfBirth") or {}).get("month"),
         "physical": {"height": None, "hair_color": None, "has_hair": None},
         "description": description,
         "images": {
