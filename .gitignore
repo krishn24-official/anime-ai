@@ -9,7 +9,7 @@ __pycache__/
 .vscode/
 .pytest_cache/
 *.log
-data/manga_chapters/
+data/
 venv/
 .ruff_cache/
 scratch/

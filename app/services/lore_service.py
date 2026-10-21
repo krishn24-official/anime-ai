@@ -370,9 +370,9 @@ def extract_text_from_pdf(file_bytes: bytes) -> list[dict[str, str]]:
     # Do not apply markdown normalization to the non-markdown fallback path
     full_text = raw_full_text
 
-    # Attempt to detect section headers (e.g., lines like 'Chapter 1: ...', or ALL CAPS headings)
+    # Attempt to detect section headers (e.g., lines like 'Chapter 1: ...', 'Episode 1: ...', or ALL CAPS headings)
     section_pattern = re.compile(
-        r"(?:^|\n\n)(?:Chapter\s+\d+[:\s]+|Section\s+\d+[:\s]+|[A-Z0-9\s]{4,40}:?\n)(.+?)(?:\n|$)",
+        r"(?:^|\n\n)(?:Chapter\s+\d+[:\s]+|Episode\s+\d+[:\s]+|Section\s+\d+[:\s]+|[A-Z0-9\s]{4,40}:?\n)(.+?)(?:\n|$)",
         re.MULTILINE,
     )
 
