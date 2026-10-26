@@ -55,17 +55,77 @@ async def remove_manual_trending(content_type: str, content_id: str):
 
 async def get_trending_content(limit: int = 10):
     entries = await get_active_trending(limit)
-    enriched = []
+    if not entries:
+        return []
 
+    from app.db.mongo import get_db
+    from app.services.content_lookup import CONTENT_COLLECTION_MAP
+    import asyncio
+
+    db = get_db()
+
+    # Group IDs by collection
+    ids_by_col: dict[str, set[str]] = {}
+    for entry in entries:
+        ctype = entry.get("content_type")
+        cid = entry.get("content_id")
+        col = CONTENT_COLLECTION_MAP.get(ctype)
+        if col and cid:
+            ids_by_col.setdefault(col, set()).add(cid)
+
+    # Batch fetch in parallel across collections
+    docs_by_col_and_id: dict[tuple[str, str], dict] = {}
+    async def fetch_col(col_name: str, id_set: set[str]):
+        cursor = db[col_name].find(
+            {"_id": {"$in": list(id_set)}},
+            {
+                "title": 1,
+                "name": 1,
+                "images": 1,
+                "poster": 1,
+                "poster_image": 1,
+                "cover_image": 1,
+            },
+        )
+        async for doc in cursor:
+            docs_by_col_and_id[(col_name, str(doc["_id"]))] = doc
+
+    if ids_by_col:
+        await asyncio.gather(*[fetch_col(col, ids) for col, ids in ids_by_col.items()])
+
+    enriched = []
     for entry in entries:
         ctype = entry["content_type"]
         cid = entry["content_id"]
-        doc_info = await resolve_content_title(ctype, cid)
+        col = CONTENT_COLLECTION_MAP.get(ctype)
+        doc = docs_by_col_and_id.get((col, cid)) if col else None
 
-        title = doc_info["title"] if doc_info else cid
-        poster = entry.get("custom_poster") or (
-            doc_info["poster_image"] if doc_info else None
-        )
+        title = None
+        if doc and doc.get("title"):
+            if isinstance(doc["title"], str):
+                title = doc["title"]
+            else:
+                title = doc["title"].get("english") or doc["title"].get("romaji")
+        if not title and doc:
+            title = doc.get("name")
+        if not title:
+            title = cid
+
+        poster = entry.get("custom_poster")
+        if not poster and doc:
+            if doc.get("poster"):
+                poster = doc["poster"]
+            elif doc.get("poster_image"):
+                poster = doc["poster_image"]
+            elif doc.get("cover_image"):
+                poster = doc["cover_image"]
+            elif doc.get("images") and isinstance(doc["images"], dict):
+                jpg = doc["images"].get("jpg", {})
+                poster = (
+                    jpg.get("large_image_url")
+                    or jpg.get("image_url")
+                    or doc["images"].get("poster")
+                )
 
         enriched.append(
             {
@@ -81,6 +141,7 @@ async def get_trending_content(limit: int = 10):
         )
 
     return enriched
+
 
 
 async def scan_article_for_mentions(article: dict, alias_index: list):
