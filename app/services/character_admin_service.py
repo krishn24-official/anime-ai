@@ -108,7 +108,7 @@ async def create_character(
         "gender": gender.strip() if gender else None,
         "role": role.strip() if role else "unknown",
         "tags": [t.strip() for t in tags if t.strip()],
-        "source_metadata": {"source": "manual", "created_by": admin_id},
+        "source_metadata": {"source": "manual", "created_by": str(admin_id)},
         "is_deleted": False,
         "deleted_at": None,
     }

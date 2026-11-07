@@ -44,3 +44,21 @@ LORE_CHUNK_OVERLAP = int(os.getenv("LORE_CHUNK_OVERLAP", "100"))
 LORE_EMBEDDING_MODEL = os.getenv("LORE_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 LORE_TOP_K = int(os.getenv("LORE_TOP_K", "5"))
 LORE_VECTOR_INDEX_NAME = os.getenv("LORE_VECTOR_INDEX_NAME", "lore_vector_index")
+
+# ── Global search ─────────────────────────────────────
+# "auto":  Atlas Search on `search_catalog` when its index is ready, else regex.
+# "regex": always use regex search on the source collections (no catalog upkeep).
+SEARCH_BACKEND = os.getenv("SEARCH_BACKEND", "auto").strip().lower()
+# Hours between full rebuilds of `search_catalog` (catches ingestion/TMDb sync changes).
+SEARCH_CATALOG_REBUILD_HOURS = int(os.getenv("SEARCH_CATALOG_REBUILD_HOURS", "6"))
+# Kinds indexed in the Atlas catalog; other kinds use regex search. Actors are left
+# out by default: ~177k rows would more than double the catalog's storage.
+SEARCH_CATALOG_KINDS = tuple(
+    k.strip()
+    for k in os.getenv(
+        "SEARCH_CATALOG_KINDS", "anime,movies,tv_series,manga,characters,organizations"
+    ).split(",")
+    if k.strip()
+)
+# Cluster storage quota (MB) the catalog build must stay under (Atlas M0 = 512).
+ATLAS_STORAGE_LIMIT_MB = int(os.getenv("ATLAS_STORAGE_LIMIT_MB", "512"))

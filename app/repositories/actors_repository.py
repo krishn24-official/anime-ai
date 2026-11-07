@@ -38,7 +38,7 @@ async def search_actors(query: str, limit: int = 20):
         [
             {
                 "$match": {
-                    "name": {"$regex": query, "$options": "i"},
+                    "name": {"$regex": re.escape(query), "$options": "i"},
                     "is_deleted": False,
                 }
             },

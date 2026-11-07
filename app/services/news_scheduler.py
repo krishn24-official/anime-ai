@@ -3,10 +3,9 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.events import EVENT_JOB_ERROR
 
 from app.services.news_pipeline_service import run_news_pipeline
-from app.services.trending_service import (
-    recompute_search_trending,
-    recompute_news_trending,
-)
+from app import container
+from app.config import ATLAS_STORAGE_LIMIT_MB, SEARCH_CATALOG_REBUILD_HOURS
+from app.container import trending_service
 from app.services.release_status_sync import sync_all_release_statuses
 from app.services.daily_discovery_service import run_daily_discovery
 
@@ -34,7 +33,7 @@ def start_news_scheduler():
     # Run every 30 minutes to recompute search trending (aligned with pipeline).
     async def _search_trending_job():
         try:
-            await recompute_search_trending(hours=3)
+            await trending_service().recompute_search_trending(hours=3)
         except Exception as e:
             print(f"[scheduler] failed to recompute search trending: {e}")
 
@@ -49,7 +48,7 @@ def start_news_scheduler():
     # Run every 30 minutes to recompute news mention trending from RSS article scans
     async def _news_trending_job():
         try:
-            res = await recompute_news_trending(hours=48)
+            res = await trending_service().recompute_news_trending(hours=48)
             print(f"[scheduler] News trending recompute: {res}")
         except Exception as e:
             print(f"[scheduler] failed to recompute news trending: {e}")
@@ -91,6 +90,31 @@ def start_news_scheduler():
         hours=24,
         next_run_time=datetime.now() + timedelta(seconds=15),
         id="daily_discovery_sync",
+    )
+
+    # Rebuild the search catalog so items added by ingestion / TMDb sync become
+    # searchable via Atlas. Admin edits are synced immediately (keeps_search_in_sync).
+    # First run after one interval (no startup memory spike), and only once the
+    # Atlas index has been set up with app/scripts/build_search_catalog.py.
+    async def _search_catalog_job():
+        try:
+            if not container.search_catalog_enabled():
+                return
+            catalog = container.search_catalog()
+            if await catalog.index_status() is None:
+                return
+            # Never fill the cluster: Atlas blocks all writes at the quota.
+            await catalog.check_quota(ATLAS_STORAGE_LIMIT_MB)
+            res = await catalog.rebuild()
+            print(f"[scheduler] Search catalog rebuild: {res}")
+        except Exception as e:
+            print(f"[scheduler] failed to rebuild search catalog: {e}")
+
+    scheduler.add_job(
+        _search_catalog_job,
+        "interval",
+        hours=SEARCH_CATALOG_REBUILD_HOURS,
+        id="search_catalog_rebuild",
     )
 
     scheduler.start()

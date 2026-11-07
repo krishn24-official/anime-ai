@@ -1,18 +1,26 @@
+"""LEGACY re-exports for modules not yet migrated to clean architecture.
+
+New code should import from:
+  - app.domain.shared.content            (content types, validation)
+  - app.infrastructure.mongo.collections  (MongoDB collection names)
+Delete this file once the content module is migrated.
+"""
+
 from bson import ObjectId
 from bson.errors import InvalidId
 
-VALID_CONTENT_TYPES = {"anime", "manga", "movie", "tv_series"}
+from app.domain.shared.content import CONTENT_TYPES as VALID_CONTENT_TYPES
+from app.domain.shared.content import is_valid_content_type
+from app.infrastructure.mongo.collections import (
+    CONTENT_COLLECTIONS as CONTENT_COLLECTION_MAP,
+)
 
-CONTENT_COLLECTION_MAP = {
-    "anime": "anime",
-    "manga": "manga",
-    "movie": "movies",
-    "tv_series": "tv_series",
-}
-
-
-def is_valid_content_type(content_type: str) -> bool:
-    return content_type in VALID_CONTENT_TYPES
+__all__ = [
+    "VALID_CONTENT_TYPES",
+    "CONTENT_COLLECTION_MAP",
+    "is_valid_content_type",
+    "to_object_id",
+]
 
 
 def to_object_id(value: str) -> ObjectId | None:

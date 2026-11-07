@@ -15,14 +15,6 @@ from app.repositories.news_repository import (
     get_latest_news,
     get_news_by_category,
 )
-from app.repositories.search_repository import (
-    search_characters,
-    search_anime,
-    search_manga,
-    search_movies,
-    search_tv_series,
-    search_organizations,
-)
 from app.repositories.chat_repository import find_character
 from app.repositories.rating_repository import get_top_rated, get_watchlist_counts
 from app.services.chat_context_service import build_character_context
@@ -128,40 +120,17 @@ async def tool_get_news_by_category(category: str, limit: int = 5) -> str:
 
 
 async def tool_search_content(query: str) -> str:
-    characters = await search_characters(query)
-    anime = await search_anime(query)
-    manga = await search_manga(query)
-    movies = await search_movies(query)
-    tv_series = await search_tv_series(query)
-    organizations = await search_organizations(query)
+    from app.container import search_service
 
-    result = {
-        "characters": [
-            {"name": c.get("name"), "id": str(c.get("_id"))} for c in characters
-        ],
-        "anime": [
-            {
-                "title": a.get("title", {}).get("english")
-                or a.get("title", {}).get("romaji"),
-                "id": str(a.get("_id")),
-            }
-            for a in anime
-        ],
-        "manga": [{"name": m.get("name"), "id": str(m.get("_id"))} for m in manga],
-        "movies": [
-            {"title": mv.get("title"), "id": str(mv.get("_id"))} for mv in movies
-        ],
-        "tv_series": [
-            {"title": tv.get("title"), "id": str(tv.get("_id"))} for tv in tv_series
-        ],
-        "organizations": [
-            {"name": o.get("name"), "id": str(o.get("id"))} for o in organizations
-        ],
-    }
+    results = await search_service().search(query)
+    result = {}
+    for kind, hits in results.by_kind.items():
+        if kind == "actors":
+            continue  # the agent has no actor tools
+        name_key = "title" if kind in ("anime", "movies", "tv_series") else "name"
+        result[kind] = [{name_key: h.document.title, "id": h.document.id} for h in hits]
 
-    total = sum(len(v) for v in result.values())
-
-    if total == 0:
+    if not any(result.values()):
         return f"No results found for '{query}'."
 
     return json.dumps(result, default=_serialize)
@@ -200,10 +169,12 @@ async def tool_get_character_info(name: str) -> str:
         return json.dumps(context, default=_serialize)
 
     # Fallback: try search
-    characters = await search_characters(name)
+    from app.container import search_service
+
+    characters = (await search_service().search(name)).by_kind["characters"]
 
     if characters:
-        suggestions = [c.get("name") for c in characters[:3]]
+        suggestions = [hit.document.title for hit in characters[:3]]
         return (
             f"Character '{name}' not found by exact name. "
             f"Did you mean one of these? {', '.join(suggestions)}. "

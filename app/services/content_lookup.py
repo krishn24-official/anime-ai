@@ -1,58 +1,20 @@
-from app.db.mongo import get_db
+"""LEGACY helper for modules not yet migrated to clean architecture.
 
-CONTENT_COLLECTION_MAP = {
-    "anime": "anime",
-    "manga": "manga",
-    "movie": "movies",
-    "tv_series": "tv_series",
-}
+New code should depend on the ContentCatalog port (app.domain.shared.ports) and get
+it from app.container.content_catalog(). Delete this file once its callers migrate.
+"""
+
+from app.container import content_catalog
+from app.domain.shared.content import ContentRef
+from app.infrastructure.mongo.collections import (
+    CONTENT_COLLECTIONS as CONTENT_COLLECTION_MAP,  # noqa: F401  (legacy re-export)
+)
 
 
 async def resolve_content_title(content_type: str, content_id: str) -> dict | None:
-    """
-    Returns a dict with 'title' and 'poster_image' if found, else None.
-    """
-    db = get_db()
-    col = CONTENT_COLLECTION_MAP.get(content_type)
-    if not col:
+    """Returns {'title', 'poster_image'} for a catalog item, or None if not found."""
+    ref = ContentRef(content_type, content_id)
+    summary = (await content_catalog().get_summaries([ref])).get(ref)
+    if not summary:
         return None
-
-    doc = await db[col].find_one(
-        {"_id": content_id},
-        {
-            "title": 1,
-            "name": 1,
-            "images": 1,
-            "poster": 1,
-            "poster_image": 1,
-            "cover_image": 1,
-        },
-    )
-
-    if not doc:
-        return None
-
-    title = None
-    if doc.get("title"):
-        if isinstance(doc["title"], str):
-            title = doc["title"]
-        else:
-            title = doc["title"].get("english") or doc["title"].get("romaji")
-
-    if not title:
-        title = doc.get("name")
-
-    poster_image = None
-    if doc.get("poster"):
-        poster_image = doc["poster"]
-    elif doc.get("poster_image"):
-        poster_image = doc["poster_image"]
-    elif doc.get("cover_image"):
-        poster_image = doc["cover_image"]
-    elif doc.get("images") and isinstance(doc["images"], dict):
-        jpg = doc["images"].get("jpg", {})
-        poster_image = jpg.get("large_image_url") or jpg.get("image_url")
-        if not poster_image:
-            poster_image = doc["images"].get("poster")
-
-    return {"title": title or content_id, "poster_image": poster_image}
+    return {"title": summary.title or content_id, "poster_image": summary.poster_image}

@@ -26,7 +26,7 @@ from app.services.news_category_mapping import (
 )
 from app.repositories.news_repository import article_exists, insert_article
 from app.services import title_matcher
-from app.services import trending_service
+from app.container import trending_service
 
 LAST_72_HOURS = 72 * 60 * 60
 # Alias index is expensive to build (scans all collections). Cache it for 2 h.
@@ -271,8 +271,11 @@ async def run_news_pipeline():
             else:
                 if alias_index:
                     try:
-                        await trending_service.scan_article_for_mentions(
-                            article, alias_index
+                        await trending_service().scan_article_for_mentions(
+                            news_id=str(article.get("_id")),
+                            title=article.get("title") or "",
+                            description=article.get("description") or "",
+                            alias_index=alias_index,
                         )
                     except Exception as match_err:
                         print("[news_pipeline] title matcher error:", match_err)
@@ -289,7 +292,7 @@ async def run_news_pipeline():
 
     if saved > 0:
         try:
-            await trending_service.recompute_news_trending(hours=48)
+            await trending_service().recompute_news_trending(hours=48)
         except Exception as trend_err:
             print(
                 "[news_pipeline] Failed to recompute trending after ingest:", trend_err

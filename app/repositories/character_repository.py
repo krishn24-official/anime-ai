@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timedelta
 
 from app.db.mongo import get_db
@@ -88,7 +89,7 @@ async def search_characters(query: str):
 
     return await (
         db["characters"]
-        .find({"name": {"$regex": query, "$options": "i"}, "is_deleted": False})
+        .find({"name": {"$regex": re.escape(query), "$options": "i"}, "is_deleted": False})
         .to_list(None)
     )
 

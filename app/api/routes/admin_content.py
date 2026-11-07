@@ -1,77 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Form, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
 from pydantic import BaseModel
-from datetime import datetime
 from typing import Optional
 
+from app.interfaces.http.search.sync import keeps_search_in_sync
 from app.api.deps import get_current_admin
 import json
-from app.services import trending_service
 from app.services import anime_admin_service
 from app.repositories.anime_repository import list_anime_for_admin
-from app.services.content_types import VALID_CONTENT_TYPES
 
 router = APIRouter(prefix="/admin", tags=["Admin Content"])
-
-
-class SetTrendingRequest(BaseModel):
-    content_type: str
-    content_id: str
-    note: Optional[str] = None
-    expires_at: Optional[datetime] = None
-
-
-@router.get("/trending")
-async def get_active_trending(current_admin: dict = Depends(get_current_admin)):
-    # Reusing the service method to return the active pinned items
-    # (could just return get_trending_content but we might want just raw in future,
-    # for now getting the enriched ones is fine for the admin panel)
-    return await trending_service.get_trending_content(limit=100)
-
-
-@router.post("/trending")
-async def set_manual_trending(
-    content_type: str = Form(...),
-    content_id: str = Form(...),
-    note: Optional[str] = Form(None),
-    expires_at: Optional[datetime] = Form(None),
-    image: Optional[UploadFile] = File(None),
-    current_admin: dict = Depends(get_current_admin),
-):
-    if content_type not in VALID_CONTENT_TYPES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid content type. Must be one of {VALID_CONTENT_TYPES}",
-        )
-
-    image_bytes = None
-    if image:
-        content = await image.read()
-        if content:
-            image_bytes = content
-
-    success = await trending_service.set_manual_trending(
-        content_type=content_type,
-        content_id=content_id,
-        admin_id=current_admin["_id"],
-        note=note,
-        expires_at=expires_at,
-        image_bytes=image_bytes,
-    )
-
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Content not found"
-        )
-
-    return {"status": "ok"}
-
-
-@router.delete("/trending/{content_type}/{content_id}")
-async def remove_manual_trending(
-    content_type: str, content_id: str, current_admin: dict = Depends(get_current_admin)
-):
-    await trending_service.remove_manual_trending(content_type, content_id)
-    return {"status": "ok"}
 
 
 # --- Anime Admin ---
@@ -93,6 +30,7 @@ async def list_anime(
 
 
 @router.post("/anime")
+@keeps_search_in_sync("anime")
 async def create_new_anime(
     title_english: Optional[str] = Form(None),
     title_romaji: Optional[str] = Form(None),
@@ -161,6 +99,7 @@ async def create_new_anime(
 
 
 @router.patch("/anime/{content_id}")
+@keeps_search_in_sync("anime")
 async def update_existing_anime(
     content_id: str,
     title_english: Optional[str] = Form(None),
@@ -229,6 +168,7 @@ async def update_existing_anime(
 
 
 @router.delete("/anime/{content_id}")
+@keeps_search_in_sync("anime")
 async def delete_existing_anime(
     content_id: str, current_admin: dict = Depends(get_current_admin)
 ):
@@ -274,6 +214,7 @@ async def list_movies(
 
 
 @router.post("/movies")
+@keeps_search_in_sync("movies")
 async def create_new_movie(
     title: str = Form(...),
     original_title: Optional[str] = Form(None),
@@ -352,6 +293,7 @@ async def create_new_movie(
 
 
 @router.patch("/movies/{content_id}")
+@keeps_search_in_sync("movies")
 async def update_existing_movie(
     content_id: str,
     title: Optional[str] = Form(None),
@@ -430,6 +372,7 @@ async def update_existing_movie(
 
 
 @router.delete("/movies/{content_id}")
+@keeps_search_in_sync("movies")
 async def delete_existing_movie(
     content_id: str, current_admin: dict = Depends(get_current_admin)
 ):
@@ -477,6 +420,7 @@ async def list_tv_series(
 
 
 @router.post("/tv-series")
+@keeps_search_in_sync("tv_series")
 async def create_new_tv_series(
     title: str = Form(...),
     original_title: Optional[str] = Form(None),
@@ -564,6 +508,7 @@ async def create_new_tv_series(
 
 
 @router.patch("/tv-series/{content_id}")
+@keeps_search_in_sync("tv_series")
 async def update_existing_tv_series(
     content_id: str,
     title: Optional[str] = Form(None),
@@ -653,6 +598,7 @@ async def update_existing_tv_series(
 
 
 @router.delete("/tv-series/{content_id}")
+@keeps_search_in_sync("tv_series")
 async def delete_existing_tv_series(
     content_id: str, current_admin: dict = Depends(get_current_admin)
 ):
@@ -966,6 +912,7 @@ async def list_characters(
 
 
 @router.post("/characters")
+@keeps_search_in_sync("characters")
 async def create_character_admin(
     name: str = Form(...),
     native_name: str = Form(None),
@@ -1038,6 +985,7 @@ async def create_character_admin(
 
 
 @router.patch("/characters/{content_id}")
+@keeps_search_in_sync("characters")
 async def update_character_admin(
     content_id: str,
     name: str = Form(None),
@@ -1110,6 +1058,7 @@ async def update_character_admin(
 
 
 @router.delete("/characters/{content_id}")
+@keeps_search_in_sync("characters")
 async def delete_character_admin(
     content_id: str, current_admin: dict = Depends(get_current_admin)
 ):

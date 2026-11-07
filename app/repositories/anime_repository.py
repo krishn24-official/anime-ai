@@ -44,8 +44,8 @@ async def search_anime(query: str):
         .find(
             {
                 "$or": [
-                    {"title.english": {"$regex": query, "$options": "i"}},
-                    {"title.romaji": {"$regex": query, "$options": "i"}},
+                    {"title.english": {"$regex": re.escape(query), "$options": "i"}},
+                    {"title.romaji": {"$regex": re.escape(query), "$options": "i"}},
                 ]
             }
         )
