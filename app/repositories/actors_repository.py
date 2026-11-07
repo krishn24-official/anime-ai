@@ -32,25 +32,6 @@ async def get_actor_by_id(actor_identifier: str):
     return await db["actors"].find_one({"name": actor_identifier, "is_deleted": False})
 
 
-async def search_actors(query: str, limit: int = 20):
-    db = get_db()
-    cursor = await db["actors"].aggregate(
-        [
-            {
-                "$match": {
-                    "name": {"$regex": re.escape(query), "$options": "i"},
-                    "is_deleted": False,
-                }
-            },
-            {"$addFields": {"name_length": {"$strLenCP": {"$ifNull": ["$name", ""]}}}},
-            {"$sort": {"name_length": 1}},
-            {"$limit": limit},
-            {"$project": {"_id": 1, "name": 1, "images.profile": 1}},
-        ]
-    )
-    return await cursor.to_list(None)
-
-
 async def create_actor(doc: dict):
     db = get_db()
     await db["actors"].insert_one(doc)

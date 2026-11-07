@@ -1,3 +1,4 @@
+from pymongo.errors import DuplicateKeyError
 import asyncio
 import argparse
 from datetime import datetime, timezone
@@ -26,7 +27,7 @@ async def process_movie(client: httpx.AsyncClient, movie_id: int, db):
     # 1. Check if movie already exists by tmdb_id
     movies_collection = db["movies"]
     existing_by_tmdb = await movies_collection.find_one(
-        {"source_metadata.tmdb_id": movie_id, "is_deleted": {"$ne": True}}
+        {"source_metadata.tmdb_id": movie_id}  # deleted records count too: a title an admin removed must not be re-imported
     )
 
     if existing_by_tmdb:
@@ -80,7 +81,12 @@ async def process_movie(client: httpx.AsyncClient, movie_id: int, db):
     doc["writer"] = await reconcile_writers(doc.get("writers", []))
     doc["cast"] = await reconcile_cast(doc.get("cast", []))
 
-    await movies_collection.insert_one(doc)
+    try:
+        await movies_collection.insert_one(doc)
+    except DuplicateKeyError:
+        # Another worker inserted this TMDb id first (unique index on tmdb_id).
+        print(f"Skipping {title} (ID {movie_id}): inserted concurrently.")
+        return
     print(f"Successfully ingested {title}.")
 
 

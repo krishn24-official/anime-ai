@@ -8,17 +8,8 @@ from app.repositories.tier_list_repository import (
     update_tier_list,
     delete_tier_list,
 )
-from app.db.mongo import get_db
 
 VALID_CONTENT_TYPES = {"character", "anime", "manga", "movie", "tv_series"}
-
-CONTENT_COLLECTION_MAP = {
-    "character": "characters",
-    "anime": "anime",
-    "manga": "manga",
-    "movie": "movies",
-    "tv_series": "tv_series",
-}
 
 
 def _serialize(doc: dict) -> dict:
@@ -158,73 +149,32 @@ async def delete_existing_tier_list(tier_list_id: str, user_id: ObjectId):
 
 
 async def search_content_for_tier_list(query: str, content_type: str | None = None):
-    """Search characters/anime/manga/movies/tv_series to add to tier list."""
+    """Search characters/anime/manga/movies/tv_series to add to a tier list.
+
+    Uses the shared ranked search (best matches first, up to 5 per type).
+    """
+    import asyncio
+
+    from app.container import search_service
+    from app.domain.search.entities import KIND_BY_CONTENT_TYPE
+
     if not query or len(query) < 2:
         return []
-
-    db = get_db()
-    results = []
 
     types_to_search = (
         [content_type]
         if content_type and content_type in VALID_CONTENT_TYPES
-        else list(VALID_CONTENT_TYPES)
+        else sorted(VALID_CONTENT_TYPES)
     )
-
-    for ctype in types_to_search:
-        collection = CONTENT_COLLECTION_MAP[ctype]
-
-        # Use title or name field depending on collection
-        name_field = "name" if ctype in ("character", "manga") else "title"
-
-        if ctype == "character":
-            query_filter = {
-                "$or": [
-                    {"name": {"$regex": query, "$options": "i"}},
-                    {"anime": {"$regex": query, "$options": "i"}},
-                    {"manga": {"$regex": query, "$options": "i"}},
-                ]
-            }
-            projection = {"_id": 1, "name": 1, "images": 1}
-        elif ctype == "anime":
-            query_filter = {
-                "$or": [
-                    {"title.english": {"$regex": query, "$options": "i"}},
-                    {"title.romaji": {"$regex": query, "$options": "i"}},
-                ]
-            }
-            projection = {"_id": 1, "title": 1, "images": 1}
-        else:
-            query_filter = {name_field: {"$regex": query, "$options": "i"}}
-            projection = {"_id": 1, name_field: 1, "images": 1}
-
-        docs = await (
-            db[collection].find(query_filter, projection).limit(5).to_list(None)
+    pages = await asyncio.gather(
+        *(
+            search_service().search_kind(query, KIND_BY_CONTENT_TYPE[t], limit=5)
+            for t in types_to_search
         )
+    )
+    return [
+        {"content_type": t, "content_id": doc.id, "name": doc.title, "image": doc.image}
+        for t, (docs, _) in zip(types_to_search, pages)
+        for doc in docs
+    ]
 
-        for doc in docs:
-            images = doc.get("images") or {}
-
-            if ctype == "anime":
-                label = (
-                    (doc.get("title") or {}).get("english")
-                    or (doc.get("title") or {}).get("romaji")
-                    or str(doc["_id"])
-                )
-            else:
-                label = doc.get(name_field) or str(doc["_id"])
-
-            results.append(
-                {
-                    "content_type": ctype,
-                    "content_id": str(doc["_id"]),
-                    "name": label,
-                    "image": (
-                        images.get("profile")
-                        or images.get("poster")
-                        or images.get("cover_image")
-                    ),
-                }
-            )
-
-    return results

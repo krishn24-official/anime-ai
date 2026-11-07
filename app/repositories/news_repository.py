@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timezone
 
 from app.db.mongo import get_db
@@ -65,11 +66,13 @@ async def get_news_by_category(
     if source:
         query["source"] = source
 
-    if search:
+    if search and search.strip():
+        # Free-text "contains" match over articles; escaped so input like "(" is literal.
+        pattern = re.escape(search.strip())
         query["$or"] = [
-            {"title": {"$regex": search, "$options": "i"}},
-            {"summary": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}},
+            {"title": {"$regex": pattern, "$options": "i"}},
+            {"summary": {"$regex": pattern, "$options": "i"}},
+            {"description": {"$regex": pattern, "$options": "i"}},
         ]
 
     if start_date or end_date:

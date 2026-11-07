@@ -51,6 +51,7 @@ class SearchSource:
     display: Callable[[dict], dict]
     rating: Callable[[dict], float] = lambda d: 0.0
     popularity: Callable[[dict], float] = lambda d: 0.0
+    image: Callable[[dict], str | None] = lambda d: None
     # Some collections store is_deleted=False, others may omit it.
     not_deleted: dict = None  # type: ignore[assignment]
 
@@ -66,6 +67,7 @@ class SearchSource:
             aliases=tuple(aliases),
             rating=self.rating(doc),
             popularity=self.popularity(doc),
+            image=self.image(doc) or None,
             display=self.display(doc),
         )
 
@@ -91,6 +93,7 @@ SOURCES: dict[str, SearchSource] = {
             "year": d.get("year"),
         },
         rating=lambda d: _number(_get(d, "rating.anilist")) / 10,
+        image=lambda d: _get(d, "images.poster"),
         not_deleted={"is_deleted": False},
     ),
     "manga": SearchSource(
@@ -106,6 +109,7 @@ SOURCES: dict[str, SearchSource] = {
             "cover_image": d.get("cover_image"),
             "status": d.get("status"),
         },
+        image=lambda d: d.get("cover_image"),
         not_deleted={"is_deleted": {"$ne": True}},
     ),
     "movies": SearchSource(
@@ -124,6 +128,7 @@ SOURCES: dict[str, SearchSource] = {
         },
         rating=lambda d: _number(_get(d, "rating.tmdb")),
         popularity=lambda d: _number(_get(d, "rating.tmdb_vote_count")),
+        image=lambda d: _get(d, "images.poster"),
         not_deleted={"is_deleted": {"$ne": True}},
     ),
     "tv_series": SearchSource(
@@ -146,6 +151,7 @@ SOURCES: dict[str, SearchSource] = {
         },
         rating=lambda d: _number(_get(d, "rating.imdb")),
         popularity=lambda d: _number(_get(d, "rating.imdb_votes")),
+        image=lambda d: _get(d, "images.poster"),
         not_deleted={"is_deleted": {"$ne": True}},
     ),
     "characters": SearchSource(
@@ -163,6 +169,7 @@ SOURCES: dict[str, SearchSource] = {
         },
         # Main characters are what people usually look for.
         popularity=lambda d: 1.0 if d.get("role") == "main" else 0.0,
+        image=lambda d: _get(d, "images.profile"),
         not_deleted={"is_deleted": False},
     ),
     "actors": SearchSource(
@@ -177,6 +184,7 @@ SOURCES: dict[str, SearchSource] = {
             "name": d.get("name"),
             "images": {"profile": _get(d, "images.profile")},
         },
+        image=lambda d: _get(d, "images.profile"),
         not_deleted={"is_deleted": False},
     ),
     "organizations": SearchSource(
@@ -194,6 +202,7 @@ SOURCES: dict[str, SearchSource] = {
             "anime_ids": d.get("anime_ids", []),
             "manga_id": d.get("manga_id"),
         },
+        image=lambda d: _get(d, "images.logo"),
         not_deleted={"is_deleted": {"$ne": True}},
     ),
 }

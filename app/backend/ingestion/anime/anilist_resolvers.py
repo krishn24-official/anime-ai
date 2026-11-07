@@ -38,6 +38,16 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+
+def _anilist_char_match(anilist_char_id) -> dict:
+    """Filter matching a character by AniList id under either stored field name."""
+    return {
+        "$or": [
+            {"source_metadata.anilist_id": anilist_char_id},
+            {"source_metadata.anilist.id": anilist_char_id},
+        ]
+    }
+
 async def resolve_or_create_voice_actor(va_data: dict) -> str | None:
     """
     Resolve a voice_actor _id from AniList staff data.
@@ -160,8 +170,10 @@ async def resolve_or_create_character(
 
     # ── 1. Primary dedup: look up by AniList character id ─────────────────────
     if anilist_char_id:
+        # Older records store the id as source_metadata.anilist.id, newer ones as
+        # source_metadata.anilist_id; match either (missing one created duplicates).
         existing = await char_collection.find_one(
-            {"source_metadata.anilist_id": anilist_char_id, "is_deleted": {"$ne": True}}
+            {**_anilist_char_match(anilist_char_id), "is_deleted": {"$ne": True}}
         )
         if existing:
             # Update the existing document — merge anime_ids and voice_actor_ids
@@ -203,7 +215,9 @@ async def resolve_or_create_character(
             candidates = await char_collection.find(
                 {
                     "is_deleted": {"$ne": True},
+                    # only characters with no AniList id under either field name
                     "source_metadata.anilist_id": {"$exists": False},
+                    "source_metadata.anilist.id": {"$exists": False},
                     "birth_day": incoming_birth_day,
                     "birth_month": incoming_birth_month,
                 }
@@ -268,9 +282,7 @@ async def resolve_or_create_character(
     except DuplicateKeyError:
         # Concurrent insert — re-check by anilist_id
         if anilist_char_id:
-            existing = await char_collection.find_one(
-                {"source_metadata.anilist_id": anilist_char_id}
-            )
+            existing = await char_collection.find_one(_anilist_char_match(anilist_char_id))
             if existing:
                 return str(existing["_id"])
         logger.warning(

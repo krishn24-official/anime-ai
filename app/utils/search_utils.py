@@ -1,24 +1,16 @@
-import re
+"""LEGACY: name filter pattern for the admin list endpoints (they filter with their
+own queries because they include deleted items and review flags).
+
+Uses the same matching as the search module: a word in the name starts with the
+query, ignoring spaces and punctuation ("spiderman" matches "Spider-Man").
+User input is escaped. Ranked search for everything else: app.application.search.
+"""
+
+from app.infrastructure.mongo.regex_search_index import word_prefix_pattern
+
+_MATCH_NOTHING = "(?!)"
 
 
 def build_fuzzy_search_regex(query: str) -> str:
-    """
-    Builds a subsequence matching regex pattern that allows >70% fuzzy matching
-    and ignores spaces/special characters natively.
-
-    Example:
-    - "narto" -> "n.*a.*r.*t.*o" (matches "Naruto")
-    - "spiderman" -> "s.*p.*i.*d.*e.*r.*m.*a.*n" (matches "Spider-Man")
-    """
-    if not query:
-        return ""
-
-    # Strip spaces and special characters
-    clean_query = re.sub(r"[^a-zA-Z0-9]", "", query)
-
-    if not clean_query:
-        # Fallback if query was entirely special characters
-        return re.escape(query)
-
-    # Join each character with '.*' to allow any characters in between
-    return ".*".join(list(clean_query))
+    """Regex pattern (string) for MongoDB name filters. Name kept for existing callers."""
+    return word_prefix_pattern(query or "") or _MATCH_NOTHING

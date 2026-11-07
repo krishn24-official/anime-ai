@@ -1,3 +1,4 @@
+from pymongo.errors import DuplicateKeyError
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
@@ -178,7 +179,7 @@ async def _ingest_movie(tmdb_id: int, log_prefix: str, movies_collection) -> str
     """Core ingestion path for movies. Returns 'saved', 'skipped', or 'failed'."""
     # 1. Existence check by tmdb_id
     existing_by_tmdb = await movies_collection.find_one(
-        {"source_metadata.tmdb_id": tmdb_id, "is_deleted": {"$ne": True}}
+        {"source_metadata.tmdb_id": tmdb_id}  # deleted records count too: a title an admin removed must not be re-imported
     )
 
     if existing_by_tmdb:
@@ -238,14 +239,18 @@ async def _ingest_movie(tmdb_id: int, log_prefix: str, movies_collection) -> str
     doc["cast"] = await reconcile_cast(doc.get("cast", []))
 
     # upsert_movie does the cross-collection duplicate check inside
-    await upsert_movie(doc)
+    try:
+        await upsert_movie(doc)
+    except DuplicateKeyError:
+        # A concurrent run already saved this TMDb id (unique index on tmdb_id).
+        return "skipped"
     return "saved"
 
 
 async def _ingest_tv_series(tmdb_id: int, log_prefix: str, tv_collection) -> str:
     """Core ingestion path for TV series. Returns 'saved', 'skipped', or 'failed'."""
     existing_by_tmdb = await tv_collection.find_one(
-        {"source_metadata.tmdb_id": tmdb_id, "is_deleted": {"$ne": True}}
+        {"source_metadata.tmdb_id": tmdb_id}  # deleted records count too: a title an admin removed must not be re-imported
     )
 
     if existing_by_tmdb:
@@ -298,7 +303,11 @@ async def _ingest_tv_series(tmdb_id: int, log_prefix: str, tv_collection) -> str
     doc["creators"] = await reconcile_creators(doc.get("creators", []))
     doc["cast"] = await reconcile_cast(doc.get("cast", []))
 
-    await upsert_tv_series(doc)
+    try:
+        await upsert_tv_series(doc)
+    except DuplicateKeyError:
+        # A concurrent run already saved this TMDb id (unique index on tmdb_id).
+        return "skipped"
     return "saved"
 
 

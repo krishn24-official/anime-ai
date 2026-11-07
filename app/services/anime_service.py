@@ -1,11 +1,11 @@
 from app.repositories.anime_repository import (
     get_all_anime,
     get_anime_by_id,
-    search_anime,
     get_anime_characters,
     get_character_count,
     get_anime_voice_actors,
 )
+from app.services.search_listing import ranked_documents
 
 
 def _serialize(item: dict) -> dict:
@@ -15,7 +15,10 @@ def _serialize(item: dict) -> dict:
 
 
 async def fetch_all_anime(page: int = 1, limit: int = 50, search: str = None):
-    items, total = await get_all_anime(page, limit, search)
+    if search:  # ranked by relevance, same as the global search bar
+        items, total = await ranked_documents("anime", search, limit, (page - 1) * limit)
+    else:
+        items, total = await get_all_anime(page, limit)
 
     return {
         "items": [_serialize(m) for m in items],
@@ -32,7 +35,8 @@ async def fetch_anime(anime_id: str):
 
 async def fetch_anime_search(query: str):
 
-    return await search_anime(query)
+    items, _ = await ranked_documents("anime", query, limit=20)
+    return items
 
 
 async def fetch_anime_characters(anime_id: str):

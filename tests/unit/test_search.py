@@ -177,3 +177,30 @@ def test_regex_patterns_escape_user_input():
     assert exact_pattern("((") is None
     assert "\\(" not in (word_prefix_pattern("naruto (") or "")  # symbols dropped, not injected
     assert fuzzy_pattern("c++") is not None
+
+
+# ── search_kind (paginated, one kind) ────────────────────────────────────────
+
+
+async def test_search_kind_pages_through_ranked_results():
+    docs = [doc("anime", t) for t in ["Naruto", "Naruto: Shippuden", "Boruto: Naruto Next Generations", "Gate"]]
+    service = SearchService(FakeIndex(docs))
+
+    page1, total = await service.search_kind("naruto", "anime", limit=2)
+    page2, _ = await service.search_kind("naruto", "anime", limit=2, offset=2)
+
+    assert total == 3  # "Gate" does not match
+    assert [d.title for d in page1] == ["Naruto", "Naruto: Shippuden"]
+    assert [d.title for d in page2] == ["Boruto: Naruto Next Generations"]
+
+
+async def test_search_kind_applies_the_same_weak_and_typo_rules():
+    service = SearchService(FakeIndex())
+    assert [d.title for d in (await service.search_kind("itachi", "characters", 10))[0]] == ["Itachi Uchiha"]
+    assert [d.title for d in (await service.search_kind("narto", "anime", 10))[0]] == ["Naruto"]
+
+
+async def test_search_kind_rejects_unknown_kind_and_short_query():
+    service = SearchService(FakeIndex())
+    assert await service.search_kind("naruto", "podcasts", 10) == ([], 0)
+    assert await service.search_kind("n", "anime", 10) == ([], 0)

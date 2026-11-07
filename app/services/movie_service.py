@@ -1,4 +1,5 @@
 from app.repositories.movie_repository import get_all_movies, get_movie_by_id
+from app.services.search_listing import ranked_documents
 
 
 def _serialize(movie: dict) -> dict:
@@ -8,7 +9,10 @@ def _serialize(movie: dict) -> dict:
 
 
 async def fetch_all_movies(page: int = 1, limit: int = 20, search: str = None):
-    movies, total = await get_all_movies(page=page, limit=limit, search=search)
+    if search:  # ranked by relevance, same as the global search bar
+        movies, total = await ranked_documents("movies", search, limit, (page - 1) * limit)
+    else:
+        movies, total = await get_all_movies(page=page, limit=limit)
 
     return {
         "items": [_serialize(m) for m in movies],

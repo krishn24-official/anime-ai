@@ -1,9 +1,9 @@
 from app.repositories.actors_repository import (
     get_all_actors,
     get_actor_by_id,
-    search_actors,
     get_birthdays_by_date_range,
 )
+from app.services.search_listing import ranked_documents
 
 
 async def fetch_all_actors(
@@ -19,7 +19,10 @@ async def fetch_actor(actor_id: str):
 async def search_actor(query: str):
     if not query or len(query) < 2:
         return []
-    return await search_actors(query)
+    items, _ = await ranked_documents(
+        "actors", query, limit=20, projection={"_id": 1, "name": 1, "images.profile": 1}
+    )
+    return items
 
 
 async def fetch_birthdays_by_date_range(start_date: str, end_date: str):

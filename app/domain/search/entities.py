@@ -12,6 +12,19 @@ SEARCH_KINDS: tuple[str, ...] = (
     "organizations",
 )
 
+# Singular content types used elsewhere in the API (ratings, tier lists,
+# relationships) -> search kind.
+KIND_BY_CONTENT_TYPE: dict[str, str] = {
+    "anime": "anime",
+    "manga": "manga",
+    "movie": "movies",
+    "tv_series": "tv_series",
+    "character": "characters",
+    "actor": "actors",
+    "organization": "organizations",
+}
+CONTENT_TYPE_BY_KIND: dict[str, str] = {v: k for k, v in KIND_BY_CONTENT_TYPE.items()}
+
 
 @dataclass(frozen=True)
 class SearchDocument:
@@ -23,6 +36,7 @@ class SearchDocument:
     aliases: tuple[str, ...] = ()
     rating: float = 0.0  # 0-10
     popularity: float = 0.0  # e.g. number of votes; 0 when unknown
+    image: str | None = None  # poster / profile / logo URL
     # Fields the client displays for this kind (kept opaque to the domain).
     display: dict = field(default_factory=dict, compare=False, hash=False)
 

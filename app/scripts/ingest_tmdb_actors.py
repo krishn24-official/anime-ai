@@ -10,6 +10,7 @@ from app.config import TMDB_API_KEY, TMDB_BASE_URL, TMDB_IMAGE_BASE_URL
 from app.db.mongo import connect_db, close_db, get_db
 from app.repositories import actors_repository
 from app.backend.utils.slug import create_slug
+from pymongo.errors import DuplicateKeyError
 
 # TMDB daily export URL format: http://files.tmdb.org/p/exports/person_ids_MM_DD_YYYY.json.gz
 
@@ -26,7 +27,7 @@ async def fetch_tmdb_person(client: httpx.AsyncClient, person_id: int):
 async def process_actor(client: httpx.AsyncClient, person_id: int, db):
     # 1. Check if actor already exists by tmdb_id
     existing_by_tmdb = await db["actors"].find_one(
-        {"tmdb_id": person_id, "is_deleted": False}
+        {"tmdb_id": person_id}  # deleted records count too: a title an admin removed must not be re-imported
     )
     if existing_by_tmdb:
         print(f"Skipping ID {person_id}: Already exists by tmdb_id.")
@@ -89,7 +90,12 @@ async def process_actor(client: httpx.AsyncClient, person_id: int, db):
         },
     }
 
-    await actors_repository.create_actor(doc)
+    try:
+        await actors_repository.create_actor(doc)
+    except DuplicateKeyError:
+        # Another worker inserted this TMDb id first (unique index on tmdb_id).
+        print(f"Skipping {name} (ID {person_id}): inserted concurrently.")
+        return
     print(f"Successfully ingested {name}.")
 
 

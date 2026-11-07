@@ -127,6 +127,16 @@ Follow the Trending module as the reference implementation.
   would exceed `ATLAS_STORAGE_LIMIT_MB`: **Atlas blocks every write on the cluster when
   the storage quota is reached.**
 - `SEARCH_BACKEND=regex` disables Atlas entirely.
+- **One search for everything:** `SearchService.search()` serves the header search bar;
+  `SearchService.search_kind()` serves every other title/character/actor search
+  (Library lists, `/characters/search`, `/actors/search`, `/anime|manga/search`, the
+  admin relationship picker, tier lists), via `app/services/search_listing.py` for the
+  legacy endpoints. Admin list filters use the same matcher (`app/utils/search_utils.py`).
+  Never write a new regex search: call the service.
+- **Frontend:** every search box is `components/search/SearchInput`; debouncing is
+  `hooks/useDebouncedValue`; search-as-you-type with stale-response protection is
+  `hooks/useSearchResults` (`useSearch` for non-list results); pickers that choose a
+  title use `components/search/ContentSearchPicker`.
 
 ## Frontend counterpart (`anime_ai_FE`)
 
