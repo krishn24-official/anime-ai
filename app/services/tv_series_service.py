@@ -24,6 +24,6 @@ async def fetch_all_tv_series(page: int = 1, limit: int = 20, search: str = None
 
 async def fetch_tv_series(series_id: str):
     series = await get_tv_series_by_id(series_id)
-    if not series:
+    if not series or series.get("is_deleted"):  # deleted titles are not public
         return None
     return _serialize(series)

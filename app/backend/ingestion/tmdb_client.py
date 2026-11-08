@@ -174,14 +174,44 @@ async def get_tv_changes(start_date: str, end_date: str, page: int = 1) -> dict:
 # --- Details ---
 
 
+# English and language-neutral videos come with the details request. Without
+# include_video_language TMDb returns only English videos, so most non-English
+# titles had no trailer at all.
+DEFAULT_VIDEO_LANGUAGES = "en,null"
+
+
+async def _add_original_language_videos(kind: str, details: dict | None) -> dict | None:
+    """If no trailer was found and the title is not English, also fetch videos in
+    its original language (e.g. Japanese trailers for anime films)."""
+    if not details:
+        return details
+    from app.domain.media.videos import TRAILER_TYPES
+
+    original = details.get("original_language")
+    videos = details.setdefault("videos", {}).setdefault("results", [])
+    has_trailer = any(v.get("site") == "YouTube" and v.get("type") in TRAILER_TYPES for v in videos)
+    if original and original != "en" and not has_trailer:
+        extra = await _get(f"/{kind}/{details['id']}/videos", {"include_video_language": f"{original},null"})
+        if extra:
+            known = {v.get("key") for v in videos}
+            videos.extend(v for v in extra.get("results", []) if v.get("key") not in known)
+    return details
+
+
 async def get_movie_details(tmdb_id: int) -> dict | None:
-    return await _get(
-        f"/movie/{tmdb_id}", {"append_to_response": "credits,videos,release_dates"}
+    details = await _get(
+        f"/movie/{tmdb_id}",
+        {"append_to_response": "credits,videos,release_dates,keywords", "include_video_language": DEFAULT_VIDEO_LANGUAGES},
     )
+    return await _add_original_language_videos("movie", details)
 
 
 async def get_tv_details(tmdb_id: int) -> dict | None:
-    return await _get(f"/tv/{tmdb_id}", {"append_to_response": "credits,videos"})
+    details = await _get(
+        f"/tv/{tmdb_id}",
+        {"append_to_response": "credits,videos,keywords", "include_video_language": DEFAULT_VIDEO_LANGUAGES},
+    )
+    return await _add_original_language_videos("tv", details)
 
 
 async def get_person_details(tmdb_id: int) -> dict | None:

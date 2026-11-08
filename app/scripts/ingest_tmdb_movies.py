@@ -1,3 +1,4 @@
+from app.domain.media.adult import is_adult_tmdb, tmdb_keyword_ids
 from pymongo.errors import DuplicateKeyError
 import asyncio
 import argparse
@@ -6,6 +7,7 @@ import httpx
 
 from app.config import TMDB_API_KEY, TMDB_BASE_URL
 from app.db.mongo import connect_db, close_db, get_db
+from app.backend.ingestion.tmdb_client import get_movie_details
 from app.backend.ingestion.tmdb_mapper import map_movie
 from app.services.cast_reconciliation_service import (
     reconcile_cast,
@@ -15,12 +17,8 @@ from app.services.cast_reconciliation_service import (
 
 
 async def fetch_tmdb_movie(client: httpx.AsyncClient, movie_id: int):
-    url = f"{TMDB_BASE_URL}/movie/{movie_id}"
-    params = {"api_key": TMDB_API_KEY, "append_to_response": "credits,videos"}
-    response = await client.get(url, params=params)
-    if response.status_code == 200:
-        return response.json()
-    return None
+    # Same request as daily discovery (credits, release dates, language-aware videos).
+    return await get_movie_details(movie_id)
 
 
 async def process_movie(client: httpx.AsyncClient, movie_id: int, db):
@@ -60,6 +58,10 @@ async def process_movie(client: httpx.AsyncClient, movie_id: int, db):
         return
 
     print(f"Ingesting: {title} (ID {movie_id})...")
+
+    if is_adult_tmdb(movie_data.get("adult"), tmdb_keyword_ids(movie_data), movie_data.get("vote_count")):
+        print(f"Skipping {title} (ID {movie_id}): adult content.")
+        return
 
     # 4. Extract data using map_movie
     doc = map_movie(movie_data)

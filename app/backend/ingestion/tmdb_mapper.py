@@ -1,25 +1,15 @@
 from app.backend.ingestion.tmdb_client import image_url
 from app.backend.utils.slug import create_slug
+from app.domain.media.videos import organize_tmdb_videos
 
 
-def _extract_trailers(videos: dict | None) -> list[dict]:
-    if not videos:
-        return []
-
-    results = videos.get("results", [])
-    trailers = []
-
-    for video in results:
-        if video.get("site") == "YouTube":
-            label = video.get("type") or "Trailer"
-            trailers.append(
-                {
-                    "url": f"https://www.youtube.com/watch?v={video['key']}",
-                    "label": label,
-                }
-            )
-
-    return trailers
+def extract_videos(details: dict) -> dict:
+    """{"trailers": [...], "extras": [...]} from a TMDb details payload (see domain.media.videos)."""
+    results = (details.get("videos") or {}).get("results", [])
+    original = details.get("original_language")
+    preferred = ("en",) + ((original,) if original and original != "en" else ())
+    trailers, extras = organize_tmdb_videos(results, preferred)
+    return {"trailers": trailers, "extras": extras}
 
 
 def _extract_cast(credits: dict | None, limit: int = 10) -> list[dict]:
@@ -130,7 +120,7 @@ def map_movie(details: dict, max_cast: int = 10) -> dict:
             "poster": image_url(details.get("poster_path")),
             "backdrop": image_url(details.get("backdrop_path"), "w1280"),
         },
-        "trailers": _extract_trailers(details.get("videos")),
+        **extract_videos(details),
         "status": details.get("status"),
         "tagline": details.get("tagline"),
         "budget": details.get("budget"),
@@ -178,7 +168,7 @@ def map_tv_series(details: dict, max_cast: int = 10) -> dict:
             "poster": image_url(details.get("poster_path")),
             "backdrop": image_url(details.get("backdrop_path"), "w1280"),
         },
-        "trailers": _extract_trailers(details.get("videos")),
+        **extract_videos(details),
         "status": details.get("status"),
         "tagline": details.get("tagline"),
         "content_type": "tv_series",

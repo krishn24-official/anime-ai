@@ -24,6 +24,6 @@ async def fetch_all_movies(page: int = 1, limit: int = 20, search: str = None):
 
 async def fetch_movie(movie_id: str):
     movie = await get_movie_by_id(movie_id)
-    if not movie:
+    if not movie or movie.get("is_deleted"):  # deleted titles are not public
         return None
     return _serialize(movie)

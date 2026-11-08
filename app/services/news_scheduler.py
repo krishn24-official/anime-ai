@@ -92,6 +92,32 @@ def start_news_scheduler():
         id="daily_discovery_sync",
     )
 
+    # Refresh TMDb titles after import: new trailers, posters, shifted release dates.
+    # Upcoming/recent titles first; first run after one interval (no startup spike).
+    async def _tmdb_refresh_job():
+        from app.services.tmdb_video_refresh_service import refresh
+
+        try:
+            print(f"[scheduler] TMDb refresh movies: {await refresh('movie', limit=600)}")
+            print(f"[scheduler] TMDb refresh tv: {await refresh('tv', limit=200)}")
+        except Exception as e:
+            print(f"[scheduler] failed to refresh TMDb titles: {e}")
+
+    scheduler.add_job(_tmdb_refresh_job, "interval", hours=24, id="tmdb_video_refresh")
+
+    # Weekly: remove titles TMDb/AniList (re)classified as adult after import.
+    async def _adult_content_job():
+        from app.services.adult_content_service import find_all, remove
+
+        try:
+            found = await find_all()
+            if any(found.values()):
+                print(f"[scheduler] Adult content removal: {await remove(found)}")
+        except Exception as e:
+            print(f"[scheduler] failed to run adult content removal: {e}")
+
+    scheduler.add_job(_adult_content_job, "interval", days=7, id="adult_content_removal")
+
     # Rebuild the search catalog so items added by ingestion / TMDb sync become
     # searchable via Atlas. Admin edits are synced immediately (keeps_search_in_sync).
     # First run after one interval (no startup memory spike), and only once the
