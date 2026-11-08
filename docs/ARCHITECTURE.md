@@ -100,6 +100,9 @@ Follow the Trending module as the reference implementation.
 | Search (global search bar, `GET /search`) | ✅ migrated (see [Global search](#global-search)) |
 | Home hero feed (`GET /home/hero`: admin picks, new trailers, news, upcoming releases) | ✅ new module (`domain/home`, `application/home`, `infrastructure/mongo/hero_source.py`) |
 | Recommendations ("if you liked X": chatbot tool `get_similar_titles`) | ✅ new module (`domain/recommendations`, `application/recommendations`, AniList/TMDb adapters in `infrastructure/external`) |
+| Episode & chapter guide (exact chapter/episode facts + keyword retrieval for the lore tool) | ✅ new module (`domain/guide`, `application/guide`, `infrastructure/mongo/chapter_guide.py`); lore vector search itself is still legacy |
+| Chat models (Gemini → Groq fallback, free tiers; Mistral supported, off by default) | ✅ new module (`domain/llm`, `application/llm`, adapters in `infrastructure/llm`); used by the chatbot agent. Order/keys: `LLM_PROVIDERS`, `GROQ_API_KEY`, `MISTRAL_API_KEY` |
+| Lore rebuild (RAG index from episode wiki pages, no PDF step) | ✅ new module (`domain/lore`, `application/lore`, `infrastructure/wiki`, `infrastructure/mongo/lore_rebuild_stores.py`); run `python -m app.scripts.rebuild_lore --series <id> --apply`. Supersedes `scripts/ingest_*_episodes*.py` |
 | News de-duplication (same story from several sources) | 🟡 rule + embedding port in `domain/news`; the news pipeline itself is still legacy |
 | Auth & users | ⏳ legacy |
 | Content: ratings, watchlist, comments, releases | ⏳ legacy |

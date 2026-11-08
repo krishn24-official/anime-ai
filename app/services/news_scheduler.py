@@ -117,6 +117,17 @@ def start_news_scheduler():
 
     scheduler.add_job(_tmdb_changes_job, "interval", hours=6, id="tmdb_changes_refresh")
 
+    # Daily: keep only the last 15 days of news (Atlas free tier is 512 MB).
+    async def _news_retention_job():
+        from app.services.data_retention_service import prune_news
+
+        try:
+            print(f"[scheduler] News retention: {await prune_news(apply=True, backup=False)}")
+        except Exception as e:
+            print(f"[scheduler] failed to prune old news: {e}")
+
+    scheduler.add_job(_news_retention_job, "interval", hours=24, id="news_retention")
+
     # Weekly: remove titles TMDb/AniList (re)classified as adult after import.
     async def _adult_content_job():
         from app.services.adult_content_service import find_all, remove

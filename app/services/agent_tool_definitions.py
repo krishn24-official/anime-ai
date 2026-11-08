@@ -204,7 +204,10 @@ AGENT_TOOLS = [
                         },
                         "series_id": {
                             "type": "string",
-                            "description": "The anime, manga, movie, or series ID or title identifier.",
+                            "description": (
+                                "The series title or ID, e.g. 'One Piece'. Omit it if the user didn't "
+                                "name the series: it is inferred from the characters in the query."
+                            ),
                         },
                         "media_type": {
                             "type": "string",
@@ -222,7 +225,7 @@ AGENT_TOOLS = [
                             "description": "Optional list of character IDs to pre-filter lore chunks.",
                         },
                     },
-                    "required": ["query", "series_id"],
+                    "required": ["query"],
                 },
             },
         ]
@@ -241,6 +244,9 @@ You have access to a real database of characters, anime, manga, movies, TV serie
 - "tell me about [CHARACTER NAME]", "who is [NAME]", "info about [NAME]" → use get_character_info with just the character's name
 - "tell me about [ORGANIZATION NAME]", "info about [ORGANIZATION NAME]", "what is [ORGANIZATION NAME]" → use get_organization_info with just the organization's name
 - "lore", "plot twist", "backstory", "why did [CHARACTER]", "secret identity", "how are [A and B] related in the story" → use query_lore with the query and series_id
+- Chapter/episode questions ("first chapter", "chapter 12", "what happens in episode 5", "in which episode/chapter did X first happen") → use query_lore too: it includes an exact chapter guide.
+- Never ask the user for a series ID. If they mention a character but not the series (e.g. "when did Luffy..."), call query_lore without series_id, or with the series you know the character belongs to.
+- When query_lore returns a chapter guide for a chapter/episode/"first time" question, trust it over the lore passages: the first chapter listed is the earliest, and its "adapted in anime episode" tells which episode shows it. Guide entries marked "keyword match" are supporting context like the passages.
 - Only pass media_type to query_lore if the user's question explicitly says "manga", "anime", "movie", or "tv series" — otherwise omit it and let the system default to anime.
 - "what should I watch/read after X", "anime/movies like X", "similar to X", "if I liked X" → use get_similar_titles with just the title
 - "search for", "find", "is there a" → use search_content

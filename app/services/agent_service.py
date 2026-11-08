@@ -1,19 +1,20 @@
 """
-Agentic AI service using Gemini function-calling.
+Agentic AI service: tool calling over whichever chat model is available.
 
 The loop:
-  1. Send user message + tool definitions to Gemini
-  2. Gemini responds with tool call(s) it wants to make
+  1. Send the user message + tool definitions to the model (Gemini, else Groq, else Mistral)
+  2. The model asks for tool call(s)
   3. We execute those tools against our real DB
-  4. Send results back to Gemini
-  5. Repeat until Gemini produces a final text response (no more tool calls)
+  4. Send results back to the model
+  5. Repeat until it produces a final text response (no more tool calls)
 """
 
 import re
-from google import genai
-from google.genai import types
 
-from app.config import GEMINI_API_KEY, GEMINI_MODEL_NAME
+from app import container
+from app.application.llm.service import AllModelsUnavailable
+from app.domain.llm.entities import ChatMessage, ToolSpec
+from app.domain.guide.question import is_exact_question
 from app.services.agent_tool_definitions import AGENT_TOOLS, AGENT_SYSTEM_PROMPT
 from app.services.agent_tools import execute_tool
 
@@ -84,176 +85,96 @@ def _detect_intent(message: str):
     similar = _similar_title_args(message)
     if similar:
         return "get_similar_titles", similar
+    # "Naruto's first chapter name", "what happens in episode 5", "when did Luffy first
+    # use Gear 5": answered exactly by the episode & chapter guide inside query_lore.
+    if is_exact_question(message):
+        return "query_lore", {"query": message}
     for pattern, tool_name, arg_builder in INTENT_PATTERNS:
         if pattern.search(message):
             return tool_name, arg_builder(message)
     return None
 
 
-def _build_gemini_tools():
-    """Convert our tool definitions dict into Gemini SDK tool objects."""
+def _tool_specs() -> list[ToolSpec]:
     return [
-        types.Tool(
-            function_declarations=[
-                types.FunctionDeclaration(
-                    name=fn["name"],
-                    description=fn["description"],
-                    parameters=fn["parameters"],
-                )
-                for fn in tool_group["function_declarations"]
-            ]
-        )
-        for tool_group in AGENT_TOOLS
+        ToolSpec(name=fn["name"], description=fn["description"], parameters=fn["parameters"])
+        for group in AGENT_TOOLS
+        for fn in group["function_declarations"]
     ]
+
+
+SYNTHESIS_PROMPT = (
+    "You are a helpful entertainment assistant. "
+    "The user asked a question and we fetched relevant data from our database. "
+    "Synthesize the data into a clear, friendly, conversational response. "
+    "If it contains an 'episode & chapter guide', answer from that exact data "
+    "(chapter/episode numbers and titles) before any lore passages. "
+    "If the data is empty or says 'No data available', say so honestly."
+)
+BUSY_ANSWER = "All my AI models are busy or out of their daily free quota right now. Please try again later."
+
+
+def _unique(names: list[str]) -> list[str]:
+    return list(dict.fromkeys(names))
 
 
 async def run_agent(user_message: str) -> dict:
     """
     Run the agentic loop for a user message.
-    Returns {"answer": str, "tools_used": list[str], "iterations": int}
+    Returns {"answer": str, "tools_used": list[str], "iterations": int, "model": str | None}
     """
+    model = container.chat_model()
 
-    if not GEMINI_API_KEY:
-        return {
-            "answer": "AI agent is not configured. Please set GEMINI_API_KEY.",
-            "tools_used": [],
-            "iterations": 0,
-        }
-
-    _client = genai.Client(api_key=GEMINI_API_KEY)
-
-    # --- Fast path: intent detection ---
+    # --- Fast path: obvious intents go straight to their tool ---
     intent = _detect_intent(user_message)
     if intent:
         tool_name, tool_args = intent
         print(f"[agent] intent detected → {tool_name}({tool_args})")
-
         tool_result = await execute_tool(tool_name, tool_args)
-
-        synthesis_prompt = (
+        prompt = (
             f"User question: {user_message}\n\n"
             f"Data from database ({tool_name}):\n{tool_result}\n\n"
             "Please provide a helpful response based on this data."
         )
-
         try:
-            response = await _client.aio.models.generate_content(
-                model=GEMINI_MODEL_NAME,
-                contents=synthesis_prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=(
-                        "You are a helpful entertainment assistant. "
-                        "The user asked a question and we fetched relevant data from our database. "
-                        "Synthesize the data into a clear, friendly, conversational response. "
-                        "If the data is empty or says 'No data available', say so honestly."
-                    )
-                ),
-            )
-            answer = response.text.strip()
-        except Exception:
-            # Quota hit or error — return raw data directly, still useful
-            answer = tool_result
+            reply = await model.complete(SYNTHESIS_PROMPT, [ChatMessage(role="user", content=prompt)])
+            answer, used_model = reply.text or tool_result, reply.provider
+        except AllModelsUnavailable:
+            # Every model is out of quota: the raw data still answers the question.
+            answer, used_model = tool_result, None
+        return {"answer": answer, "tools_used": [tool_name], "iterations": 1, "model": used_model}
 
-        return {
-            "answer": answer,
-            "tools_used": [tool_name],
-            "iterations": 1,
-        }
+    # --- Slow path: tool-calling loop (whichever model is available drives it) ---
+    tools = _tool_specs()
+    messages = [ChatMessage(role="user", content=user_message)]
+    tools_used: list[str] = []
+    used_model = None
 
-    # --- Slow path: full Gemini tool-calling loop ---
-    tools = _build_gemini_tools()
-
-    # Conversation history for multi-turn tool calling
-    messages = [
-        types.Content(role="user", parts=[types.Part.from_text(text=user_message)])
-    ]
-
-    tools_used = []
-    iterations = 0
-
-    while iterations < MAX_ITERATIONS:
-        iterations += 1
-
+    for iteration in range(1, MAX_ITERATIONS + 1):
         try:
-            response = await _client.aio.models.generate_content(
-                model=GEMINI_MODEL_NAME,
-                contents=messages,
-                config=types.GenerateContentConfig(
-                    system_instruction=AGENT_SYSTEM_PROMPT,
-                    tools=tools,
-                    automatic_function_calling=types.AutomaticFunctionCallingConfig(
-                        disable=True
-                    ),
-                ),
-            )
-        except Exception as e:
+            reply = await model.complete(AGENT_SYSTEM_PROMPT, messages, tools)
+        except AllModelsUnavailable:
+            return {"answer": BUSY_ANSWER, "tools_used": _unique(tools_used), "iterations": iteration, "model": None}
+        used_model = reply.provider
+
+        if not reply.tool_calls:  # final answer
             return {
-                "answer": f"Agent error: {e}",
-                "tools_used": tools_used,
-                "iterations": iterations,
+                "answer": reply.text or "I couldn't find relevant information.",
+                "tools_used": _unique(tools_used),
+                "iterations": iteration,
+                "model": used_model,
             }
 
-        candidate = response.candidates[0] if response.candidates else None
-        parts = (
-            candidate.content.parts
-            if candidate and candidate.content and candidate.content.parts is not None
-            else []
-        )
-
-        # Check if Gemini wants to call tools
-        tool_call_parts = [p for p in parts if p.function_call]
-
-        if not tool_call_parts:
-            # No tool calls — this is the final answer
-            final_text = "".join(p.text for p in parts if p.text).strip()
-
-            # Deduplicate tools_used while preserving order
-            seen = set()
-            unique_tools = []
-            for t in tools_used:
-                if t not in seen:
-                    seen.add(t)
-                    unique_tools.append(t)
-
-            return {
-                "answer": final_text or "I couldn't find relevant information.",
-                "tools_used": unique_tools,
-                "iterations": iterations,
-            }
-
-        # Execute all tool calls Gemini requested
-        tool_results = []
-
-        for part in tool_call_parts:
-            fn = part.function_call
-            tool_name = fn.name
-            tool_args = dict(fn.args) if fn.args else {}
-
-            tools_used.append(tool_name)
-            print(f"[agent] calling tool: {tool_name}({tool_args})")
-
-            result_str = await execute_tool(tool_name, tool_args)
-
-            tool_results.append(
-                types.Part.from_function_response(
-                    name=tool_name, response={"result": result_str}
-                )
-            )
-
-        # Add Gemini's tool-call message + our results to the conversation
-        messages.append(types.Content(role="model", parts=parts))
-        messages.append(types.Content(role="user", parts=tool_results))
-
-    # Safety cap reached
-    seen = set()
-    unique_tools = []
-    for t in tools_used:
-        if t not in seen:
-            seen.add(t)
-            unique_tools.append(t)
+        messages.append(ChatMessage(role="assistant", content=reply.text, tool_calls=reply.tool_calls))
+        for call in reply.tool_calls:
+            tools_used.append(call.name)
+            print(f"[agent] {reply.provider} calls tool: {call.name}({call.args})")
+            result = await execute_tool(call.name, call.args)
+            messages.append(ChatMessage(role="tool", content=result, tool_call_id=call.id, name=call.name))
 
     return {
         "answer": "I reached the maximum number of reasoning steps. Please try a simpler question.",
-        "tools_used": unique_tools,
-        "iterations": iterations,
+        "tools_used": _unique(tools_used),
+        "iterations": MAX_ITERATIONS,
+        "model": used_model,
     }

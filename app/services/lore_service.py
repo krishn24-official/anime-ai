@@ -722,6 +722,16 @@ async def resolve_series_id(raw_input: str, media_type: str | None = None) -> st
     return fallback_id
 
 
+# Scraped episode pages without a synopsis: only metadata, no story. Indexing them
+# fills search results with empty passages that crowd out real ones.
+PLACEHOLDER_MARKERS = ("detailed synopsis unavailable",)
+
+
+def is_placeholder_section(text: str) -> bool:
+    lowered = text.lower()
+    return any(marker in lowered for marker in PLACEHOLDER_MARKERS)
+
+
 def process_lore_pdf(
     file_bytes: bytes,
     series_id: str,
@@ -747,7 +757,7 @@ def process_lore_pdf(
     for section in sections:
         sec_title = section.get("section_title")
         sec_text = section.get("text", "")
-        if not sec_text.strip():
+        if not sec_text.strip() or is_placeholder_section(sec_text):
             continue
 
         # Extract chapter-specific characters if available in the text

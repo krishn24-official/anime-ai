@@ -7,18 +7,38 @@ Interface code (FastAPI routers, schedulers, scripts) gets use cases from this m
 
 from functools import lru_cache
 
+from app.application.guide.service import GuideService
 from app.application.home.service import HomeService
+from app.application.llm.service import FallbackChatModel
+from app.application.lore.rebuild import LoreRebuildService
 from app.application.recommendations.service import RecommendationService
 from app.application.search.service import SearchService
 from app.application.trending.service import TrendingService
-from app.config import NEWS_SEMANTIC_DEDUP, SEARCH_BACKEND, SEARCH_CATALOG_KINDS, TMDB_API_KEY
+from app.config import (
+    GEMINI_API_KEY,
+    GEMINI_MODEL_NAME,
+    GROQ_API_KEY,
+    GROQ_MODEL,
+    LLM_PROVIDERS,
+    MISTRAL_API_KEY,
+    MISTRAL_MODEL,
+    NEWS_SEMANTIC_DEDUP,
+    SEARCH_BACKEND,
+    SEARCH_CATALOG_KINDS,
+    TMDB_API_KEY,
+)
 from app.db.mongo import get_db
 from app.infrastructure.embeddings.threaded_embedder import ThreadedEmbedder
 from app.infrastructure.external.anilist_recommendations import AniListRecommendations
 from app.infrastructure.external.tmdb_recommendations import TmdbRecommendations
+from app.infrastructure.llm.gemini_model import GeminiChatModel
+from app.infrastructure.llm.openai_compatible_model import GROQ_URL, MISTRAL_URL, OpenAICompatibleChatModel
 from app.infrastructure.mongo.atlas_search_index import AtlasSearchIndex
+from app.infrastructure.mongo.chapter_guide import MongoChapterGuide
 from app.infrastructure.mongo.content_catalog import MongoContentCatalog
 from app.infrastructure.mongo.hero_source import MongoHeroSource
+from app.infrastructure.mongo.lore_rebuild_stores import MongoEpisodeCatalog, MongoLoreStore
+from app.infrastructure.wiki.fandom_episode_source import FandomEpisodeSource
 from app.infrastructure.mongo.recommendation_catalog import MongoRecommendationCatalog
 from app.infrastructure.mongo.regex_search_index import MongoRegexSearchIndex
 from app.infrastructure.mongo.search_catalog import MongoSearchCatalog
@@ -97,4 +117,33 @@ def recommendation_service() -> RecommendationService:
             "movie": TmdbRecommendations(TMDB_API_KEY, "movie"),
             "tv_series": TmdbRecommendations(TMDB_API_KEY, "tv_series"),
         },
+    )
+
+
+@lru_cache(maxsize=None)
+def guide_service() -> GuideService:
+    return GuideService(MongoChapterGuide(get_db))
+
+
+@lru_cache(maxsize=None)
+def chat_model() -> FallbackChatModel:
+    """Gemini -> Groq -> Mistral (order from LLM_PROVIDERS); providers without a key are left out."""
+    available = {
+        "gemini": (GEMINI_API_KEY, lambda: GeminiChatModel(GEMINI_API_KEY, GEMINI_MODEL_NAME)),
+        "groq": (GROQ_API_KEY, lambda: OpenAICompatibleChatModel("groq", GROQ_URL, GROQ_API_KEY, GROQ_MODEL)),
+        "mistral": (MISTRAL_API_KEY, lambda: OpenAICompatibleChatModel("mistral", MISTRAL_URL, MISTRAL_API_KEY, MISTRAL_MODEL)),
+    }
+    models = [build() for name in LLM_PROVIDERS if name in available for key, build in [available[name]] if key]
+    return FallbackChatModel(models)
+
+
+def lore_rebuild_service() -> LoreRebuildService:
+    """Used by app/scripts/rebuild_lore.py; embeds with the same model lore search queries use."""
+    from app.services.lore_service import lore_embedder
+
+    return LoreRebuildService(
+        catalog=MongoEpisodeCatalog(get_db),
+        source=FandomEpisodeSource(),
+        embedder=ThreadedEmbedder(lore_embedder.embed_chunks),
+        store=MongoLoreStore(get_db),
     )

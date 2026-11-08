@@ -8,6 +8,16 @@ MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "anime_ai")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash-lite")
 
+# ── Chat model fallback (free tiers) ──────────────────
+# Tried in this order; a provider without a key, or out of quota, is skipped.
+# Mistral is supported but off by default until its free plan works for the key:
+# set LLM_PROVIDERS=gemini,groq,mistral to turn it on.
+LLM_PROVIDERS = [p.strip() for p in os.getenv("LLM_PROVIDERS", "gemini,groq").split(",") if p.strip()]
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")  # free tier, supports tool calling
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+MISTRAL_MODEL = os.getenv("MISTRAL_MODEL", "mistral-small-latest")
+
 # ── OMDb ──────────────────────────────────────────────
 OMDB_API_KEY = os.getenv("OMDB_API_KEY")
 OMDB_BASE_URL = "https://www.omdbapi.com/"

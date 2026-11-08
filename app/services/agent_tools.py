@@ -4,6 +4,7 @@ Each function is the actual execution of a tool call from Gemini.
 """
 
 import json
+import re
 from datetime import datetime
 
 from app.repositories.home_repository import (
@@ -285,7 +286,7 @@ async def tool_get_organization_info(name: str) -> str:
 
 async def tool_query_lore(
     query: str,
-    series_id: str,
+    series_id: str = "",
     media_type: str | None = None,
     character_ids: list[str] | None = None,
 ) -> str:
@@ -293,8 +294,24 @@ async def tool_query_lore(
     Executes a vector search query against lore chunks and returns
     formatted markdown context.
     """
+    from app import container
     from app.services import lore_service
 
+    if not series_id:  # "when did Luffy..." -> the series of the characters named
+        series_id = await _infer_series(query)
+        if not series_id:
+            return "Couldn't tell which series this is about. Ask the user to name the series."
+
+    # Exact facts first (chapter/episode lookups vector search can't do), then
+    # semantically similar lore passages. Either one alone is still useful.
+    parts = []
+    try:
+        resolved = await lore_service.resolve_series_id(series_id, media_type=media_type)
+        facts = await container.guide_service().facts(resolved, query)
+        if facts:
+            parts.append(format_guide_facts(facts))
+    except Exception as e:
+        print(f"[agent] chapter guide lookup failed: {e}")
     try:
         results = await lore_service.query_lore(
             query=query,
@@ -302,12 +319,65 @@ async def tool_query_lore(
             media_type=media_type,
             character_ids=character_ids,
         )
-        if not results:
-            return f"No relevant lore found for '{query}' in series '{series_id}'."
-
-        return lore_service.format_lore_context(results)
+        if results:
+            parts.append("## Related lore passages\n" + lore_service.format_lore_context(results))
     except Exception as e:
-        return f"Error querying lore: {e}"
+        print(f"[agent] lore vector search failed: {e}")
+    return "\n\n".join(parts) or f"No relevant lore found for '{query}' in series '{series_id}'."
+
+
+async def _infer_series(query: str) -> str | None:
+    """The series a question is about: a series with lore named in it or owning a
+    character named in it; else the best anime/manga title match."""
+    from app import container
+    from app.domain.guide.question import parse_guide_question
+    from app.domain.search.entities import CONTENT_TYPE_BY_KIND
+    from app.services.chat_service import _extract_candidate_series_ids
+
+    # 1. A series named in the question wins ("dragon ball first chapter"): otherwise a
+    #    character guess could pick the wrong show (Monkey D. *Dragon* -> One Piece).
+    words = set(re.findall(r"[a-z0-9]+", query.lower()))
+    terms = " ".join(parse_guide_question(query).terms)  # "dragon ball first chapter" -> "dragon ball"
+    if terms:
+        results = await container.search_service().search(terms)
+        hits = ([results.top] if results.top else []) + [h for hs in results.by_kind.values() for h in hs]
+        for h in hits:
+            title_words = set(re.findall(r"[a-z0-9]+", h.document.title.lower()))
+            if CONTENT_TYPE_BY_KIND.get(h.document.kind) in ("anime", "manga") and title_words and title_words <= words:
+                return h.document.id
+    # 2. Otherwise the series of a character named in it ("when did Luffy ...").
+    candidates = await _extract_candidate_series_ids(query=query)
+    return candidates[0] if candidates else None
+
+
+def format_guide_facts(facts) -> str:
+    lines = [f"## {facts.series_title} episode & chapter guide (exact data; {facts.note})"]
+    for e in facts.episodes:
+        title = f', episode title "{e.title}"' if e.title else ""
+        covered = e.chapters_covered or ""
+        extra = ", ".join(x for x in (
+            _arc(e.arc), "filler" if e.filler else "",
+            (f"covers {covered}" if covered.lower().startswith("chapter") else f"covers manga chapter {covered}") if covered else "",
+        ) if x)
+        lines.append(f"- Episode {e.number}{title}" + (f" ({extra})" if extra else ""))
+        if e.summary:
+            lines.append(f"  Summary: {e.summary.strip()}")
+    for c in facts.chapters:
+        title = f', chapter title "{c.title}"' if c.title else ""
+        arc = f" ({_arc(c.arc)})" if c.arc else ""
+        episodes = ", ".join(map(str, c.anime_episodes))
+        adapted = f"; adapted in anime episode {episodes}" if episodes else ""
+        lines.append(f"- Chapter {c.number}{title}{arc}{adapted}")
+        if c.summary:
+            lines.append(f"  Summary: {c.summary.strip()}")
+    return "\n".join(lines)
+
+
+def _arc(arc: str | None) -> str:
+    """'Wano' -> 'Wano arc'; 'Agent of the Shinigami arc' stays as is."""
+    if not arc:
+        return ""
+    return arc if arc.lower().endswith("arc") else f"{arc} arc"
 
 
 # --- Tool dispatcher ---
