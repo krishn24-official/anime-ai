@@ -103,6 +103,11 @@ def _tool_specs() -> list[ToolSpec]:
     ]
 
 
+# The chat bubble renders only **bold**, *italics* and `code`, line by line.
+FORMAT_RULE = (
+    " Format for a chat bubble: short paragraphs and simple bullet lists ('- '), "
+    "**bold** for names; no tables, no '#' headings."
+)
 SYNTHESIS_PROMPT = (
     "You are a helpful entertainment assistant. "
     "The user asked a question and we fetched relevant data from our database. "
@@ -110,8 +115,16 @@ SYNTHESIS_PROMPT = (
     "If it contains an 'episode & chapter guide', answer from that exact data "
     "(chapter/episode numbers and titles) before any lore passages. "
     "If the data is empty or says 'No data available', say so honestly."
-)
+) + FORMAT_RULE
 BUSY_ANSWER = "All my AI models are busy or out of their daily free quota right now. Please try again later."
+ANSWER_NOW = "You have enough information. Answer the user's question now from the tool results above, without calling more tools."
+
+# Some models (gpt-oss) emit narrow/non-breaking spaces and hyphens that render as no gap.
+_PLAIN = str.maketrans({" ": " ", " ": " ", " ": " ", " ": " ", " ": " ", "‑": "-"})
+
+
+def _clean(text: str) -> str:
+    return text.translate(_PLAIN).strip()
 
 
 def _unique(names: list[str]) -> list[str]:
@@ -142,24 +155,29 @@ async def run_agent(user_message: str) -> dict:
         except AllModelsUnavailable:
             # Every model is out of quota: the raw data still answers the question.
             answer, used_model = tool_result, None
-        return {"answer": answer, "tools_used": [tool_name], "iterations": 1, "model": used_model}
+        return {"answer": _clean(answer), "tools_used": [tool_name], "iterations": 1, "model": used_model}
 
     # --- Slow path: tool-calling loop (whichever model is available drives it) ---
     tools = _tool_specs()
+    system = AGENT_SYSTEM_PROMPT + FORMAT_RULE
     messages = [ChatMessage(role="user", content=user_message)]
     tools_used: list[str] = []
+    seen: dict[str, str] = {}  # "tool(args)" -> result, so a repeated call is not run again
     used_model = None
 
     for iteration in range(1, MAX_ITERATIONS + 1):
+        last = iteration == MAX_ITERATIONS
+        if last:  # out of steps: no more tools, the model must answer from what it gathered
+            messages.append(ChatMessage(role="user", content=ANSWER_NOW))
         try:
-            reply = await model.complete(AGENT_SYSTEM_PROMPT, messages, tools)
+            reply = await model.complete(system, messages, None if last else tools)
         except AllModelsUnavailable:
             return {"answer": BUSY_ANSWER, "tools_used": _unique(tools_used), "iterations": iteration, "model": None}
         used_model = reply.provider
 
-        if not reply.tool_calls:  # final answer
+        if not reply.tool_calls or last:  # final answer
             return {
-                "answer": reply.text or "I couldn't find relevant information.",
+                "answer": _clean(reply.text) or "I couldn't find relevant information.",
                 "tools_used": _unique(tools_used),
                 "iterations": iteration,
                 "model": used_model,
@@ -167,14 +185,11 @@ async def run_agent(user_message: str) -> dict:
 
         messages.append(ChatMessage(role="assistant", content=reply.text, tool_calls=reply.tool_calls))
         for call in reply.tool_calls:
-            tools_used.append(call.name)
-            print(f"[agent] {reply.provider} calls tool: {call.name}({call.args})")
-            result = await execute_tool(call.name, call.args)
+            key = f"{call.name}({sorted(call.args.items())})"
+            if key in seen:
+                result = "You already have this result above. " + ANSWER_NOW
+            else:
+                tools_used.append(call.name)
+                print(f"[agent] {reply.provider} calls tool: {call.name}({call.args})")
+                result = seen[key] = await execute_tool(call.name, call.args)
             messages.append(ChatMessage(role="tool", content=result, tool_call_id=call.id, name=call.name))
-
-    return {
-        "answer": "I reached the maximum number of reasoning steps. Please try a simpler question.",
-        "tools_used": _unique(tools_used),
-        "iterations": MAX_ITERATIONS,
-        "model": used_model,
-    }

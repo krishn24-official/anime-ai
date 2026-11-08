@@ -163,7 +163,13 @@ async def tool_get_character_info(name: str) -> str:
             "or get_latest_news for news questions."
         )
 
-    character = await find_character(name)
+    from app.domain.shared.names import name_variants
+
+    character = None
+    for variant in name_variants(name):  # "Gojo Satoru" -> "Satoru Gojo", "Monkey D. Luffy" -> "Luffy Monkey"
+        character = await find_character(variant)
+        if character:
+            break
 
     if character:
         context = await build_character_context(character)
