@@ -122,6 +122,7 @@ def map_movie(details: dict, max_cast: int = 10) -> dict:
         },
         **extract_videos(details),
         "status": details.get("status"),
+        "popularity": details.get("popularity"),
         "tagline": details.get("tagline"),
         "budget": details.get("budget"),
         "revenue": details.get("revenue"),
@@ -170,6 +171,7 @@ def map_tv_series(details: dict, max_cast: int = 10) -> dict:
         },
         **extract_videos(details),
         "status": details.get("status"),
+        "popularity": details.get("popularity"),
         "tagline": details.get("tagline"),
         "content_type": "tv_series",
         "source_metadata": {

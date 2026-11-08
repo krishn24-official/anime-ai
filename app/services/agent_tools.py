@@ -311,7 +311,29 @@ async def tool_query_lore(
 
 
 # --- Tool dispatcher ---
+TYPE_LABELS = {"anime": "anime", "manga": "manga", "movie": "movie", "tv_series": "TV series"}
+
+
+async def tool_get_similar_titles(title: str, limit: int = 6) -> str:
+    """Titles fans of `title` also enjoyed (AniList / TMDb recommendations)."""
+    from app import container
+
+    result = await container.recommendation_service().similar_to(title, limit)
+    if result is None:
+        return f"No title matching '{title}' was found in the database."
+    base = result.base
+    if not result.items:
+        return f"No recommendations are available for {base.title} right now."
+    lines = [f"Titles similar to {base.title} ({TYPE_LABELS[base.content_type]}), most recommended first:"]
+    for r in result.items:
+        year = f" ({r.year})" if r.year else ""
+        lines.append(f"- {r.title}{year}, recommended by {r.votes} fans" if base.content_type in ("anime", "manga")
+                     else f"- {r.title}{year}")
+    return "\n".join(lines)
+
+
 TOOL_REGISTRY = {
+    "get_similar_titles": tool_get_similar_titles,
     "get_today_birthdays": tool_get_today_birthdays,
     "get_today_events": tool_get_today_events,
     "get_latest_news": tool_get_latest_news,

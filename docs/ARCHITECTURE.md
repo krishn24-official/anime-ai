@@ -98,6 +98,9 @@ Follow the Trending module as the reference implementation.
 |---|---|
 | Trending (pins, trending list, news/search signals) | ✅ migrated |
 | Search (global search bar, `GET /search`) | ✅ migrated (see [Global search](#global-search)) |
+| Home hero feed (`GET /home/hero`: admin picks, new trailers, news, upcoming releases) | ✅ new module (`domain/home`, `application/home`, `infrastructure/mongo/hero_source.py`) |
+| Recommendations ("if you liked X": chatbot tool `get_similar_titles`) | ✅ new module (`domain/recommendations`, `application/recommendations`, AniList/TMDb adapters in `infrastructure/external`) |
+| News de-duplication (same story from several sources) | 🟡 rule + embedding port in `domain/news`; the news pipeline itself is still legacy |
 | Auth & users | ⏳ legacy |
 | Content: ratings, watchlist, comments, releases | ⏳ legacy |
 | Anime, manga, movies, TV series (+ admin) | ⏳ legacy |

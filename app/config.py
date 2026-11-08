@@ -42,6 +42,9 @@ OTP_EXPIRE_MINUTES = 10
 LORE_CHUNK_SIZE = int(os.getenv("LORE_CHUNK_SIZE", "800"))
 LORE_CHUNK_OVERLAP = int(os.getenv("LORE_CHUNK_OVERLAP", "100"))
 LORE_EMBEDDING_MODEL = os.getenv("LORE_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+# Compare news headlines by meaning (reuses the lore embedding model, which then
+# stays loaded). Set to "false" on hosts short on memory: word matching still runs.
+NEWS_SEMANTIC_DEDUP = os.getenv("NEWS_SEMANTIC_DEDUP", "true").lower() != "false"
 LORE_TOP_K = int(os.getenv("LORE_TOP_K", "5"))
 LORE_VECTOR_INDEX_NAME = os.getenv("LORE_VECTOR_INDEX_NAME", "lore_vector_index")
 

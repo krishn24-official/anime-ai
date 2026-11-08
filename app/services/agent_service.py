@@ -21,6 +21,23 @@ MAX_ITERATIONS = 5  # safety cap on tool-call rounds
 
 # Intent patterns: map regex → (tool_name, arg_builder)
 # These fire BEFORE sending to Gemini, routing obvious queries directly.
+# "What should I watch after Frieren?", "anime like Naruto", "if I liked Berserk, ..."
+SIMILAR_TITLE = re.compile(
+    r"\b(?:after|similar to|like|if i (?:liked|loved|enjoyed))\s+(?P<title>[^?!.,]+)", re.I
+)
+WANTS_SUGGESTION = re.compile(
+    r"\b(watch|read|recommend|suggest|similar|anime|manga|movies?|shows?|series)\b", re.I
+)
+
+
+def _similar_title_args(message: str) -> dict | None:
+    match = SIMILAR_TITLE.search(message)
+    if not (match and WANTS_SUGGESTION.search(message)):
+        return None
+    title = re.sub(r"\s+(?:anime|manga|movie|series|show)$", "", match.group("title").strip(), flags=re.I)
+    return {"title": title} if title else None
+
+
 INTENT_PATTERNS = [
     (
         re.compile(
@@ -64,6 +81,9 @@ INTENT_PATTERNS = [
 
 def _detect_intent(message: str):
     """Returns (tool_name, tool_args) if a clear intent is detected, else None."""
+    similar = _similar_title_args(message)
+    if similar:
+        return "get_similar_titles", similar
     for pattern, tool_name, arg_builder in INTENT_PATTERNS:
         if pattern.search(message):
             return tool_name, arg_builder(message)

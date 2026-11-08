@@ -105,3 +105,7 @@ api_router.include_router(trending_router)
 from app.interfaces.http.search.router import router as search_router  # noqa: E402
 
 api_router.include_router(search_router)
+
+from app.interfaces.http.home.router import router as home_router  # noqa: E402
+
+api_router.include_router(home_router)

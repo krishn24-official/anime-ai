@@ -105,6 +105,18 @@ def start_news_scheduler():
 
     scheduler.add_job(_tmdb_refresh_job, "interval", hours=24, id="tmdb_video_refresh")
 
+    # Every 6 h: titles TMDb reports as changed (new trailers reach the home hero fast).
+    async def _tmdb_changes_job():
+        from app.services.tmdb_video_refresh_service import refresh_changed
+
+        try:
+            for kind in ("movie", "tv"):
+                print(f"[scheduler] TMDb changes {kind}: {await refresh_changed(kind)}")
+        except Exception as e:
+            print(f"[scheduler] failed to refresh changed TMDb titles: {e}")
+
+    scheduler.add_job(_tmdb_changes_job, "interval", hours=6, id="tmdb_changes_refresh")
+
     # Weekly: remove titles TMDb/AniList (re)classified as adult after import.
     async def _adult_content_job():
         from app.services.adult_content_service import find_all, remove

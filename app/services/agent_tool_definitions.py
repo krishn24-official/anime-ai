@@ -74,6 +74,24 @@ AGENT_TOOLS = [
                 },
             },
             {
+                "name": "get_similar_titles",
+                "description": (
+                    "Recommend anime, manga, movies or TV series similar to a title the "
+                    "user names (what fans of it also enjoyed). Use for 'what should I "
+                    "watch after X', 'anime like X', 'similar to X', 'if I liked X'."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "title": {
+                            "type": "string",
+                            "description": "Just the title the user liked, e.g. 'Frieren'",
+                        }
+                    },
+                    "required": ["title"],
+                },
+            },
+            {
                 "name": "search_content",
                 "description": (
                     "Search across all content types: characters, anime, manga, "
@@ -224,6 +242,7 @@ You have access to a real database of characters, anime, manga, movies, TV serie
 - "tell me about [ORGANIZATION NAME]", "info about [ORGANIZATION NAME]", "what is [ORGANIZATION NAME]" → use get_organization_info with just the organization's name
 - "lore", "plot twist", "backstory", "why did [CHARACTER]", "secret identity", "how are [A and B] related in the story" → use query_lore with the query and series_id
 - Only pass media_type to query_lore if the user's question explicitly says "manga", "anime", "movie", or "tv series" — otherwise omit it and let the system default to anime.
+- "what should I watch/read after X", "anime/movies like X", "similar to X", "if I liked X" → use get_similar_titles with just the title
 - "search for", "find", "is there a" → use search_content
 - NEVER pass a full question or sentence to get_character_info or get_organization_info — only pass the name.
 
@@ -233,4 +252,4 @@ You have access to a real database of characters, anime, manga, movies, TV serie
 3. Synthesize results into a clear, conversational response.
 4. If the database has no relevant data, say so honestly.
 5. Be concise but informative.
-"""
+"""

@@ -5,6 +5,10 @@ from app.db.mongo import get_db
 
 VALID_CATEGORIES = ["Anime", "Games", "Movies", "TV Series"]
 
+# Articles that are another source's copy of a stored story are kept (so their URL
+# is never fetched again) but linked to the original and hidden from listings.
+ORIGINALS = {"duplicate_of": {"$exists": False}}
+
 
 def normalize_category(cat: str | None) -> str | None:
     if not cat:
@@ -32,11 +36,35 @@ async def insert_article(article: dict):
     await db["news"].insert_one(article)
 
 
+async def recent_originals(since: datetime) -> list[dict]:
+    """Listed articles published since `since` (id, source, title, published_at), oldest first."""
+    return await get_db()["news"].find(
+        {**ORIGINALS, "published_at": {"$gte": since}}, {"title": 1, "source": 1, "published_at": 1}
+    ).sort("published_at", 1).to_list(None)
+
+
+async def insert_duplicate(article: dict, original_id) -> None:
+    """Store a lightweight record of another source's copy and credit that source."""
+    db = get_db()
+    await db["news"].insert_one({
+        "url": article.get("url"),
+        "title": article.get("title"),
+        "source": article.get("source"),
+        "published_at": article.get("published_at"),
+        "duplicate_of": original_id,
+        "created_at": datetime.now(timezone.utc),
+    })
+    await db["news"].update_one(
+        {"_id": original_id},
+        {"$addToSet": {"also_reported_by": {"source": article.get("source"), "url": article.get("url")}}},
+    )
+
+
 async def get_latest_news(limit: int = 5):
     db = get_db()
     return await (
         db["news"]
-        .find({"category": {"$in": VALID_CATEGORIES}})
+        .find({**ORIGINALS, "category": {"$in": VALID_CATEGORIES}})
         .sort("published_at", -1)
         .limit(limit)
         .to_list(None)
@@ -57,7 +85,7 @@ async def get_news_by_category(
 
     category = normalize_category(category)
 
-    query = {}
+    query = dict(ORIGINALS)
     if category:
         query["category"] = category
     else:

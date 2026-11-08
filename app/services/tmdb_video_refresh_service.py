@@ -7,12 +7,17 @@ Each run refreshes up to `limit` titles per kind, in priority order:
   1. active titles (releasing in the future or within ACTIVE_DAYS), every ACTIVE_RESYNC_DAYS
   2. all other TMDb titles: once, then every IDLE_RESYNC_DAYS
 Never overwrites trailers an admin typed in, or images that are not TMDb's.
+
+`refresh_changed` runs more often: it asks TMDb which titles changed recently
+(e.g. a trailer was added) and refreshes just the ones stored here, so new
+trailers show up within hours instead of at the next scheduled re-check.
 """
 
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 
+from app.backend.ingestion.tmdb_client import _get as tmdb_get
 from app.backend.ingestion.tmdb_client import get_movie_details, get_tv_details
 from app.backend.ingestion.tmdb_mapper import (
     _extract_us_theatrical_release_date,
@@ -28,6 +33,8 @@ ACTIVE_DAYS = 180
 ACTIVE_RESYNC_DAYS = 7
 IDLE_RESYNC_DAYS = 90
 CONCURRENCY = 4
+CHANGES_MAX_PAGES = 100  # TMDb's changes feed: 100 ids per page
+CHANGES_SKIP_HOURS = 6  # = how often the scheduler runs refresh_changed
 SYNCED_AT = "source_metadata.videos_synced_at"
 
 KINDS = {
@@ -92,6 +99,8 @@ def build_updates(kind: str, doc: dict, details: dict, now: datetime) -> dict:
 
     if details.get("status"):
         updates["status"] = details["status"]
+    if details.get("popularity") is not None:
+        updates["popularity"] = details["popularity"]  # ranks titles, e.g. home hero
 
     if kind == "movie":
         today = now.strftime("%Y-%m-%d")
@@ -112,11 +121,9 @@ def build_updates(kind: str, doc: dict, details: dict, now: datetime) -> dict:
     return updates
 
 
-async def refresh(kind: str, limit: int, dry_run: bool = False, active_only: bool = False) -> dict:
-    now = datetime.now(timezone.utc)
+async def _refresh_docs(kind: str, docs: list[dict], now: datetime, dry_run: bool) -> dict:
     col = get_db()[KINDS[kind]["collection"]]
     fetch = KINDS[kind]["fetch"]
-    candidates = await find_candidates(kind, limit, now, active_only)
     stats = {"checked": 0, "updated_videos": 0, "gained_trailer": 0, "manual_kept": 0, "failed": 0}
     sem = asyncio.Semaphore(CONCURRENCY)
 
@@ -139,6 +146,44 @@ async def refresh(kind: str, limit: int, dry_run: bool = False, active_only: boo
         if not dry_run:
             await col.update_one({"_id": doc["_id"]}, {"$set": updates})
 
-    await asyncio.gather(*(one(d) for d in candidates))
+    await asyncio.gather(*(one(d) for d in docs))
+    return stats
+
+
+async def refresh(kind: str, limit: int, dry_run: bool = False, active_only: bool = False) -> dict:
+    now = datetime.now(timezone.utc)
+    candidates = await find_candidates(kind, limit, now, active_only)
+    stats = await _refresh_docs(kind, candidates, now, dry_run)
     logger.info("tmdb refresh %s: %s", kind, stats)
     return {"candidates": len(candidates), **stats}
+
+
+async def _changed_tmdb_ids(kind: str, since: datetime) -> set[int]:
+    ids, page = set(), 1
+    while page <= CHANGES_MAX_PAGES:
+        r = await tmdb_get(f"/{kind}/changes", {"start_date": since.strftime("%Y-%m-%d"), "page": page})
+        if not r:
+            break
+        ids |= {x["id"] for x in r.get("results", []) if not x.get("adult")}
+        if page >= r.get("total_pages", 1):
+            break
+        page += 1
+    return ids
+
+
+async def refresh_changed(kind: str, hours: int = 24, dry_run: bool = False) -> dict:
+    """Refresh stored titles that TMDb reports as changed in the last `hours`."""
+    now = datetime.now(timezone.utc)
+    changed = await _changed_tmdb_ids(kind, now - timedelta(hours=hours))
+    docs = await get_db()[KINDS[kind]["collection"]].find(
+        {
+            "source_metadata.tmdb_id": {"$in": list(changed)},
+            "is_deleted": {"$ne": True},
+            # TMDb reports changes per day; skip titles a previous run already refreshed.
+            SYNCED_AT: {"$not": {"$gte": now - timedelta(hours=CHANGES_SKIP_HOURS)}},
+        },
+        {"source_metadata": 1, "trailers": 1, "images": 1, "release_date": 1, "title": 1},
+    ).to_list(None)
+    stats = await _refresh_docs(kind, docs, now, dry_run)
+    logger.info("tmdb changed refresh %s: %s", kind, stats)
+    return {"changed_on_tmdb": len(changed), "stored": len(docs), **stats}
