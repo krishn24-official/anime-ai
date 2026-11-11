@@ -3,16 +3,12 @@ import re
 from app.utils.search_utils import build_fuzzy_search_regex
 
 
-async def get_all_anime(page: int = 1, limit: int = 50, search: str = None):
+async def get_all_anime(page: int = 1, limit: int = 50):
 
     db = get_db()
     skip = (page - 1) * limit
 
     query = {"is_deleted": False}
-    if search:
-        fuzzy_pattern = build_fuzzy_search_regex(search)
-        search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
-        query["$or"] = [{"title.english": search_regex}, {"title.romaji": search_regex}]
 
     items = await (
         db["anime"]
@@ -33,24 +29,6 @@ async def get_anime_by_id(anime_id: str):
     db = get_db()
 
     return await db["anime"].find_one({"_id": anime_id, "is_deleted": False})
-
-
-async def search_anime(query: str):
-
-    db = get_db()
-
-    return await (
-        db["anime"]
-        .find(
-            {
-                "$or": [
-                    {"title.english": {"$regex": query, "$options": "i"}},
-                    {"title.romaji": {"$regex": query, "$options": "i"}},
-                ]
-            }
-        )
-        .to_list(None)
-    )
 
 
 async def get_anime_characters(anime_id: str):

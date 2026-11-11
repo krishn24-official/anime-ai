@@ -58,10 +58,14 @@ async def vector_search(
                 "path": "embedding_vector",
                 "queryVector": query_embedding,
                 "numCandidates": num_candidates,
-                "limit": top_k,
+                # Over-fetch: placeholder passages are dropped below.
+                "limit": top_k * 3,
                 "filter": filter_doc,
             }
         },
+        # Episode pages scraped without a synopsis hold only metadata; never return them.
+        {"$match": {"chunk_text": {"$not": {"$regex": "detailed synopsis unavailable", "$options": "i"}}}},
+        {"$limit": top_k},
         {
             "$project": {
                 "_id": 0,

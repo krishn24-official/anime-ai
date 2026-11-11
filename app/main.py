@@ -4,6 +4,7 @@ from app.db.init_db import check_db
 from app.db.setup_collections import create_collections
 from app.db.indexes import create_indexes
 from app.api.router import api_router
+from app.interfaces.http.errors import register_exception_handlers
 from app.services.news_scheduler import start_news_scheduler, stop_news_scheduler
 from app.services.websocket_manager import manager
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,13 +22,16 @@ app.add_middleware(
         "https://tauri.localhost",  # Tauri desktop on Windows (WebView2)
         "https://anime-ai-fe.vercel.app",
     ],
-    allow_origin_regex="https://.*\\.vercel\\.app",  # Matches any Vercel staging or production subdomains
+    # Any Vercel staging/production subdomain, plus local dev servers on any port
+    # (Vite moves to 5174+ when 5173 is busy; `vite preview` uses 4173).
+    allow_origin_regex=r"https://.*\.vercel\.app|http://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(api_router)
+register_exception_handlers(app)
 
 
 @app.websocket("/ws")
@@ -88,12 +92,6 @@ async def shutdown():
 @app.get("/")
 async def root():
     return {"status": "Anime AI DB running"}
-
-
-@app.get("/health")
-async def health():
-    ok = await check_db()
-    return {"db": "connected" if ok else "failed"}
 
 
 

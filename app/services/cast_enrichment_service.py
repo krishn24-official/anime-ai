@@ -24,9 +24,7 @@ async def enrich_cast(cast: list[dict]) -> list[dict]:
 
         actor = await actors_repository.get_actor_by_id(actor_id)
         if not actor:
-            logger.warning(
-                f"Actor {actor_id} referenced in cast but not found (may be deleted)."
-            )
+            logger.warning(f"Actor {actor_id} referenced in cast but not found (may be deleted).")
             continue
 
         profile_img = (
@@ -89,9 +87,7 @@ async def enrich_crew(
 
         actor = await actors_repository.get_actor_by_id(actor_id)
         if not actor:
-            logger.warning(
-                f"Actor {actor_id} referenced in crew but not found (may be deleted)."
-            )
+            logger.warning(f"Actor {actor_id} referenced in crew but not found (may be deleted).")
             continue
 
         profile_img = (

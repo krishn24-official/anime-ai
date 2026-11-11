@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
 from typing import Optional
+from app.interfaces.http.search.sync import keeps_search_in_sync
 from app.api.deps import get_current_admin
 from app.services import actors_admin_service
 from app.services.actors_service import fetch_all_actors
@@ -19,6 +20,7 @@ async def list_actors(
 
 
 @router.post("")
+@keeps_search_in_sync("actors")
 async def create_new_actor(
     name: str = Form(...),
     birthdate: Optional[str] = Form(None),
@@ -42,6 +44,7 @@ async def create_new_actor(
 
 
 @router.patch("/{content_id}")
+@keeps_search_in_sync("actors")
 async def update_existing_actor(
     content_id: str,
     name: Optional[str] = Form(None),
@@ -67,6 +70,7 @@ async def update_existing_actor(
 
 
 @router.delete("/{content_id}")
+@keeps_search_in_sync("actors")
 async def delete_existing_actor(
     content_id: str, current_admin: dict = Depends(get_current_admin)
 ):

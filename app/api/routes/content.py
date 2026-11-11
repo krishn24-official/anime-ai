@@ -114,22 +114,6 @@ async def get_chapter_detail(content_id: str):
     }
 
 
-# --- Trending ---
-
-from app.services.trending_service import get_trending_content
-
-
-@router.get("/content/trending")
-async def get_trending(limit: int = 10):
-    try:
-        return await get_trending_content(limit)
-    except Exception as e:
-        import traceback
-
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 # --- Ratings ---
 
 

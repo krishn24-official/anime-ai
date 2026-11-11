@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from app.backend.utils.slug import create_slug
+from app.domain.media.videos import trailer_urls_changed
 from app.repositories import tv_series_repository, actors_repository
 from app.services.cloudinary_service import upload_image_from_bytes
 from app.services.release_date_utils import parse_release_date
@@ -269,7 +270,11 @@ async def update_tv_series(
     if tagline is not None:
         updates["tagline"] = tagline
     if trailers is not None:
-        updates["trailers"] = trailers
+        current = await tv_series_repository.get_tv_series_by_id(content_id)
+        if trailer_urls_changed((current or {}).get("trailers"), trailers):
+            updates["trailers"] = trailers
+            # Hand-edited trailers: the TMDb refresh must not overwrite them.
+            updates["trailers_manual"] = True
 
     if creators is not None:
         processed_creators = []

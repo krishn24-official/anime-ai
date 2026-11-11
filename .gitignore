@@ -13,4 +13,6 @@ data/
 venv/
 .ruff_cache/
 scratch/
-
+
+# local data backups (merge_duplicates.py)
+backups/

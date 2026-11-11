@@ -167,8 +167,14 @@ async def test_format_content_profile_tv_series():
 
 
 @pytest.mark.asyncio
+@patch("app.repositories.relationship_repository.search_relationship_entities")
 @patch("app.repositories.search_repository.search_anime")
-async def test_chat_anime_intent(mock_search_anime):
+async def test_chat_anime_intent(mock_search_anime, mock_candidates):
+    # The chat first resolves the title to a single media candidate...
+    mock_candidates.return_value = [
+        {"id": "anime_bleach", "name": "Bleach", "entity_type": "anime", "image": ""}
+    ]
+    # ...then loads its details.
     mock_search_anime.return_value = [
         {"title": {"english": "Bleach"}, "description": "Soul reapers."}
     ]
@@ -199,8 +205,12 @@ async def test_chat_movie_intent():
 
 
 @pytest.mark.asyncio
+@patch("app.repositories.relationship_repository.search_relationship_entities")
 @patch("app.repositories.search_repository.search_tv_series")
-async def test_chat_tv_series_intent(mock_search_tv):
+async def test_chat_tv_series_intent(mock_search_tv, mock_candidates):
+    mock_candidates.return_value = [
+        {"id": "tv_the_wire", "name": "The Wire", "entity_type": "tv_series", "image": ""}
+    ]
     mock_search_tv.return_value = [{"title": "The Wire", "plot": "Baltimore."}]
     result = await process_chat_message("tell me about the tv show The Wire")
     assert "answer" in result

@@ -1,3 +1,4 @@
+import re
 from app.db.mongo import get_db
 
 
@@ -27,8 +28,8 @@ async def search_organizations(query_str: str):
     cursor = db["organizations"].find(
         {
             "$or": [
-                {"name": {"$regex": query_str, "$options": "i"}},
-                {"description": {"$regex": query_str, "$options": "i"}},
+                {"name": {"$regex": re.escape(query_str), "$options": "i"}},
+                {"description": {"$regex": re.escape(query_str), "$options": "i"}},
             ],
             "is_deleted": {"$ne": True},
         }
@@ -54,7 +55,7 @@ async def find_organizations_by_names(names: list[str]):
     # let's construct case-insensitive regexes for each name, or simply query all and filter in python.
     # Actually, using a regex $in list is easiest:
     regex_list = [
-        {"name": {"$regex": f"^{names_item}$", "$options": "i"}} for names_item in names
+        {"name": {"$regex": f"^{re.escape(names_item)}$", "$options": "i"}} for names_item in names
     ]
     if not regex_list:
         return []

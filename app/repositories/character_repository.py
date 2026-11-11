@@ -82,17 +82,6 @@ async def get_character_by_id(character_id: str):
     return await db["characters"].find_one({"_id": character_id, "is_deleted": False})
 
 
-async def search_characters(query: str):
-
-    db = get_db()
-
-    return await (
-        db["characters"]
-        .find({"name": {"$regex": query, "$options": "i"}, "is_deleted": False})
-        .to_list(None)
-    )
-
-
 async def get_character_basic(character_id: str):
 
     db = get_db()

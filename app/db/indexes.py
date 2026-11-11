@@ -110,11 +110,6 @@ async def create_indexes():
     await create_index_safely(db.tier_lists, "is_public")
     await create_index_safely(db.tier_lists, [("is_public", 1), ("updated_at", -1)])
 
-    # organizations
-    await create_index_safely(db.organizations, "name", unique=True)
-    await create_index_safely(db.organizations, "type")
-    await create_index_safely(db.organizations, "anime_ids")
-    await create_index_safely(db.organizations, "manga_id")
 
     # trending
     await create_index_safely(
@@ -172,4 +167,38 @@ async def create_indexes():
     #   ]
     # }
 
+    # One record per external id. These stop concurrent importers from inserting the
+    # same AniList/TMDb record twice (the cause of "char_x_40" / "actor_x_2" copies).
+    # Partial: only enforced where the id is a number, so manual records without an
+    # external id are unaffected.
+    for collection, field in [
+        (db.characters, "source_metadata.anilist.id"),
+        (db.actors, "tmdb_id"),
+        (db.movies, "source_metadata.tmdb_id"),
+        (db.tv_series, "source_metadata.tmdb_id"),
+        (db.voice_actors, "source_metadata.anilist.id"),
+    ]:
+        await _create_external_id_index(collection, field)
+
     print("Indexes created")
+
+
+async def _create_external_id_index(collection, field):
+    """Unique index on an external id; never blocks startup.
+
+    Fails while duplicates exist: run `python -m app.scripts.merge_duplicates --apply`
+    once, then restart.
+    """
+    try:
+        await create_index_safely(
+            collection,
+            field,
+            name=f"unique_{field.replace('.', '_')}",
+            unique=True,
+            partialFilterExpression={field: {"$type": "number"}},
+        )
+    except Exception as exc:
+        print(
+            f"[indexes] unique index on {collection.name}.{field} not created "
+            f"(duplicates present? run app/scripts/merge_duplicates.py): {str(exc)[:120]}"
+        )

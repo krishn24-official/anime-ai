@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from app.api.deps import get_current_admin
 
 from app.services.news_service import (
     fetch_latest_news,
@@ -51,5 +53,5 @@ async def get_news_detail(news_id: str):
 
 
 @router.post("/run")
-async def trigger_news_pipeline():
+async def trigger_news_pipeline(current_admin: dict = Depends(get_current_admin)):
     return await run_news_pipeline()

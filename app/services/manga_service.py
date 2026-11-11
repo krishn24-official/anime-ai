@@ -1,8 +1,8 @@
 from app.repositories.manga_repository import (
     get_all_manga,
     get_manga_by_id,
-    search_manga,
 )
+from app.services.search_listing import ranked_documents
 
 
 def _serialize(item: dict) -> dict:
@@ -12,7 +12,10 @@ def _serialize(item: dict) -> dict:
 
 
 async def fetch_all_manga(page: int = 1, limit: int = 50, search: str = None):
-    items, total = await get_all_manga(page, limit, search)
+    if search:  # ranked by relevance, same as the global search bar
+        items, total = await ranked_documents("manga", search, limit, (page - 1) * limit)
+    else:
+        items, total = await get_all_manga(page, limit)
 
     return {
         "items": [_serialize(m) for m in items],
@@ -29,7 +32,8 @@ async def fetch_manga(manga_id: str):
 
 async def fetch_manga_search(query: str):
 
-    return await search_manga(query)
+    items, _ = await ranked_documents("manga", query, limit=20)
+    return items
 
 
 async def fetch_manga_summary(manga_id: str):

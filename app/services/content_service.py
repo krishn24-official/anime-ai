@@ -1,5 +1,6 @@
 from bson import ObjectId
 
+from app.domain.media.videos import split_stored_videos
 from app.services.content_types import (
     is_valid_content_type,
     to_object_id,
@@ -307,7 +308,8 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
     db = get_db()
     collection = CONTENT_COLLECTION_MAP[content_type]
 
-    doc = await db[collection].find_one({"_id": content_id})
+    # Deleted (incl. removed adult) titles are not public.
+    doc = await db[collection].find_one({"_id": content_id, "is_deleted": {"$ne": True}})
     if not doc:
         raise ContentError(404, f"{content_type} not found")
 
@@ -332,13 +334,31 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
         if trailer_url:
             trailers.append({"url": trailer_url, "label": "Trailer"})
 
+    # Titles refreshed from TMDb store trailers and extras separately. Older ones
+    # mix every video in "trailers": split them so trailers[0] is a real trailer.
+    extras = doc.get("extras")
+    if extras is None:
+        trailers, extras = split_stored_videos(trailers)
+
+    def _display_year(d: dict):
+        """A plain year: manga/anime store start_date as {day, month, year, precision}."""
+        for value in (d.get("year"), d.get("start_date"), d.get("release_date"), d.get("first_air_date")):
+            if isinstance(value, dict):
+                value = value.get("year")
+            if isinstance(value, (int, float)) and value:
+                return int(value)
+            if isinstance(value, str) and value[:4].isdigit():
+                return int(value[:4])
+        return None
+
     # We want to format the response to include cast and crew consistently
     response = {
         "id": str(doc.get("_id")),
         "title": doc.get("title", doc.get("name")),
         "description": doc.get("plot", doc.get("description", "")),
-        "year": doc.get("year", doc.get("start_date", "")),
+        "year": _display_year(doc),
         "trailers": trailers,
+        "extras": extras,
         "genres": doc.get("genres", []),
         "images": doc.get("images", {}),
         "cast": [],
@@ -435,7 +455,13 @@ async def fetch_content_details(content_type: str, content_id: str) -> dict:
         writers = doc.get("writers", [])
         if isinstance(writers, list):
             for w in writers:
-                response["crew"].append({"name": w, "role": "Writer", "image": None})
+                if isinstance(w, dict):  # TMDb import: {name, profile_image, ...}
+                    if w.get("name"):
+                        response["crew"].append(
+                            {"name": w["name"], "role": "Writer", "image": w.get("profile_image")}
+                        )
+                elif isinstance(w, str):
+                    response["crew"].append({"name": w, "role": "Writer", "image": None})
 
     elif content_type == "anime":
         # Voice Actors

@@ -3,15 +3,11 @@ import re
 from app.utils.search_utils import build_fuzzy_search_regex
 
 
-async def get_all_tv_series(page: int = 1, limit: int = 20, search: str = None):
+async def get_all_tv_series(page: int = 1, limit: int = 20):
     db = get_db()
     skip = (page - 1) * limit
 
     query = {"is_deleted": {"$ne": True}}
-    if search:
-        fuzzy_pattern = build_fuzzy_search_regex(search)
-        search_regex = re.compile(fuzzy_pattern, re.IGNORECASE)
-        query["title"] = search_regex
 
     items = await (
         db["tv_series"]

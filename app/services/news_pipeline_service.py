@@ -24,9 +24,18 @@ from app.services.news_category_mapping import (
     get_mapped_category,
     make_fallback_summary,
 )
-from app.repositories.news_repository import article_exists, insert_article
+from datetime import datetime, timedelta
+
+from app.domain.news.duplicates import find_original
+from app.services.news_dedup import headlines, with_headlines
+from app.repositories.news_repository import (
+    article_exists,
+    insert_article,
+    insert_duplicate,
+    recent_originals,
+)
 from app.services import title_matcher
-from app.services import trending_service
+from app.container import trending_service
 
 LAST_72_HOURS = 72 * 60 * 60
 # Alias index is expensive to build (scans all collections). Cache it for 2 h.
@@ -199,8 +208,13 @@ async def run_news_pipeline():
 
     saved = 0
     skipped_duplicate = 0
+    merged_same_story = 0
     skipped_unmapped = 0
     processed_urls = set()
+    # Stories already listed, to merge other sources' copies (published_at is naive UTC).
+    recent = await with_headlines(
+        await recent_originals(datetime.utcnow() - timedelta(seconds=LAST_72_HOURS))
+    )
 
     for article in fresh_articles:
         try:
@@ -220,6 +234,14 @@ async def run_news_pipeline():
 
             if not mapped_category:
                 skipped_unmapped += 1
+                continue
+
+            # Same story from another source: link it to the original, don't list it twice.
+            (headline,) = await headlines([article])
+            original_id = find_original(headline, article.get("source"), recent)
+            if original_id is not None:
+                await insert_duplicate(article, original_id)
+                merged_same_story += 1
                 continue
 
             # If it's a website article, fetch full content
@@ -253,6 +275,7 @@ async def run_news_pipeline():
             try:
                 await insert_article(article)
                 saved += 1
+                recent.append((article["_id"], article.get("source"), headline))
 
                 try:
                     from app.services.websocket_manager import manager
@@ -271,8 +294,11 @@ async def run_news_pipeline():
             else:
                 if alias_index:
                     try:
-                        await trending_service.scan_article_for_mentions(
-                            article, alias_index
+                        await trending_service().scan_article_for_mentions(
+                            news_id=str(article.get("_id")),
+                            title=article.get("title") or "",
+                            description=article.get("description") or "",
+                            alias_index=alias_index,
                         )
                     except Exception as match_err:
                         print("[news_pipeline] title matcher error:", match_err)
@@ -284,12 +310,13 @@ async def run_news_pipeline():
         "fresh": len(fresh_articles),
         "saved": saved,
         "skipped_duplicate": skipped_duplicate,
+        "merged_same_story": merged_same_story,
         "skipped_unmapped": skipped_unmapped,
     }
 
     if saved > 0:
         try:
-            await trending_service.recompute_news_trending(hours=48)
+            await trending_service().recompute_news_trending(hours=48)
         except Exception as trend_err:
             print(
                 "[news_pipeline] Failed to recompute trending after ingest:", trend_err

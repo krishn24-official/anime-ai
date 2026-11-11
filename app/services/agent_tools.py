@@ -4,6 +4,7 @@ Each function is the actual execution of a tool call from Gemini.
 """
 
 import json
+import re
 from datetime import datetime
 
 from app.repositories.home_repository import (
@@ -14,14 +15,6 @@ from app.repositories.home_repository import (
 from app.repositories.news_repository import (
     get_latest_news,
     get_news_by_category,
-)
-from app.repositories.search_repository import (
-    search_characters,
-    search_anime,
-    search_manga,
-    search_movies,
-    search_tv_series,
-    search_organizations,
 )
 from app.repositories.chat_repository import find_character
 from app.repositories.rating_repository import get_top_rated, get_watchlist_counts
@@ -128,40 +121,17 @@ async def tool_get_news_by_category(category: str, limit: int = 5) -> str:
 
 
 async def tool_search_content(query: str) -> str:
-    characters = await search_characters(query)
-    anime = await search_anime(query)
-    manga = await search_manga(query)
-    movies = await search_movies(query)
-    tv_series = await search_tv_series(query)
-    organizations = await search_organizations(query)
+    from app.container import search_service
 
-    result = {
-        "characters": [
-            {"name": c.get("name"), "id": str(c.get("_id"))} for c in characters
-        ],
-        "anime": [
-            {
-                "title": a.get("title", {}).get("english")
-                or a.get("title", {}).get("romaji"),
-                "id": str(a.get("_id")),
-            }
-            for a in anime
-        ],
-        "manga": [{"name": m.get("name"), "id": str(m.get("_id"))} for m in manga],
-        "movies": [
-            {"title": mv.get("title"), "id": str(mv.get("_id"))} for mv in movies
-        ],
-        "tv_series": [
-            {"title": tv.get("title"), "id": str(tv.get("_id"))} for tv in tv_series
-        ],
-        "organizations": [
-            {"name": o.get("name"), "id": str(o.get("id"))} for o in organizations
-        ],
-    }
+    results = await search_service().search(query)
+    result = {}
+    for kind, hits in results.by_kind.items():
+        if kind == "actors":
+            continue  # the agent has no actor tools
+        name_key = "title" if kind in ("anime", "movies", "tv_series") else "name"
+        result[kind] = [{name_key: h.document.title, "id": h.document.id} for h in hits]
 
-    total = sum(len(v) for v in result.values())
-
-    if total == 0:
+    if not any(result.values()):
         return f"No results found for '{query}'."
 
     return json.dumps(result, default=_serialize)
@@ -193,17 +163,25 @@ async def tool_get_character_info(name: str) -> str:
             "or get_latest_news for news questions."
         )
 
-    character = await find_character(name)
+    from app.domain.shared.names import name_variants
+
+    character = None
+    for variant in name_variants(name):  # "Gojo Satoru" -> "Satoru Gojo", "Monkey D. Luffy" -> "Luffy Monkey"
+        character = await find_character(variant)
+        if character:
+            break
 
     if character:
         context = await build_character_context(character)
         return json.dumps(context, default=_serialize)
 
     # Fallback: try search
-    characters = await search_characters(name)
+    from app.container import search_service
+
+    characters = (await search_service().search(name)).by_kind["characters"]
 
     if characters:
-        suggestions = [c.get("name") for c in characters[:3]]
+        suggestions = [hit.document.title for hit in characters[:3]]
         return (
             f"Character '{name}' not found by exact name. "
             f"Did you mean one of these? {', '.join(suggestions)}. "
@@ -314,7 +292,7 @@ async def tool_get_organization_info(name: str) -> str:
 
 async def tool_query_lore(
     query: str,
-    series_id: str,
+    series_id: str = "",
     media_type: str | None = None,
     character_ids: list[str] | None = None,
 ) -> str:
@@ -322,8 +300,24 @@ async def tool_query_lore(
     Executes a vector search query against lore chunks and returns
     formatted markdown context.
     """
+    from app import container
     from app.services import lore_service
 
+    if not series_id:  # "when did Luffy..." -> the series of the characters named
+        series_id = await _infer_series(query)
+        if not series_id:
+            return "Couldn't tell which series this is about. Ask the user to name the series."
+
+    # Exact facts first (chapter/episode lookups vector search can't do), then
+    # semantically similar lore passages. Either one alone is still useful.
+    parts = []
+    try:
+        resolved = await lore_service.resolve_series_id(series_id, media_type=media_type)
+        facts = await container.guide_service().facts(resolved, query)
+        if facts:
+            parts.append(format_guide_facts(facts))
+    except Exception as e:
+        print(f"[agent] chapter guide lookup failed: {e}")
     try:
         results = await lore_service.query_lore(
             query=query,
@@ -331,16 +325,91 @@ async def tool_query_lore(
             media_type=media_type,
             character_ids=character_ids,
         )
-        if not results:
-            return f"No relevant lore found for '{query}' in series '{series_id}'."
-
-        return lore_service.format_lore_context(results)
+        if results:
+            parts.append("## Related lore passages\n" + lore_service.format_lore_context(results))
     except Exception as e:
-        return f"Error querying lore: {e}"
+        print(f"[agent] lore vector search failed: {e}")
+    return "\n\n".join(parts) or f"No relevant lore found for '{query}' in series '{series_id}'."
+
+
+async def _infer_series(query: str) -> str | None:
+    """The series a question is about: a series with lore named in it or owning a
+    character named in it; else the best anime/manga title match."""
+    from app import container
+    from app.domain.guide.question import parse_guide_question
+    from app.domain.search.entities import CONTENT_TYPE_BY_KIND
+    from app.services.chat_service import _extract_candidate_series_ids
+
+    # 1. A series named in the question wins ("dragon ball first chapter"): otherwise a
+    #    character guess could pick the wrong show (Monkey D. *Dragon* -> One Piece).
+    words = set(re.findall(r"[a-z0-9]+", query.lower()))
+    terms = " ".join(parse_guide_question(query).terms)  # "dragon ball first chapter" -> "dragon ball"
+    if terms:
+        results = await container.search_service().search(terms)
+        hits = ([results.top] if results.top else []) + [h for hs in results.by_kind.values() for h in hs]
+        for h in hits:
+            title_words = set(re.findall(r"[a-z0-9]+", h.document.title.lower()))
+            if CONTENT_TYPE_BY_KIND.get(h.document.kind) in ("anime", "manga") and title_words and title_words <= words:
+                return h.document.id
+    # 2. Otherwise the series of a character named in it ("when did Luffy ...").
+    candidates = await _extract_candidate_series_ids(query=query)
+    return candidates[0] if candidates else None
+
+
+def format_guide_facts(facts) -> str:
+    lines = [f"## {facts.series_title} episode & chapter guide (exact data; {facts.note})"]
+    for e in facts.episodes:
+        title = f', episode title "{e.title}"' if e.title else ""
+        covered = e.chapters_covered or ""
+        extra = ", ".join(x for x in (
+            _arc(e.arc), "filler" if e.filler else "",
+            (f"covers {covered}" if covered.lower().startswith("chapter") else f"covers manga chapter {covered}") if covered else "",
+        ) if x)
+        lines.append(f"- Episode {e.number}{title}" + (f" ({extra})" if extra else ""))
+        if e.summary:
+            lines.append(f"  Summary: {e.summary.strip()}")
+    for c in facts.chapters:
+        title = f', chapter title "{c.title}"' if c.title else ""
+        arc = f" ({_arc(c.arc)})" if c.arc else ""
+        episodes = ", ".join(map(str, c.anime_episodes))
+        adapted = f"; adapted in anime episode {episodes}" if episodes else ""
+        lines.append(f"- Chapter {c.number}{title}{arc}{adapted}")
+        if c.summary:
+            lines.append(f"  Summary: {c.summary.strip()}")
+    return "\n".join(lines)
+
+
+def _arc(arc: str | None) -> str:
+    """'Wano' -> 'Wano arc'; 'Agent of the Shinigami arc' stays as is."""
+    if not arc:
+        return ""
+    return arc if arc.lower().endswith("arc") else f"{arc} arc"
 
 
 # --- Tool dispatcher ---
+TYPE_LABELS = {"anime": "anime", "manga": "manga", "movie": "movie", "tv_series": "TV series"}
+
+
+async def tool_get_similar_titles(title: str, limit: int = 6) -> str:
+    """Titles fans of `title` also enjoyed (AniList / TMDb recommendations)."""
+    from app import container
+
+    result = await container.recommendation_service().similar_to(title, limit)
+    if result is None:
+        return f"No title matching '{title}' was found in the database."
+    base = result.base
+    if not result.items:
+        return f"No recommendations are available for {base.title} right now."
+    lines = [f"Titles similar to {base.title} ({TYPE_LABELS[base.content_type]}), most recommended first:"]
+    for r in result.items:
+        year = f" ({r.year})" if r.year else ""
+        lines.append(f"- {r.title}{year}, recommended by {r.votes} fans" if base.content_type in ("anime", "manga")
+                     else f"- {r.title}{year}")
+    return "\n".join(lines)
+
+
 TOOL_REGISTRY = {
+    "get_similar_titles": tool_get_similar_titles,
     "get_today_birthdays": tool_get_today_birthdays,
     "get_today_events": tool_get_today_events,
     "get_latest_news": tool_get_latest_news,

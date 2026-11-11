@@ -8,6 +8,16 @@ MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "anime_ai")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash-lite")
 
+# ── Chat model fallback (free tiers) ──────────────────
+# Tried in this order; a provider without a key, or out of quota, is skipped.
+# Mistral is supported but off by default until its free plan works for the key:
+# set LLM_PROVIDERS=gemini,groq,mistral to turn it on.
+LLM_PROVIDERS = [p.strip() for p in os.getenv("LLM_PROVIDERS", "gemini,groq").split(",") if p.strip()]
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")  # free tier, supports tool calling
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+MISTRAL_MODEL = os.getenv("MISTRAL_MODEL", "mistral-small-latest")
+
 # ── OMDb ──────────────────────────────────────────────
 OMDB_API_KEY = os.getenv("OMDB_API_KEY")
 OMDB_BASE_URL = "https://www.omdbapi.com/"
@@ -42,5 +52,26 @@ OTP_EXPIRE_MINUTES = 10
 LORE_CHUNK_SIZE = int(os.getenv("LORE_CHUNK_SIZE", "800"))
 LORE_CHUNK_OVERLAP = int(os.getenv("LORE_CHUNK_OVERLAP", "100"))
 LORE_EMBEDDING_MODEL = os.getenv("LORE_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+# Compare news headlines by meaning (reuses the lore embedding model, which then
+# stays loaded). Set to "false" on hosts short on memory: word matching still runs.
+NEWS_SEMANTIC_DEDUP = os.getenv("NEWS_SEMANTIC_DEDUP", "true").lower() != "false"
 LORE_TOP_K = int(os.getenv("LORE_TOP_K", "5"))
 LORE_VECTOR_INDEX_NAME = os.getenv("LORE_VECTOR_INDEX_NAME", "lore_vector_index")
+
+# ── Global search ─────────────────────────────────────
+# "auto":  Atlas Search on `search_catalog` when its index is ready, else regex.
+# "regex": always use regex search on the source collections (no catalog upkeep).
+SEARCH_BACKEND = os.getenv("SEARCH_BACKEND", "auto").strip().lower()
+# Hours between full rebuilds of `search_catalog` (catches ingestion/TMDb sync changes).
+SEARCH_CATALOG_REBUILD_HOURS = int(os.getenv("SEARCH_CATALOG_REBUILD_HOURS", "6"))
+# Kinds indexed in the Atlas catalog; other kinds use regex search. Actors are left
+# out by default: ~177k rows would more than double the catalog's storage.
+SEARCH_CATALOG_KINDS = tuple(
+    k.strip()
+    for k in os.getenv(
+        "SEARCH_CATALOG_KINDS", "anime,movies,tv_series,manga,characters,organizations"
+    ).split(",")
+    if k.strip()
+)
+# Cluster storage quota (MB) the catalog build must stay under (Atlas M0 = 512).
+ATLAS_STORAGE_LIMIT_MB = int(os.getenv("ATLAS_STORAGE_LIMIT_MB", "512"))

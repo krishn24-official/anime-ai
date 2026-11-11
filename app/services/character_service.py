@@ -1,7 +1,6 @@
 from app.repositories.character_repository import (
     get_all_characters,
     get_character_by_id,
-    search_characters,
     get_character_basic,
     get_birthdays_by_date_range,
 )
@@ -11,6 +10,7 @@ from app.repositories.relationship_repository import get_relationships_by_type
 from app.repositories.organization_repository import find_organizations_by_names
 
 from app.repositories.anime_repository import find_anime_by_ids
+from app.services.search_listing import ranked_documents
 
 
 async def fetch_all_characters(skip: int = 0, limit: int = 50):
@@ -47,7 +47,8 @@ async def fetch_character(character_id: str):
 
 async def search_character(query: str):
 
-    return await search_characters(query)
+    items, _ = await ranked_documents("characters", query, limit=20)
+    return items
 
 
 async def enrich_relationships_by_source(relationships):

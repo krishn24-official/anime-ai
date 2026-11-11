@@ -26,6 +26,7 @@ def _serialize(article: dict) -> dict:
         "description": article.get("description"),
         "image_url": article.get("image_url"),
         "published_at": published_at,
+        "also_reported_by": article.get("also_reported_by") or [],
     }
 
 
