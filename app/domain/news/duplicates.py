@@ -20,7 +20,7 @@ a hidden story is lost news. So:
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 MIN_SHARED = 3  # distinctive words both headlines must contain
 MIN_OVERLAP = 0.6  # shared words / words in the shorter headline
@@ -76,7 +76,15 @@ def parse_headline(title: str, vector=None, published_at: datetime | None = None
         if len(w) > 4 and w.endswith("s") and not w.endswith("ss"):
             w = w[:-1]  # crude plural folding
         words.add(w)
-    return Headline(frozenset(words), frozenset(kind), tuple(vector) if vector else None, published_at)
+    return Headline(frozenset(words), frozenset(kind), tuple(vector) if vector else None, _naive_utc(published_at))
+
+
+def _naive_utc(dt: datetime | None) -> datetime | None:
+    """Mongo hands back naive UTC datetimes while freshly fetched articles are
+    timezone-aware; normalise both to naive UTC so they can be subtracted."""
+    if dt is None or dt.tzinfo is None:
+        return dt
+    return dt.astimezone(timezone.utc).replace(tzinfo=None)
 
 
 def similarity(a: Headline, b: Headline) -> float | None:

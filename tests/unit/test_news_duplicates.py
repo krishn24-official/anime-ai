@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.domain.news.duplicates import find_original, parse_headline, same_story
 
@@ -63,3 +63,13 @@ def test_close_meaning_merges_when_embeddings_are_available():
     assert not same_story(parse_headline(joins, near, t), parse_headline(crashes, far, t + timedelta(days=2)))
     # close meaning but no shared name is never the same story
     assert not same_story(parse_headline("One Piece Wins Award", near, t), parse_headline("Bleach Gets Prize", near, t))
+
+
+def test_stored_naive_and_fetched_aware_times_compare():
+    # Mongo returns naive UTC; freshly fetched feeds are timezone-aware.
+    joins = "Emma Stone Joins Druski During His ‘SNL’ Hosting Debut"
+    crashes = "Emma Stone Crashes Druski’s ‘SNL’ Monologue in Hilarious Fashion"
+    stored = datetime(2026, 11, 7, 23, 0)
+    fetched = datetime(2026, 11, 8, 4, 37, tzinfo=timezone(timedelta(hours=5, minutes=30)))  # 23:07 UTC
+    near, far = (1.0, 0.0), (0.8, 0.6)
+    assert same_story(parse_headline(joins, near, stored), parse_headline(crashes, far, fetched))
