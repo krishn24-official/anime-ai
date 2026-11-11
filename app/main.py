@@ -22,7 +22,9 @@ app.add_middleware(
         "https://tauri.localhost",  # Tauri desktop on Windows (WebView2)
         "https://anime-ai-fe.vercel.app",
     ],
-    allow_origin_regex="https://.*\\.vercel\\.app",  # Matches any Vercel staging or production subdomains
+    # Any Vercel staging/production subdomain, plus local dev servers on any port
+    # (Vite moves to 5174+ when 5173 is busy; `vite preview` uses 4173).
+    allow_origin_regex=r"https://.*\.vercel\.app|http://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
