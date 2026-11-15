@@ -36,6 +36,14 @@ async def insert_article(article: dict):
     await db["news"].insert_one(article)
 
 
+async def update_article_body(article_id, description: str, summary: str) -> None:
+    """Fill in the page text after the headline has already been saved."""
+    await get_db()["news"].update_one(
+        {"_id": article_id},
+        {"$set": {"description": description, "summary": summary}},
+    )
+
+
 async def recent_originals(since: datetime) -> list[dict]:
     """Listed articles published since `since` (id, source, title, published_at), oldest first."""
     return await get_db()["news"].find(

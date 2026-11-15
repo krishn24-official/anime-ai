@@ -33,6 +33,7 @@ from app.repositories.news_repository import (
     insert_article,
     insert_duplicate,
     recent_originals,
+    update_article_body,
 )
 from app.services import title_matcher
 from app.container import trending_service
@@ -244,12 +245,28 @@ async def run_news_pipeline():
                 merged_same_story += 1
                 continue
 
-            # If it's a website article, fetch full content
+            # Save the headline first. Downloading the article page is slow, and on
+            # the free host the process is often killed mid-run; a saved row still
+            # shows up, and the body is filled in afterwards.
+            article["category"] = mapped_category
+            article["summary"] = make_fallback_summary(article)
+
+            try:
+                await insert_article(article)
+            except Exception as e:
+                if "duplicate key" in str(e).lower() or "11000" in str(e):
+                    skipped_duplicate += 1
+                else:
+                    print(f"[news_pipeline] insert error for {url}: {e}")
+                continue
+
+            saved += 1
+            recent.append((article["_id"], article.get("source"), headline))
+
             if article.get("source") != "youtube":
                 try:
                     full_content, raw_html = await fetch_full_article_content(url)
                     if full_content:
-                        # Check for listicle before proceeding
                         if is_listicle(title) and raw_html:
                             list_items = extract_list_items(raw_html)
                             if list_items:
@@ -264,44 +281,35 @@ async def run_news_pipeline():
                                     full_content = listicle_body
 
                         article["description"] = full_content
+                        article["summary"] = make_fallback_summary(article)
+                        await update_article_body(
+                            article["_id"], article["description"], article["summary"]
+                        )
                 except Exception as content_err:
                     print(
                         f"[news_pipeline] Error extracting full content for {url}: {content_err}"
                     )
 
-            article["category"] = mapped_category
-            article["summary"] = make_fallback_summary(article)
-
             try:
-                await insert_article(article)
-                saved += 1
-                recent.append((article["_id"], article.get("source"), headline))
+                from app.services.websocket_manager import manager
+                from app.services.news_service import _serialize
 
+                await manager.broadcast(
+                    {"type": "NEW_ARTICLE", "data": _serialize(article)}
+                )
+            except Exception as ws_err:
+                print("[news_pipeline] websocket broadcast error:", ws_err)
+
+            if alias_index:
                 try:
-                    from app.services.websocket_manager import manager
-                    from app.services.news_service import _serialize
-
-                    await manager.broadcast(
-                        {"type": "NEW_ARTICLE", "data": _serialize(article)}
+                    await trending_service().scan_article_for_mentions(
+                        news_id=str(article.get("_id")),
+                        title=article.get("title") or "",
+                        description=article.get("description") or "",
+                        alias_index=alias_index,
                     )
-                except Exception as ws_err:
-                    print("[news_pipeline] websocket broadcast error:", ws_err)
-            except Exception as e:
-                if "duplicate key" in str(e).lower() or "11000" in str(e):
-                    skipped_duplicate += 1
-                else:
-                    print(f"[news_pipeline] insert error for {url}: {e}")
-            else:
-                if alias_index:
-                    try:
-                        await trending_service().scan_article_for_mentions(
-                            news_id=str(article.get("_id")),
-                            title=article.get("title") or "",
-                            description=article.get("description") or "",
-                            alias_index=alias_index,
-                        )
-                    except Exception as match_err:
-                        print("[news_pipeline] title matcher error:", match_err)
+                except Exception as match_err:
+                    print("[news_pipeline] title matcher error:", match_err)
         except Exception as item_err:
             print(f"[news_pipeline] Unexpected item error: {item_err}")
 
