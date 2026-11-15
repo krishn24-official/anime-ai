@@ -98,11 +98,19 @@ def home_service() -> HomeService:
 
 @lru_cache(maxsize=None)
 def headline_embedder() -> ThreadedEmbedder | None:
-    """Embeddings for news de-duplication, or None when disabled."""
+    """Embeddings for news de-duplication, or None when disabled or not already loaded.
+
+    The news job runs on every web-process boot. Loading sentence-transformers there
+    pulls PyTorch into a 512 MB host and the process is killed before any article is
+    saved. Word matching still runs; semantic matching runs only if chat already
+    loaded the model for a lore question.
+    """
     if not NEWS_SEMANTIC_DEDUP:
         return None
     from app.services.lore_service import lore_embedder  # one shared model in memory
 
+    if not lore_embedder.loaded:
+        return None
     return ThreadedEmbedder(lore_embedder.embed_chunks)
 
 

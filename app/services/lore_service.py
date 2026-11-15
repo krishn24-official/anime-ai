@@ -510,6 +510,11 @@ class LoreEmbedder:
         self._model: Any = None
 
     @property
+    def loaded(self) -> bool:
+        """True once the weights are in memory. Checking this must not load them."""
+        return self._model is not None
+
+    @property
     def model(self) -> Any:
         if self._model is None:
             logger.info(f"[lore_service] Loading embedding model: {self.model_name}")

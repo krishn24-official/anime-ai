@@ -27,6 +27,9 @@ def start_news_scheduler():
         "interval",
         minutes=30,
         next_run_time=datetime.now(),
+        # Default grace is 1s. A slow boot then skips this run, and the free host
+        # sleeps before the next 30-minute tick, so nothing is fetched.
+        misfire_grace_time=None,
         id="news_pipeline",
     )
 
@@ -84,11 +87,13 @@ def start_news_scheduler():
         except Exception as e:
             print(f"[scheduler] failed to run daily discovery sync: {e}")
 
+    # No next_run_time: this sync pulls TMDb and AniList. Running it a few seconds
+    # after every boot (the free host boots on each visit) was killing the process
+    # while the news job was still saving articles.
     scheduler.add_job(
         _daily_discovery_job,
         "interval",
         hours=24,
-        next_run_time=datetime.now() + timedelta(seconds=15),
         id="daily_discovery_sync",
     )
 
